@@ -1,0 +1,15 @@
+.data/
+.nuxt/
+.output/
+dist/
+generated/
+node_modules/
+public/generated/
+
+.env
+.env.*
+!.env.example
+
+*.log
+.DS_Store
+Thumbs.db

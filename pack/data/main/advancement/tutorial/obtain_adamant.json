@@ -1,0 +1,33 @@
+{
+  "parent": "main:tutorial/obtain_gold",
+  "criteria": {
+    "get_smithing": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:netherite_ingot"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Адамант дарует владельцу божественную стойкость"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:netherite_ingot"
+    },
+    "title": {
+      "text": "Божественный сплав"
+    },
+    "hidden": true
+  },
+  "requirements": [
+    [
+      "get_smithing"
+    ]
+  ]
+}

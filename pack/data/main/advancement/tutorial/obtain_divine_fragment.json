@@ -1,0 +1,36 @@
+{
+  "parent": "main:tutorial/obtain_estus",
+  "criteria": {
+    "get_heart": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:turtle_scute"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Реликвию можно добыть, только разрушая рассадники монстров или одолевая могучих врагов."
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:turtle_scute"
+    },
+    "title": {
+      "text": "Искра божественности"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "get_heart"
+    ]
+  ]
+}

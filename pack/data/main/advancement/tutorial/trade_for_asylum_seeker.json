@@ -1,0 +1,35 @@
+{
+  "parent": "main:tutorial/obtain_obol",
+  "criteria": {
+    "traded": {
+      "trigger": "minecraft:villager_trade",
+      "conditions": {
+        "villager": {},
+        "item": {
+          "items": "minecraft:villager_spawn_egg"
+        }
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Приютите просителя убежища"
+    },
+    "icon": {
+      "components": {
+        "minecraft:item_model": "minecraft:application"
+      },
+      "count": 1,
+      "id": "minecraft:emerald"
+    },
+    "title": {
+      "text": "Добрый самаритянин"
+    },
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "traded"
+    ]
+  ]
+}

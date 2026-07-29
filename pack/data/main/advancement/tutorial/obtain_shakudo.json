@@ -1,0 +1,33 @@
+{
+  "parent": "main:tutorial/obtain_gold",
+  "criteria": {
+    "get_smithing": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:shulker_shell"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Сякудо наделяет медное снаряжение «Шёлковым касанием» и очищающими свойствами"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:shulker_shell"
+    },
+    "title": {
+      "text": "Деликатный сплав"
+    },
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "get_smithing"
+    ]
+  ]
+}

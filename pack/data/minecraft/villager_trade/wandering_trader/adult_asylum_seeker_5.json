@@ -1,0 +1,50 @@
+{
+  "gives": {
+    "components": {
+      "minecraft:entity_data": {
+        "id": "minecraft:villager",
+        "active_effects": [
+          {
+            "id": "minecraft:invisibility",
+            "amplifier": 0,
+            "duration": 1,
+            "show_particles": false
+          }
+        ],
+        "VillagerData": {
+          "type": "minecraft:jungle"
+        }
+      },
+      "minecraft:item_model": "minecraft:application",
+      "minecraft:item_name": "Asylum Seeker",
+      "minecraft:lore": [
+        {
+          "text": "Возраст: взрослый",
+          "color": "dark_gray",
+          "italic": false
+        },
+        {
+          "text": "Культура: джунглей",
+          "color": "dark_gray",
+          "italic": false
+        },
+        {
+          "text": "Причина переселения: стихийное бедствие",
+          "color": "dark_gray",
+          "italic": false
+        },
+        {
+          "text": "Нажмите по земле, чтобы поселить",
+          "color": "gray",
+          "italic": false
+        }
+      ]
+    },
+    "count": 1,
+    "id": "minecraft:villager_spawn_egg"
+  },
+  "max_uses": 1,
+  "wants": {
+    "id": "minecraft:emerald"
+  }
+}

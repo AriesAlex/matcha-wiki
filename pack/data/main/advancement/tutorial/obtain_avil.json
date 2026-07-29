@@ -1,0 +1,33 @@
+{
+  "parent": "main:tutorial/obtain_steel",
+  "criteria": {
+    "get_smithing": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:anvil"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Наковальни из стальных или железных блоков чинят снаряжение самородком или слитком соответствующего основного металла."
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:anvil"
+    },
+    "title": {
+      "text": "Чини и пользуйся"
+    },
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "get_smithing"
+    ]
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "area": "equipment",
+  "packVersion": "1.03",
+  "minecraftVersion": "26.2",
+  "fixes": [
+    {
+      "id": "EQUIPMENT-01",
+      "files": [
+        "pack/data/crafting/recipe/wooden_pickaxe.json",
+        "pack/data/crafting/recipe/tinder.json",
+        "pack/data/smithing_table/recipe/butcher_knife.json",
+        "pack/data/smithing_table/recipe/lesser_warding_shield.json",
+        "pack/data/smithing_table/recipe/warding_shield.json",
+        "pack/data/smithing_table/recipe/gilded_leather_boots.json",
+        "pack/data/smithing_table/recipe/silver_sword.json",
+        "pack/data/smithing_table/recipe/warding_sword.json",
+        "pack/data/minecraft/loot_table/archaeology/ocean_ruin_cold.json",
+        "pack/data/minecraft/loot_table/archaeology/ocean_ruin_warm.json",
+        "pack/assets/minecraft/lang/en_us.json",
+        "pack/assets/minecraft/lang/ru_ru.json"
+      ],
+      "summary": "Убраны буквальные английские item_name у живого снаряжения: ванильная кирка использует штатную локализацию, остальные предметы используют стабильные translate-ключи с русскими и английскими строками.",
+      "evidenceType": "component_and_language_semantics"
+    },
+    {
+      "id": "EQUIPMENT-02",
+      "files": [
+        "pack/data/crafting/recipe/iron_mattock.json",
+        "pack/data/crafting/recipe/iron_sword.json",
+        "pack/data/crafting/recipe/iron_dolabra.json",
+        "pack/data/minecraft/loot_table/chests/equipment/iron.json",
+        "pack/data/minecraft/loot_table/chests/equipment/iron_tools.json"
+      ],
+      "summary": "Железные меч и мотыга-лопата теперь имеют фактическую скорость из собственной lore, а боевые модификаторы комбинированных инструментов не протекают из второй руки. Лутовые мечи синхронизированы с крафтовым.",
+      "evidenceType": "attribute_formula_and_cross_file_invariant"
+    },
+    {
+      "id": "EQUIPMENT-03",
+      "files": [
+        "pack/data/smithing_table/recipe/butcher_knife.json",
+        "pack/data/minecraft/villager_trade/butcher/4/butcher_knife.json",
+        "pack/data/minecraft/villager_trade/shepherd/3/crook.json"
+      ],
+      "summary": "Кузнечный и торговый мясницкие тесаки согласованы на 6 урона и 1.6 скорости, а пастуший посох действительно даёт заявленные 5 урона и 3 скорости только в основной руке.",
+      "evidenceType": "attribute_formula_and_cross_file_invariant"
+    },
+    {
+      "id": "EQUIPMENT-04",
+      "files": [
+        "pack/data/smithing_table/recipe/bronze_axe.json",
+        "pack/data/smithing_table/recipe/bronze_mattock.json",
+        "pack/data/smithing_table/recipe/bronze_spear.json"
+      ],
+      "summary": "Бронзовые топор, мотыга-лопата и копьё согласованы с собственной lore: 3.5 урона у мотыги-лопаты, 1.18 скорости у копья и отсутствие offhand-замедления от топора.",
+      "evidenceType": "attribute_formula_and_tier_consistency"
+    },
+    {
+      "id": "EQUIPMENT-05",
+      "files": [
+        "pack/data/smithing_table/recipe/electrum_spear.json",
+        "pack/data/smithing_table/recipe/shakudo_spear.json",
+        "pack/data/smithing_table/recipe/shakudo_pickaxe.json",
+        "pack/data/smithing_table/recipe/shakudo_hoe.json",
+        "pack/data/smithing_table/recipe/shakudo_dolabra.json"
+      ],
+      "summary": "Электрумовое и палатинатовое снаряжение получает заявленные скорость и урон; палатинатовая мотыга больше не разгоняется до 7, а долабра не меняет атрибуты из второй руки.",
+      "evidenceType": "attribute_formula_and_tier_consistency"
+    },
+    {
+      "id": "EQUIPMENT-06",
+      "files": [
+        "pack/data/smithing_table/recipe/steel_axe.json",
+        "pack/data/smithing_table/recipe/steel_pickaxe.json",
+        "pack/data/smithing_table/recipe/steel_shovel.json",
+        "pack/data/smithing_table/recipe/steel_hoe.json",
+        "pack/data/smithing_table/recipe/steel_mattock.json"
+      ],
+      "summary": "Стальная ветка больше не наследует неподходящие боевые атрибуты каменных carrier-предметов: все пять результатов совпадают с заявленными уроном и скоростью, а топор исправлен с 10 до 9 итогового урона.",
+      "evidenceType": "carrier_defaults_and_attribute_formula"
+    },
+    {
+      "id": "EQUIPMENT-07",
+      "files": [
+        "pack/data/main/function/enchantment_effects/bloodrage.mcfunction",
+        "pack/data/main/function/enchantment_effects/conduit_power.mcfunction",
+        "pack/data/main/function/enchantment_effects/fire_proof.mcfunction",
+        "pack/data/main/function/enchantment_effects/haste.mcfunction",
+        "pack/data/main/function/enchantment_effects/regeneration.mcfunction",
+        "pack/data/main/function/enchantment_effects/slaughter.mcfunction",
+        "pack/data/main/function/enchantment_effects/divinity.mcfunction",
+        "pack/data/main/function/enchantment_effects/warding_armour.mcfunction"
+      ],
+      "summary": "Эффекты экипировки адресованы владельцу зачарованного предмета через @s. Кровавая ярость больше не усиливает всех раненых игроков, аксессуары не бафают соседа, а Slaughter, Divinity и Warding Armour используют позицию и счётчики владельца.",
+      "evidenceType": "run_function_command_source_ownership"
+    }
+  ],
+  "deferred": [
+    {
+      "id": "EQUIPMENT-DEFERRED-01",
+      "subject": "Сохранение прежних зачарований при кузнечном улучшении",
+      "status": "not_safely_fixable_declaratively",
+      "affectedRecipeCount": 56,
+      "evidence": [
+        "Minecraft 26.2 SmithingTransformRecipe.assemble вызывает TransmuteRecipe.createWithOriginalComponents.",
+        "createWithOriginalComponents передаёт patch основы в ItemStackTemplate.apply, после чего result components накладываются поверх него.",
+        "DataComponentPatch заменяет значение одного компонента целиком; minecraft:enchantments не имеет операции union в JSON-рецепте.",
+        "Удаление minecraft:enchantments из result сохранило бы старые чары, но одновременно убрало бы обязательные встроенные чары Matcha, поэтому это не является исправлением."
+      ],
+      "requiredCapability": "Динамическое объединение enchantments основы и результата на стороне recipe engine либо отдельный надёжный runtime-процессор результата."
+    }
+  ],
+  "validation": {
+    "jsonFilesParsed": 3135,
+    "mcmetaFilesParsed": 24,
+    "officialServerVersion": "26.2",
+    "serverStarted": true,
+    "loadedRecipeCount": 2330,
+    "loadedAdvancementCount": 1781,
+    "equipmentDataFilesChecked": 777,
+    "itemModelIdsChecked": 183,
+    "equipmentAssetIdsChecked": 11,
+    "assetGraphProblems": 0,
+    "equipmentLoadErrors": 0,
+    "serverLogErrorLines": 0,
+    "note": "Финальное дерево загружено официальным dedicated server 26.2 без ошибок загрузки данных."
+  },
+  "intentionallyUnchanged": [
+    "Два рецепта щита-оберега с одинаковым результатом.",
+    "Кузнечный рецепт янтарных серёг и конфликт carrier-предметов аксессуаров.",
+    "Проверка Назара только по vanilla item ID.",
+    "Неиспользуемые vermeil, titanium и horse-armour ассеты.",
+    "Баланс серебряного оружия и Warding.",
+    "Штраф дальности мясницкого тесака во второй руке."
+  ]
+}

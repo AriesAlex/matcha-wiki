@@ -1,0 +1,32 @@
+{
+  "parent": "main:tutorial/obtain_bowl",
+  "criteria": {
+    "get_food": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "food:paneer_makhani"
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Приготовьте панир махани — у каждого блюда есть полноценный вегетарианский вариант"
+    },
+    "icon": {
+      "components": {
+        "minecraft:item_model": "minecraft:paneer_makhani"
+      },
+      "count": 1,
+      "id": "minecraft:rabbit_stew"
+    },
+    "title": {
+      "text": "Сладко и остро"
+    },
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "get_food"
+    ]
+  ]
+}

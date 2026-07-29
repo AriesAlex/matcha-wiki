@@ -1,0 +1,33 @@
+{
+  "parent": "main:tutorial/obtain_oven",
+  "criteria": {
+    "get_primary_material": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:bowl"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Сделайте керамическую миску из кирпичей"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:bowl"
+    },
+    "title": {
+      "text": "Манеры прежде всего"
+    },
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "get_primary_material"
+    ]
+  ]
+}

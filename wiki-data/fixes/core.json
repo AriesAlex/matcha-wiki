@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "packVersion": "1.03",
+  "minecraftVersion": "26.2",
+  "fixes": [
+    {
+      "id": "core-empty-loot-table",
+      "files": [],
+      "removedFiles": [
+        "pack/data/minecraft/loot_table/advancement/custom/root.json"
+      ],
+      "summary": "Удалена нулевая неиспользуемая loot table, которую loader отвергал как невалидный JSON.",
+      "evidenceType": "runtime_reload_log"
+    },
+    {
+      "id": "core-development-notes-paths",
+      "files": [],
+      "removedFiles": [
+        "pack/data/custom_music/jukebox_song/HELP.txt",
+        "pack/data/main/predicate/HELP_MEEEE.txt",
+        "pack/data/main/advancement/mechanics/HELP.txt"
+      ],
+      "summary": "Удалены авторские HELP-файлы из data registry directories, которые resource loader считал невалидными ID.",
+      "evidenceType": "runtime_reload_log"
+    },
+    {
+      "id": "core-coarse-dirt-predicate",
+      "files": [
+        "pack/data/main/predicate/in_village_on_oak_coarse_dirt_inside.json"
+      ],
+      "summary": "Исправлен несуществующий block ID coarse_dirtt на coarse_dirt без изменения логики any_of.",
+      "evidenceType": "runtime_reload_log"
+    },
+    {
+      "id": "core-rejected-recipes",
+      "files": [
+        "pack/data/crafting/recipe/chicken_noodle_soup.json",
+        "pack/data/crafting/recipe/nametag.json",
+        "pack/data/stonecutting/recipe/iron_chain_from_stonecutting_iron_ingot.json"
+      ],
+      "summary": "Выровнены shaped-pattern двух рецептов и исправлен result ID железной цепи, чтобы все три рецепта регистрировались.",
+      "evidenceType": "runtime_reload_log"
+    },
+    {
+      "id": "core-kill-villager-schema",
+      "files": [
+        "pack/data/main/advancement/tutorial/kill_villager.json"
+      ],
+      "summary": "Entity conditions переведены на context-aware schema Minecraft 26.2 с сохранением OR между жителем и странствующим торговцем.",
+      "evidenceType": "runtime_reload_log"
+    },
+    {
+      "id": "core-skeleton-axe-context",
+      "files": [
+        "pack/data/minecraft/loot_table/entities/skeleton.json"
+      ],
+      "summary": "Недоступный match_tool заменён проверкой mainhand direct_attacker, поэтому условие топора допустимо в entity loot context.",
+      "evidenceType": "runtime_reload_log"
+    },
+    {
+      "id": "core-loot-table-references",
+      "files": [
+        "pack/data/minecraft/loot_table/chests/bastion_other.json",
+        "pack/data/minecraft/loot_table/chests/adventure_old/ruin_generic_storage.json"
+      ],
+      "summary": "Исправлены активная ссылка на Matcha-золотое яблоко и четыре латентные sibling-ссылки старых руин.",
+      "evidenceType": "static_reference_graph"
+    },
+    {
+      "id": "core-fishing-biome-and-collection",
+      "files": [
+        "pack/data/minecraft/loot_table/gameplay/fishing.json",
+        "pack/data/main/advancement/tutorial/catch_everything.json"
+      ],
+      "summary": "Hot-wet fishing привязана к hot-wet biome tag, а Alaska blackfish согласована с реальной моделью рыбы.",
+      "evidenceType": "cross_file_invariant"
+    },
+    {
+      "id": "core-water-bottle-count",
+      "files": [
+        "pack/data/main/function/mechanic/water_bottle_stacking.mcfunction"
+      ],
+      "summary": "Обе команды clear ограничены одной бутылкой, поэтому тиковая конвертация больше не схлопывает стопку в один предмет.",
+      "evidenceType": "command_semantics"
+    },
+    {
+      "id": "core-spawn-modifier-target",
+      "files": [
+        "pack/data/main/function/mechanic/spawn_mechanic/modify_mob.mcfunction"
+      ],
+      "summary": "Drop chances теперь меняются у executor @s; две недостижимые piglin-ветки удалены.",
+      "evidenceType": "call_graph_and_selector_semantics"
+    },
+    {
+      "id": "core-advancement-recipe-references",
+      "files": [
+        "pack/data/main/advancement/recipe_unlocks/apple.json",
+        "pack/data/main/advancement/recipe_unlocks/pumpkin.json",
+        "pack/data/main/advancement/recipe_unlocks/benzene.json",
+        "pack/data/main/advancement/recipe_unlocks/diamond.json",
+        "pack/data/main/advancement/recipe_unlocks/hay_block.json",
+        "pack/data/main/advancement/recipe_unlocks/iron_ingot.json",
+        "pack/data/main/advancement/recipe_unlocks/wheat_and_dry_grass.json"
+      ],
+      "summary": "Dangling recipe criteria и rewards заменены живыми ID либо удалены там, где однозначной замены нет.",
+      "evidenceType": "static_reference_graph"
+    },
+    {
+      "id": "core-obsolete-advancements",
+      "files": [],
+      "removedFiles": [
+        "pack/data/main/advancement/recipe_unlocks/greater_prayers.json",
+        "pack/data/main/advancement/recipe_unlocks/most_prayers.json",
+        "pack/data/main/advancement/using_item.json"
+      ],
+      "summary": "Удалены два заменённых prayers unlock и изолированный using_item с отсутствующей reward function.",
+      "evidenceType": "static_reference_graph"
+    },
+    {
+      "id": "core-blessing-advancement-coverage",
+      "files": [
+        "pack/data/main/advancement/hell/craft_blessing.json"
+      ],
+      "summary": "Достижение Апокрифы теперь принимает любой из всех 22 действующих рецептов благословений.",
+      "evidenceType": "set_equality"
+    },
+    {
+      "id": "core-live-food-model-fallbacks",
+      "files": [
+        "pack/assets/minecraft/items/pumpkin_pie.json",
+        "pack/assets/minecraft/items/rabbit_stew.json"
+      ],
+      "summary": "Три крафтящихся блюда направлены на ванильные модели их carrier вместо отсутствующих model JSON.",
+      "evidenceType": "asset_reference_graph"
+    },
+    {
+      "id": "core-poisonous-carrot-texture-reference",
+      "files": [
+        "pack/assets/minecraft/models/item/poisonous_carrot.json"
+      ],
+      "summary": "Модель ссылается на существующую texture в unused вместо отсутствующего item-path.",
+      "evidenceType": "asset_reference_graph"
+    }
+  ]
+}

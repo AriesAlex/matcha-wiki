@@ -1,0 +1,42 @@
+{
+  "name": "matcha-wiki",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.14",
+  "scripts": {
+    "data": "bun run scripts/generate-wiki-data.ts",
+    "vanilla:sync": "bun run scripts/sync-vanilla-language.ts",
+    "dev": "bun run data && nuxt dev",
+    "build": "bun run data && nuxt build",
+    "generate": "bun run data && nuxt generate",
+    "pages": "bun run data && nuxt build --preset github_pages",
+    "preview": "nuxt preview",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "pack:normalize": "bun run scripts/normalize-pack-filter.ts",
+    "pack": "bun run scripts/build-pack.ts",
+    "validate": "bun run pack:normalize --check && bun run data && bun run lint && bun run typecheck && bun run test && bun run generate && bun run pack",
+    "postinstall": "bun run data && nuxt prepare"
+  },
+  "dependencies": {
+    "@fontsource-variable/onest": "5.3.0",
+    "@fontsource/tiny5": "5.3.0",
+    "@nuxt/content": "3.15.2",
+    "@nuxtjs/sitemap": "8.3.1",
+    "@phosphor-icons/vue": "2.2.1",
+    "better-sqlite3": "12.5.0",
+    "nuxt": "4.5.1"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "1.16.0",
+    "@types/node": "^25.0.0",
+    "eslint": "10.8.0",
+    "fflate": "0.8.3",
+    "sass": "1.102.0",
+    "typescript": "^5.9.0",
+    "vitest": "4.1.10",
+    "vue-tsc": "^3.3.8"
+  }
+}

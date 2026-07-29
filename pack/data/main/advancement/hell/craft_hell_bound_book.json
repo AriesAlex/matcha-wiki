@@ -1,0 +1,30 @@
+{
+  "parent": "main:hell/obtain_stabilised_estus",
+  "criteria": {
+    "hell_bound_book": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "blessings:hell_bound_book"
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Создайте книгу адских уз"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:enchanted_book"
+    },
+    "title": {
+      "text": "Нечестивое знание"
+    },
+    "frame": "task",
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "hell_bound_book"
+    ]
+  ]
+}

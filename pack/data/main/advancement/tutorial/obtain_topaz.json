@@ -1,0 +1,37 @@
+{
+  "parent": "main:tutorial/obtain_amber",
+  "criteria": {
+    "get_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "components": {
+              "minecraft:item_model": "minecraft:topaz"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Разграбьте Тартар"
+    },
+    "icon": {
+      "components": {
+        "minecraft:item_model": "minecraft:topaz"
+      },
+      "count": 1,
+      "id": "minecraft:emerald"
+    },
+    "title": {
+      "text": "Песнь IV"
+    }
+  },
+  "requirements": [
+    [
+      "get_item"
+    ]
+  ]
+}

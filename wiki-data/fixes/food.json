@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "area": "food",
+  "packVersion": "1.03",
+  "minecraftVersion": "26.2",
+  "fixes": [
+    {
+      "id": "FOOD-01",
+      "files": [
+        "pack/data/crafting/recipe/morsel_stew.json",
+        "pack/data/crafting/recipe/squid_ink_pasta.json"
+      ],
+      "summary": "Мгновенное лечение у двух legacy-блюд теперь действительно восстанавливает заявленные 4 сердца.",
+      "evidence": [
+        "Эффект minecraft:instant_health без duration декодировался с нулевой длительностью и не успевал сработать.",
+        "amplifier 1 соответствует Мгновенному лечению II и 8 HP, указанным четырьмя сердцами в lore."
+      ]
+    },
+    {
+      "id": "FOOD-02",
+      "files": [
+        "pack/data/minecraft/loot_table/food/enchanted_golden_apple.json"
+      ],
+      "summary": "Зачарованное золотое яблоко выдаёт заявленные 8 сердец Поглощения на 2 минуты.",
+      "evidence": [
+        "amplifier 0 давал только 4 HP Поглощения при lore на 16 HP.",
+        "amplifier 3 даёт 4 * (1 + amplifier) = 16 HP и совпадает с указанными восемью сердцами."
+      ]
+    },
+    {
+      "id": "FOOD-03",
+      "files": [
+        "pack/data/minecraft/loot_table/food/apple.json"
+      ],
+      "summary": "Сундуковое яблоко лечит полное заявленное сердце и совпадает с яблоком из листвы.",
+      "evidence": [
+        "Регенерация III с duration 20 успевала восстановить только 1 HP.",
+        "duration 24 совпадает с рабочими loot-вариантами яблока из дубовой листвы."
+      ]
+    },
+    {
+      "id": "FOOD-04",
+      "files": [
+        "pack/data/main/function/effects/soul_sight_effect_3.mcfunction",
+        "pack/data/main/function/effects/soul_sight_effect_30.mcfunction",
+        "pack/data/main/function/effects/soul_sight_effect_60.mcfunction"
+      ],
+      "removedFiles": [
+        "pack/data/main/function/effects/soul_sight_apply_glow_3.mcfunction",
+        "pack/data/main/function/effects/soul_sight_apply_glow_30.mcfunction",
+        "pack/data/main/function/effects/soul_sight_apply_glow_60.mcfunction"
+      ],
+      "summary": "Аура светящихся ягод применяется сразу и строго вокруг съевшего игрока.",
+      "evidence": [
+        "Scheduled function терял исходный command source, а @p заново выбирал ближайшего игрока.",
+        "Reward-функция имеет корректного едока в @s, поэтому немедленное execute at @s устойчиво в мультиплеере и не объединяет одновременные применения."
+      ]
+    },
+    {
+      "id": "FOOD-05",
+      "files": [
+        "pack/data/minecraft/loot_table/chests/bastion_hoglin_stable.json",
+        "pack/data/minecraft/loot_table/chests/ruined_portal.json"
+      ],
+      "summary": "Конюшня бастиона и разрушенный портал используют централизованные Matcha-варианты золотых яблок.",
+      "evidence": [
+        "Прямые item entries создавали ванильные стеки без Matcha-компонентов.",
+        "Nested loot-table entries сохраняют исходные веса и исключают визуально одинаковые несовместимые варианты."
+      ]
+    },
+    {
+      "id": "FOOD-06",
+      "files": [
+        "pack/data/minecraft/loot_table/chests/village/village_armorer.json",
+        "pack/data/minecraft/loot_table/chests/bastion_hoglin_stable.json"
+      ],
+      "summary": "Деревенский хлеб и бастионная свинина совпадают с центральными пищевыми стеками и складываются с ними.",
+      "evidence": [
+        "У хлеба отсутствовало очищение от вредных эффектов, а literal Bread создавал отдельный стек.",
+        "Literal Cooked Porkchop был единственным отличием бастионной свинины от результата основного рецепта."
+      ]
+    },
+    {
+      "id": "FOOD-07",
+      "files": [
+        "pack/data/minecraft/loot_table/food/golden_carrot.json"
+      ],
+      "summary": "Лутовая и скрафченная золотая морковь имеют идентичные скрытые компоненты.",
+      "evidence": [
+        "Одинаковое лечение было закодировано разными amplifier, duration и show_icon, из-за чего стеки не объединялись.",
+        "Лутовый стек синхронизирован с каноническими components рецепта."
+      ]
+    },
+    {
+      "id": "FOOD-08",
+      "files": [
+        "pack/data/food/recipe/pickled_potatoes.json"
+      ],
+      "summary": "Описание маринованного картофеля показывает Сопротивление I на 5 минут.",
+      "evidence": [
+        "Runtime-эффект minecraft:resistance duration 6000 уже существовал, но не был указан в lore."
+      ]
+    },
+    {
+      "id": "FOOD-09",
+      "files": [
+        "pack/data/crafting/recipe/chicken_noodle_soup.json",
+        "pack/data/crafting/recipe/golden_pie.json",
+        "pack/data/crafting/recipe/green_curry.json",
+        "pack/data/crafting/recipe/morsel_stew.json",
+        "pack/data/crafting/recipe/paneer_makhani.json",
+        "pack/data/crafting/recipe/ramen.json",
+        "pack/data/crafting/recipe/squid_ink_pasta.json",
+        "pack/data/crafting/recipe/stuffed_mushrooms.json",
+        "pack/assets/minecraft/lang/en_au.json",
+        "pack/assets/minecraft/lang/en_ca.json",
+        "pack/assets/minecraft/lang/en_gb.json",
+        "pack/assets/minecraft/lang/en_us.json",
+        "pack/assets/minecraft/lang/ru_ru.json"
+      ],
+      "summary": "Восемь legacy-блюд используют translate-ключи и корректно меняют имя вместе с языком игры.",
+      "evidence": [
+        "Literal minecraft:item_name обходил ru_ru; Morsel Stew не имел собственного имени и отображался как ванильное кроличье рагу.",
+        "Существующие ключи переиспользованы для трёх одноимённых блюд, для остальных добавлены согласованные ключи во все пять языковых таблиц."
+      ]
+    },
+    {
+      "id": "FOOD-10",
+      "files": [
+        "pack/data/crafting/recipe/golden_pie.json"
+      ],
+      "summary": "Lore золотого пирога правильно подписывает Регенерацию III.",
+      "evidence": [
+        "Runtime amplifier 2 соответствует уровню III, тогда как прежний текст показывал Уют II."
+      ]
+    }
+  ]
+}

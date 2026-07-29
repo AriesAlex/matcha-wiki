@@ -1,0 +1,33 @@
+{
+  "parent": "main:tutorial/obtain_blast_furnace",
+  "criteria": {
+    "get_diamond": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:diamond"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "У алмазов нет собственных свойств, но они могут служить основой для электрума и адаманта"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:diamond"
+    },
+    "title": {
+      "text": "Прочный минерал"
+    },
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "get_diamond"
+    ]
+  ]
+}

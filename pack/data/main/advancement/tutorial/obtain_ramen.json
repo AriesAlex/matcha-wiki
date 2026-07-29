@@ -1,0 +1,32 @@
+{
+  "parent": "main:tutorial/obtain_bowl",
+  "criteria": {
+    "get_food": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "food:ramen"
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Приготовьте рамэн"
+    },
+    "icon": {
+      "components": {
+        "minecraft:item_model": "minecraft:ramen"
+      },
+      "count": 1,
+      "id": "minecraft:rabbit_stew"
+    },
+    "title": {
+      "text": "Лучший суп"
+    },
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "get_food"
+    ]
+  ]
+}

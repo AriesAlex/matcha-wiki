@@ -1,0 +1,33 @@
+{
+  "parent": "main:tutorial/obtain_blast_furnace",
+  "criteria": {
+    "get_iron": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:iron_ingot"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "У железа нет собственных свойств, и оно может служить основой лишь для стали"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:iron_ingot"
+    },
+    "title": {
+      "text": "Стойкий металл"
+    },
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "get_iron"
+    ]
+  ]
+}

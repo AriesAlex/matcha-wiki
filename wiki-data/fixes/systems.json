@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "area": "systems",
+  "packVersion": "1.03",
+  "minecraftVersion": "26.2",
+  "fixes": [
+    {
+      "id": "SYSTEMS-01",
+      "files": [
+        "pack/data/main/function/mechanic/anvil_xp.mcfunction",
+        "pack/data/main/function/mechanic/set_xp.mcfunction",
+        "pack/data/main/function/setup/scoreboard.mcfunction",
+        "pack/data/main/function/setup/ticking_functions.mcfunction"
+      ],
+      "removedFiles": [
+        "pack/data/main/advancement/mechanics/inventory_changed.json",
+        "pack/data/main/function/mechanic/check_anvil_interaction.mcfunction",
+        "pack/data/main/function/mechanic/check_anvil_interaction_delayed.mcfunction",
+        "pack/data/main/function/mechanic/clear_xp_tag.mcfunction"
+      ],
+      "summary": "Временные 50 уровней наковальни получили личный 15-секундный таймер: одновременная ковка больше не переносит тег между игроками.",
+      "evidenceType": "multiplayer_scoreboard_ownership"
+    },
+    {
+      "id": "SYSTEMS-02",
+      "files": [
+        "pack/data/main/function/mechanic/manage_hunger.mcfunction",
+        "pack/data/main/function/mechanic/remove_xp.mcfunction",
+        "pack/data/main/function/mechanic/hpdown.mcfunction",
+        "pack/data/main/function/mechanic/set_max_hp.mcfunction",
+        "pack/data/main/function/mechanic/sleep.mcfunction",
+        "pack/data/main/function/mechanic/water_bottle_stacking.mcfunction",
+        "pack/data/main/function/mechanic/check_if_estus_should_be_processed.mcfunction",
+        "pack/data/main/function/mechanic/process_estus.mcfunction",
+        "pack/data/main/function/mechanic/estus_effects.mcfunction",
+        "pack/data/main/function/mechanic/process_heart_container.mcfunction",
+        "pack/data/main/function/mechanic/clear_heart_container.mcfunction",
+        "pack/data/main/function/setup/scoreboard.mcfunction"
+      ],
+      "summary": "Голод, опыт, смерть, сон, Эстус, вода и хрустальные сердца теперь читают и меняют состояние того же игрока через @s.",
+      "evidenceType": "multiplayer_selector_ownership"
+    },
+    {
+      "id": "SYSTEMS-03",
+      "files": [
+        "pack/data/crafting/recipe/copper_pickaxe.json"
+      ],
+      "summary": "Медная кирка больше не добывает блоки уровня алмаза, сохраняя заявленную лестницу инструментов.",
+      "evidenceType": "tier_tag_consistency"
+    },
+    {
+      "id": "SYSTEMS-04",
+      "files": [
+        "pack/data/main/function/mechanic/first_dragon_killed_reward.mcfunction"
+      ],
+      "summary": "После первого убийства дракона безопасная поверхность сразу переоценивает уже существующих враждебных мобов, а не только новых.",
+      "evidenceType": "state_transition_runtime"
+    },
+    {
+      "id": "SYSTEMS-05",
+      "files": [
+        "pack/data/main/enchantment/divinity.json",
+        "pack/data/main/enchantment/warding_armour.json",
+        "pack/data/main/function/enchantment_effects/divinity.mcfunction",
+        "pack/data/main/function/enchantment_effects/warding_armour.mcfunction",
+        "pack/data/main/function/enchantment_effects/warding1.mcfunction",
+        "pack/data/main/function/enchantment_effects/warding2.mcfunction",
+        "pack/data/main/function/enchantment_effects/warding3.mcfunction",
+        "pack/data/main/function/setup/scoreboard.mcfunction",
+        "pack/data/main/function/setup/ticking_functions.mcfunction"
+      ],
+      "summary": "Divinity и Warding исполняются один раз на игрока за тик, с личными cooldown и согласованными радиусами цели, частицы и урона.",
+      "evidenceType": "enchantment_tick_cardinality"
+    },
+    {
+      "id": "SYSTEMS-06",
+      "files": [
+        "pack/data/main/function/mechanic/warding_stone.mcfunction",
+        "pack/data/main/function/mechanic/warding_stone_effects.mcfunction",
+        "pack/data/main/function/mechanic/warding_stone_pulse.mcfunction",
+        "pack/data/main/function/setup/scoreboard.mcfunction"
+      ],
+      "summary": "Каждый камень оберега независимо лечит каждого союзника и наносит периодический урон нежити из собственной позиции.",
+      "evidenceType": "entity_local_cooldown"
+    },
+    {
+      "id": "SYSTEMS-07",
+      "files": [
+        "pack/data/main/function/stopwatches.mcfunction",
+        "pack/data/main/function/setup/scoreboard.mcfunction"
+      ],
+      "summary": "Глобальные секундомеры сведены к реально используемым интервалам и перезапускаются по точным порогам без многотиковых окон.",
+      "evidenceType": "tick_gate_semantics"
+    },
+    {
+      "id": "SYSTEMS-08",
+      "files": [
+        "pack/data/main/enchantment/zephyr.json",
+        "pack/data/main/function/enchantment_effects/zephyr.mcfunction",
+        "pack/data/main/function/enchantment_effects/zephyr_execute.mcfunction",
+        "pack/data/main/function/enchantment_effects/zephyr_failure.mcfunction",
+        "pack/data/main/function/setup/scoreboard.mcfunction",
+        "pack/data/main/function/setup/ticking_functions.mcfunction"
+      ],
+      "summary": "Zephyr требует непрерывной личной зарядки 45 тиков и сбрасывается на земле или после снятия ботинок; старая статистика всех приседаний больше не даёт мгновенный запуск.",
+      "evidenceType": "continuous_charge_state_machine"
+    },
+    {
+      "id": "SYSTEMS-09",
+      "files": [
+        "pack/data/main/function/enchantment_effects/anemos.mcfunction",
+        "pack/data/main/function/environmental/check_freezing_water_conditions.mcfunction",
+        "pack/data/main/function/environmental/freezing_water.mcfunction",
+        "pack/data/main/function/environmental/set_eerie_score.mcfunction",
+        "pack/data/main/function/environmental/village_eerie_sound.mcfunction",
+        "pack/data/main/function/mechanic/cheerful_clay_statue.mcfunction",
+        "pack/data/main/function/mechanic/happy_ghast_horn.mcfunction",
+        "pack/data/main/function/mechanic/mournful_clay_statue.mcfunction",
+        "pack/data/main/function/mechanic/set_clear_weather.mcfunction",
+        "pack/data/main/function/mechanic/set_rain.mcfunction",
+        "pack/data/main/function/particle/boarding_boat.mcfunction",
+        "pack/data/main/function/particle/riding_boat.mcfunction",
+        "pack/data/main/function/particle/sulfurous_hellstone.mcfunction",
+        "pack/data/main/function/particle/sulfurous_hellstone_tick.mcfunction"
+      ],
+      "removedFiles": [
+        "pack/data/main/function/environmental/initial_stalking.mcfunction",
+        "pack/data/main/function/environmental/player_stepping_sound.mcfunction",
+        "pack/data/main/function/environmental/player_stepping_sound_adv.mcfunction"
+      ],
+      "summary": "Разрозненные эффекты движения, воды, лодок, погоды, деревень, счастливого гаста и серы больше не выбирают случайного ближайшего игрока.",
+      "evidenceType": "scheduled_context_ownership"
+    },
+    {
+      "id": "SYSTEMS-10",
+      "files": [
+        "pack/assets/minecraft/textures/colormap/dry_foliage.png"
+      ],
+      "summary": "Регистр имени текстуры сухой листвы приведён к точной ссылке, поэтому ресурс-пак работает и на файловых системах с чувствительностью к регистру.",
+      "evidenceType": "case_sensitive_asset_reference"
+    }
+  ]
+}

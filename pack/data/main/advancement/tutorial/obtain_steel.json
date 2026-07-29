@@ -1,0 +1,33 @@
+{
+  "parent": "main:tutorial/obtain_carbon_rich_iron",
+  "criteria": {
+    "get_steel": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:resin_brick"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Сталь получают, переплавляя высокоуглеродистое железо в плавильной печи. Она наделяет железное снаряжение Отдачей и значительно повышает его долговечность"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:resin_brick"
+    },
+    "title": {
+      "text": "Прочный сплав"
+    },
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "get_steel"
+    ]
+  ]
+}

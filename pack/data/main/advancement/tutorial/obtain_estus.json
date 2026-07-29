@@ -1,0 +1,33 @@
+{
+  "parent": "main:tutorial/root",
+  "criteria": {
+    "get_ash": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:glowstone_dust"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "description": {
+      "text": "Он излучает святую силу. И немного пахнет карри… или всё-таки корицей?"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:glowstone_dust"
+    },
+    "title": {
+      "text": "Адский порошок"
+    },
+    "hidden": true
+  },
+  "requirements": [
+    [
+      "get_ash"
+    ]
+  ]
+}

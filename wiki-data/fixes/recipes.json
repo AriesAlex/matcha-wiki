@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "area": "recipes",
+  "packVersion": "1.03",
+  "minecraftVersion": "26.2",
+  "fixes": [
+    {
+      "id": "RECIPES-01",
+      "files": [
+        "pack/data/crafting/recipe/fire_starter.json"
+      ],
+      "removedFiles": [
+        "pack/data/crafting/recipe/flint_and_steel.json"
+      ],
+      "summary": "Два побайтно одинаковых рецепта огнива сведены к одному стабильному ID.",
+      "evidenceType": "recipe_output_equivalence"
+    },
+    {
+      "id": "RECIPES-02",
+      "files": [
+        "pack/data/blasting/recipe/copper_ingot_from_blasting_copper_materials.json",
+        "pack/data/blasting/recipe/gold_ingot_from_blasting_gold_materials.json",
+        "pack/data/blasting/recipe/iron_ingot_from_blasting_iron_materials.json"
+      ],
+      "summary": "Сырьё убрано из рецептов переплавки старого снаряжения: ванильная плавка снова выдаёт правильный опыт вместо конфликтующих 0,2.",
+      "evidenceType": "vanilla_recipe_collision"
+    },
+    {
+      "id": "RECIPES-03",
+      "files": [
+        "pack/pack.mcmeta",
+        "scripts/normalize-pack-filter.ts"
+      ],
+      "summary": "Фильтр ванильных рецептов очищен от 35 дублей и устаревшего turtle_shell; конфликтующий nether_brick заблокирован явно.",
+      "evidenceType": "pack_filter_set_invariant"
+    }
+  ]
+}
