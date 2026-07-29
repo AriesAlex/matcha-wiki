@@ -81,4 +81,4 @@ carrier и components меняются, после чего рыбак може�
 Если убрать магнетит, сущность камня исчезает и возвращает семь единиц сырого
 эстуса вместо готового устройства.
 
-<RecipeById id="crafting:warding_stone" />
+<RecipeById id="crafting:warding_stone"></RecipeById>

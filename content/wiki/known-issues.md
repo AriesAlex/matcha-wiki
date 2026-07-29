@@ -26,7 +26,7 @@ sourcePaths:
 исправлений сервер регистрирует все активные рецепты и стартует без ошибок
 recipe, loot table, function и enchantment.
 
-<FixRegistry />
+<FixRegistry></FixRegistry>
 
 ## Известные особенности upstream
 

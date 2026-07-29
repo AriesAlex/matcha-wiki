@@ -42,14 +42,14 @@ sourcePaths:
 инструменты медленнее бронзовых, зато имеют 3000 прочности. Сталь также
 удваивает эффективность железа в ряде строительных рецептов.
 
-<RecipeById id="blasting:steel_alloy" />
+<RecipeById id="blasting:steel_alloy"></RecipeById>
 
 ### Гепатизон, в русской версии бронза
 
 Текущий рецепт использует семь медных слитков, серебро и золото. Бронзовая
 кирка очень быстрая, а бронзовое снаряжение связано с мобильностью.
 
-<RecipeById id="crafting:bronze_alloy" />
+<RecipeById id="crafting:bronze_alloy"></RecipeById>
 
 ### Сякудо, в русской версии палатинат
 
@@ -57,7 +57,7 @@ sourcePaths:
 кирка уже имеет Шёлковое касание, поэтому это лучший ранний способ сохранить
 редкую руду и блоки без поездки в Энд.
 
-<RecipeById id="crafting:shakudo_alloy" />
+<RecipeById id="crafting:shakudo_alloy"></RecipeById>
 
 ### Электрум
 
@@ -65,7 +65,7 @@ sourcePaths:
 Удачу III, а броня и оружие связаны с Warding. Это сильная поздняя ветка, а не
 обязательный следующий tier.
 
-<RecipeById id="crafting:electrum_alloy" />
+<RecipeById id="crafting:electrum_alloy"></RecipeById>
 
 ## Гибридные инструменты экономят хотбар
 
@@ -99,7 +99,7 @@ sourcePaths:
 Контейнер сердца добавляет одно сердце до максимума в 30. После смерти
 инвентарь сохраняется, но теряется одно бонусное сердце.
 
-<RecipeById id="crafting:crystal_heart" />
+<RecipeById id="crafting:crystal_heart"></RecipeById>
 
 Рецепт содержит три алмазных блока и один Божественный фрагмент. Поднять здоровье
 с 10 до 30 сердец только крафтом означает потратить 540 алмазов и 20 фрагментов.

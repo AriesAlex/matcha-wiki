@@ -11,7 +11,7 @@ sourcePaths:
   - pack/CREDITS.txt
 ---
 
-<VideoEssay />
+<VideoEssay></VideoEssay>
 
 ## Не оптимизировать веселье из игры
 

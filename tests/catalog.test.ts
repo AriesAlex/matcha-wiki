@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { WikiCatalog } from '../app/types/wiki'
@@ -38,6 +38,24 @@ describe('generated wiki catalog', () => {
           `${item.id} → ${item.icon}`
         ).toBe(true)
       }
+    }
+  })
+
+  it('explicitly closes custom components embedded in Markdown', () => {
+    const contentDir = resolve(rootDir, 'content', 'wiki')
+    const articlePaths = readdirSync(contentDir, { recursive: true })
+      .filter(path => path.endsWith('.md'))
+
+    for (const articlePath of articlePaths) {
+      const source = readFileSync(resolve(contentDir, articlePath), 'utf8')
+      const selfClosingComponents = [
+        ...source.matchAll(/<([A-Z][A-Za-z0-9]*)\b[^>]*\/>/g)
+      ].map(match => match[0])
+
+      expect(
+        selfClosingComponents,
+        `${articlePath}: self-closing custom elements truncate the rendered article`
+      ).toEqual([])
     }
   })
 })

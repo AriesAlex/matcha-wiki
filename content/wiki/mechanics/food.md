@@ -80,9 +80,9 @@ Matcha-хлеб содержит собственные components лечени�
 После первого праха эстуса переходите к выпечке, но всё равно носите фляги для
 момента, когда трёхсекундную еду доесть невозможно.
 
-<RecipeById id="food:baked_potato" />
+<RecipeById id="food:baked_potato"></RecipeById>
 
-<RecipeById id="food:bread" />
+<RecipeById id="food:bread"></RecipeById>
 
 ## Эстус
 
@@ -94,7 +94,7 @@ Matcha-хлеб содержит собственные components лечени�
 Фляга с эстусом создаётся из бутылки и двух единиц праха. Это настоящий
 расходник с Мгновенным лечением II, а не обычная медленная пищевая регенерация.
 
-<RecipeById id="potions:estus_flask" />
+<RecipeById id="potions:estus_flask"></RecipeById>
 
 ## Костёр или коптильня
 

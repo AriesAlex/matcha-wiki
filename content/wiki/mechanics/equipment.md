@@ -46,7 +46,7 @@ sourcePaths:
 гепатизоном. Рецепт: семь медных слитков, серебро и золото. Кирка имеет скорость
 15, поэтому отлично подходит для массовой обычной добычи.
 
-<RecipeById id="crafting:bronze_alloy" />
+<RecipeById id="crafting:bronze_alloy"></RecipeById>
 
 ### Палатинат
 
@@ -56,7 +56,7 @@ sourcePaths:
 Шесть меди и три золота дают ранний доступ к Шёлковому касанию без
 Божественного фрагмента и без Энда.
 
-<RecipeById id="crafting:shakudo_alloy" />
+<RecipeById id="crafting:shakudo_alloy"></RecipeById>
 
 ### Сталь
 
@@ -64,7 +64,7 @@ sourcePaths:
 бронзы, но инструменты имеют 3000 прочности. Это хороший повседневный комплект,
 если серебро нужно экономить.
 
-<RecipeById id="blasting:steel_alloy" />
+<RecipeById id="blasting:steel_alloy"></RecipeById>
 
 ### Электрум
 
@@ -72,7 +72,7 @@ sourcePaths:
 игры. Инструменты получают Удачу II или III, оружие усиливается против нежити,
 броня масштабирует автоматический оберег.
 
-<RecipeById id="crafting:electrum_alloy" />
+<RecipeById id="crafting:electrum_alloy"></RecipeById>
 
 ## Гибридные инструменты
 
@@ -112,4 +112,4 @@ sourcePaths:
 настоящим шалкеровым ящиком на 27 слотов, поэтому доступ к переносному хранилищу
 не нужно откладывать до Энда.
 
-<RecipeById id="crafting:sack" />
+<RecipeById id="crafting:sack"></RecipeById>

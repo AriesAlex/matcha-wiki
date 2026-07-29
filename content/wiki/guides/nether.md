@@ -44,12 +44,12 @@ sourcePaths:
 - жемчуг Эндера, который в русской локализации рецепта называется стабильной
   пустотой.
 
-<RecipeById id="crafting:stabilised_estus" />
+<RecipeById id="crafting:stabilised_estus"></RecipeById>
 
 После этого открывается Книга адских уз. Она создаётся из бензола, стабильного
 эстуса и обычной книги.
 
-<RecipeById id="blessings:hell_bound_book" />
+<RecipeById id="blessings:hell_bound_book"></RecipeById>
 
 Книга нужна для штатного открытия рецептов, но движок проверяет только базовый
 ID `enchanted_book`. В качестве ингредиента технически подходит любая
@@ -78,7 +78,7 @@ ID `enchanted_book`. В качестве ингредиента техничес
 очей Эндера, поэтому ранняя трата на необязательный предмет может задержать
 крепость.
 
-<RecipeById id="crafting:ender_eye" />
+<RecipeById id="crafting:ender_eye"></RecipeById>
 
 Портал требует до 12 вставок, но для безопасного поиска и неизбежных потерь
 готовьте 16 очей.

@@ -35,7 +35,7 @@ sourcePaths:
 Сначала создайте Стабилизированный эстус. Он открывает рецепт Книги адских уз:
 обычная книга, Стабилизированный эстус и бензол.
 
-<RecipeById id="blessings:hell_bound_book" />
+<RecipeById id="blessings:hell_bound_book"></RecipeById>
 
 Первый крафт Книги адских уз открывает остальные 22 рецепта. Достижение
 «Апокрифы» засчитывает любой один из них.
@@ -78,9 +78,9 @@ sourcePaths:
 Названия материалов в таблице следуют русской локализации. Технические carriers
 можно посмотреть на страницах результатов и рецептов.
 
-<RecipeById id="blessings:mending" />
+<RecipeById id="blessings:mending"></RecipeById>
 
-<RecipeById id="blessings:efficiency_unbreaking" />
+<RecipeById id="blessings:efficiency_unbreaking"></RecipeById>
 
 ## Одна книга, несколько типов предметов
 

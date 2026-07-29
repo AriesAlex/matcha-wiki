@@ -52,6 +52,9 @@ fallback.
   `app/assets/styles/`; do not grow a detached page-level stylesheet.
 - Use nested SCSS where it makes the component hierarchy clearer, without
   BEM-style class names or deeply coupled selectors.
+- В Markdown Nuxt Content закрывай пользовательские Vue-компоненты явным
+  парным тегом. Запись `<RecipeById ... />` обрывает отрендеренную статью после
+  вставки; используй `<RecipeById ...></RecipeById>`.
 - Не используй декоративные numbered markers, стат-бейджи и одинаковые карточки
   как автоматический scaffolding. Номера допустимы только там, где они несут
   реальный смысл, и должны быть оформлены спокойно, без “AI dashboard”
