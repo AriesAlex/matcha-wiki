@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Он излучает святую силу. И немного пахнет карри… или всё-таки корицей?"
+      "translate": "advancements.kleispack.tutorial.obtain_estus.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:glowstone_dust"
     },
     "title": {
-      "text": "Адский порошок"
+      "translate": "advancements.kleispack.tutorial.obtain_estus.title"
     },
     "hidden": true
   },

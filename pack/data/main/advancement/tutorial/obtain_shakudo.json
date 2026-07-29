@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Сякудо наделяет медное снаряжение «Шёлковым касанием» и очищающими свойствами"
+      "translate": "advancements.kleispack.tutorial.obtain_shakudo.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:shulker_shell"
     },
     "title": {
-      "text": "Деликатный сплав"
+      "translate": "advancements.kleispack.tutorial.obtain_shakudo.title"
     },
     "hidden": false
   },

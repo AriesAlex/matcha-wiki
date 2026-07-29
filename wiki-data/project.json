@@ -1,0 +1,25 @@
+{
+  "pack": {
+    "title": "Matcha Flavoured",
+    "version": "1.03",
+    "forkRevision": 4,
+    "artifactName": "Matcha_Flavoured"
+  },
+  "minecraftVersion": "26.2",
+  "versionMetadataUrl": "https://piston-meta.mojang.com/v1/packages/3457237902814cca3f5c6f20b0c5db1b1f341512/26.2.json",
+  "client": {
+    "url": "https://piston-data.mojang.com/v1/objects/2dc72797acbc1b63fc16a11c4ac393605f453754/client.jar",
+    "sha1": "2dc72797acbc1b63fc16a11c4ac393605f453754",
+    "size": 39193383
+  },
+  "assetIndex": {
+    "id": "32",
+    "url": "https://piston-meta.mojang.com/v1/packages/a7b53da5fa967c3e8196712f1b734bbc9df44bb6/32.json",
+    "sha1": "a7b53da5fa967c3e8196712f1b734bbc9df44bb6"
+  },
+  "language": {
+    "key": "minecraft/lang/ru_ru.json",
+    "sha1": "44f2a01ff488842431bb3a9f33c0d3d2dc8e9a2f"
+  },
+  "usageGuidelines": "https://www.minecraft.net/en-us/usage-guidelines"
+}

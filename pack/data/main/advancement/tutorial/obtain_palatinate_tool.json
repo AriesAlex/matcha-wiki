@@ -76,7 +76,7 @@
   },
   "display": {
     "description": {
-      "text": "Создайте предмет палатинатового снаряжения"
+      "translate": "advancements.kleispack.tutorial.obtain_palatinate_tool.description"
     },
     "icon": {
       "components": {
@@ -86,7 +86,7 @@
       "id": "minecraft:wooden_axe"
     },
     "title": {
-      "text": "Палатинатовое совершенство"
+      "translate": "advancements.kleispack.tutorial.obtain_palatinate_tool.title"
     },
     "frame": "goal",
     "hidden": false

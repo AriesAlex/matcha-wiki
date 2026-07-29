@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "Приготовьте японское карри"
+      "translate": "advancements.kleispack.tutorial.obtain_japanese_curry.description"
     },
     "icon": {
       "components": {
@@ -20,7 +20,7 @@
       "id": "minecraft:rabbit_stew"
     },
     "title": {
-      "text": "Сытное карри"
+      "translate": "advancements.kleispack.tutorial.obtain_japanese_curry.title"
     },
     "hidden": false
   },

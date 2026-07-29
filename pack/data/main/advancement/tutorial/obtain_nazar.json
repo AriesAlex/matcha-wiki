@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "Лазуритовый назар в руке оберегает от мёртвых; его также можно прикрепить к некоторым предметам снаряжения"
+      "translate": "advancements.kleispack.tutorial.obtain_nazar.description"
     },
     "icon": {
       "components": {},
@@ -18,7 +18,7 @@
       "id": "minecraft:glistering_melon_slice"
     },
     "title": {
-      "text": "Апотропейное украшение"
+      "translate": "advancements.kleispack.tutorial.obtain_nazar.title"
     },
     "frame": "task",
     "show_toast": true,

@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "entries": {
+    "main:tutorial/obtain_opal": {
+      "note": "Морской Бог — лорное имя обычного древнего стража, а не отдельный босс.",
+      "intendedPath": "Найдите океанский монумент и убейте древнего стража. При убийстве игроком каждый из трёх стражей монумента гарантированно роняет Опал.",
+      "exactCondition": "В инвентарь должен попасть любой предмет с item_model minecraft:opal. Само убийство и нахождение в монументе достижение не проверяет.",
+      "link": {
+        "label": "Морской Бог, монумент и добыча Опала",
+        "to": "/world#морской-бог"
+      },
+      "searchTerms": [
+        "Sea God",
+        "Elder Guardian",
+        "древний страж",
+        "океанский монумент",
+        "подводная крепость",
+        "opal"
+      ]
+    },
+    "main:tutorial/obtain_ruby": {
+      "note": "Пандемониум — лорное название развалин бастиона, а не отдельная структура.",
+      "intendedPath": "Ищите специализированный сундук моста, стойл хоглинов или сокровищницы. Сундуки Housing Units используют другую таблицу и Рубин не содержат.",
+      "exactCondition": "В инвентарь должен попасть любой предмет с item_model minecraft:ruby. Посещение бастиона и открытие сундука не проверяются.",
+      "link": {
+        "label": "Пандемониум и точные сундуки с Рубином",
+        "to": "/world#пандемониум"
+      },
+      "searchTerms": [
+        "Pandaemonium",
+        "Pandemonium",
+        "Bastion Remnant",
+        "развалины бастиона",
+        "Bridge",
+        "Hoglin Stable",
+        "Treasure Room",
+        "Housing Units",
+        "ruby"
+      ]
+    },
+    "main:tutorial/obtain_amber": {
+      "note": "Следы паломника — лорное название руин тропы.",
+      "intendedPath": "Расчищайте подозрительный гравий внутри частей домов руин тропы: только их редкая археологическая таблица содержит Янтарь.",
+      "exactCondition": "В инвентарь должен попасть любой предмет с item_model minecraft:amber. Щётка, археология и сама структура не проверяются.",
+      "link": {
+        "label": "Руины тропы и добыча Янтаря",
+        "to": "/world#следы-паломника"
+      },
+      "searchTerms": [
+        "Pilgrim's Trails",
+        "Trail Ruins",
+        "руины тропы",
+        "подозрительный гравий",
+        "археология",
+        "amber"
+      ]
+    },
+    "main:tutorial/obtain_topaz": {
+      "note": "Тартар — лорное название древнего города.",
+      "intendedPath": "Обыскивайте обычные сундуки древнего города в мрачных глубинах. Ледяной погреб использует отдельную таблицу без Топаза.",
+      "exactCondition": "В инвентарь должен попасть любой предмет с item_model minecraft:topaz. Древний город и сундук не проверяются.",
+      "link": {
+        "label": "Тартар, древний город и добыча Топаза",
+        "to": "/world#тартар"
+      },
+      "searchTerms": [
+        "Tartarus",
+        "Ancient City",
+        "древний город",
+        "мрачные глубины",
+        "Deep Dark",
+        "ice box",
+        "topaz"
+      ]
+    },
+    "main:tutorial/cook_secret_food": {
+      "spoiler": true,
+      "note": "Достаточно получить любой один из четырёх скрытых ингредиентов.",
+      "exactCondition": "В инвентаре должен появиться хотя бы один предмет из списка ниже.",
+      "itemModels": [
+        "minecraft:golden_steamed_carrots",
+        "minecraft:baked_golden_apple",
+        "minecraft:braised_crimson_fungus",
+        "minecraft:braised_warped_fungus"
+      ],
+      "searchTerms": [
+        "секретный ингредиент",
+        "тайные вкусы"
+      ]
+    },
+    "main:tutorial/cook_secret_meal": {
+      "spoiler": true,
+      "note": "Достаточно скрафтить любое одно из девяти скрытых блюд.",
+      "exactCondition": "Срабатывает событие recipe_crafted для любого рецепта из списка ниже.",
+      "recipeIds": [
+        "food:canned_golden_apples",
+        "food:crimson_stroganoff",
+        "food:golden_apple_empanada",
+        "food:golden_carrot_cupcake",
+        "food:golden_pickled_carrots",
+        "food:pickled_crimson_fungus",
+        "food:pickled_warped_fungus",
+        "food:sweet_berry_toast",
+        "food:warped_stroganoff"
+      ],
+      "searchTerms": [
+        "секретное блюдо",
+        "скрытый рецепт"
+      ]
+    }
+  }
+}

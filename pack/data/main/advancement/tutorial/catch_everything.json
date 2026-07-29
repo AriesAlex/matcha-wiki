@@ -474,7 +474,7 @@
   },
   "display": {
     "description": {
-      "text": "Поймайте все виды рыбы!"
+      "translate": "advancements.kleispack.tutorial.catch_everything.description"
     },
     "icon": {
       "components": {
@@ -484,7 +484,7 @@
       "id": "minecraft:emerald"
     },
     "title": {
-      "text": "В море больше нет рыбы"
+      "translate": "advancements.kleispack.tutorial.catch_everything.title"
     },
     "frame": "challenge",
     "hidden": false

@@ -14,7 +14,7 @@
   },
   "display": {
     "description": {
-      "text": "Завладейте творением Дедала"
+      "translate": "advancements.kleispack.end.elytra.description"
     },
     "frame": "goal",
     "icon": {
@@ -22,7 +22,7 @@
       "id": "minecraft:elytra"
     },
     "title": {
-      "text": "Восковые крылья"
+      "translate": "advancements.kleispack.end.elytra.title"
     }
   },
   "requirements": [

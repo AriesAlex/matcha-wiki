@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Бронза наделяет медное снаряжение непревзойдённой скоростью"
+      "translate": "advancements.kleispack.tutorial.obtain_bronze.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:phantom_membrane"
     },
     "title": {
-      "text": "Стремительный сплав"
+      "translate": "advancements.kleispack.tutorial.obtain_bronze.title"
     },
     "hidden": false
   },

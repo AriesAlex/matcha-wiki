@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "На кузнечном столе закрепите назар на железном мече"
+      "translate": "advancements.kleispack.tutorial.smith_warding_sword.description"
     },
     "icon": {
       "components": {
@@ -21,7 +21,7 @@
       "id": "minecraft:glistering_melon_slice"
     },
     "title": {
-      "text": "Погибель фей"
+      "translate": "advancements.kleispack.tutorial.smith_warding_sword.title"
     },
     "frame": "task",
     "show_toast": true,

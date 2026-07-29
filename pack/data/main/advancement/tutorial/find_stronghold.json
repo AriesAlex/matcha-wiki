@@ -20,14 +20,14 @@
   },
   "display": {
     "description": {
-      "text": "Их час близок"
+      "translate": "advancements.kleispack.tutorial.find_stronghold.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:ender_eye"
     },
     "title": {
-      "text": "Конец Сна"
+      "translate": "advancements.kleispack.tutorial.find_stronghold.title"
     },
     "frame": "goal"
   },

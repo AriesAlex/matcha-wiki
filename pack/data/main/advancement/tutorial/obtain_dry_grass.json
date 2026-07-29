@@ -24,14 +24,14 @@
   },
   "display": {
     "description": {
-      "text": "Соберите траву мотыгой и высушите её на костре"
+      "translate": "advancements.kleispack.tutorial.obtain_dry_grass.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:tall_dry_grass"
     },
     "title": {
-      "text": "Жнец"
+      "translate": "advancements.kleispack.tutorial.obtain_dry_grass.title"
     },
     "show_toast": true,
     "announce_to_chat": true,

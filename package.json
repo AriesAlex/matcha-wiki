@@ -1,12 +1,25 @@
 {
   "name": "matcha-wiki",
   "version": "1.0.0",
+  "description": "Русская вики и исправленный форк Matcha Flavoured.",
+  "author": {
+    "name": "ArieX",
+    "url": "https://github.com/AriesAlex"
+  },
+  "license": "CC-BY-NC-SA-4.0",
+  "homepage": "https://ariesalex.github.io/matcha-wiki/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AriesAlex/matcha-wiki.git"
+  },
   "private": true,
   "type": "module",
   "packageManager": "bun@1.3.14",
   "scripts": {
-    "data": "bun run scripts/generate-wiki-data.ts",
-    "vanilla:sync": "bun run scripts/sync-vanilla-language.ts",
+    "data": "bun run localization --check && bun run vanilla:assets && bun run scripts/generate-wiki-data.ts",
+    "localization": "bun run scripts/localize-pack-text.ts",
+    "vanilla:assets": "bun run scripts/prepare-vanilla-assets.ts",
+    "vanilla:sync": "bun run scripts/sync-vanilla-language.ts && bun run scripts/prepare-vanilla-assets.ts --refresh",
     "dev": "bun run data && nuxt dev",
     "build": "bun run data && nuxt build",
     "generate": "bun run data && nuxt generate",

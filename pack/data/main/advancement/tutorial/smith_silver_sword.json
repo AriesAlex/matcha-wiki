@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "На кузнечном столе инкрустируйте железный меч серебром и закрепите на нём назар"
+      "translate": "advancements.kleispack.tutorial.smith_silver_sword.description"
     },
     "icon": {
       "components": {
@@ -21,7 +21,7 @@
       "id": "minecraft:glistering_melon_slice"
     },
     "title": {
-      "text": "Саббатарианец"
+      "translate": "advancements.kleispack.tutorial.smith_silver_sword.title"
     },
     "frame": "task",
     "show_toast": true,

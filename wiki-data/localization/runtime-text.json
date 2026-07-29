@@ -1,0 +1,1223 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "kind": "json",
+      "file": "data/main/advancement/end/elytra.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.end.elytra.description",
+      "en": "Seize the work of Daedalus",
+      "ru": "Завладейте творением Дедала"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/end/elytra.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.end.elytra.title",
+      "en": "Wax Wings",
+      "ru": "Восковые крылья"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/end/kill_dragon.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.end.kill_dragon.description",
+      "en": "Defile the Dead God's Dream.",
+      "ru": "Оскверните Сон Мёртвого Бога."
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/end/kill_dragon.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.end.kill_dragon.title",
+      "en": "Iconoclast",
+      "ru": "Иконоборец"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/end/root.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.end.root.description",
+      "en": "",
+      "ru": ""
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/end/root.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.end.root.title",
+      "en": "To Dreams",
+      "ru": "Ко Сну"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/craft_blessing.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.hell.craft_blessing.description",
+      "en": "Steal Prayers from a long-dead God",
+      "ru": "Похитьте молитвы у Мёртвого Бога"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/craft_blessing.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.hell.craft_blessing.title",
+      "en": "Apocrypha",
+      "ru": "Апокрифы"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/craft_hell_bound_book.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.hell.craft_hell_bound_book.description",
+      "en": "Craft a Hell-Bound Book",
+      "ru": "Создайте книгу адских уз"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/craft_hell_bound_book.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.hell.craft_hell_bound_book.title",
+      "en": "Unholy Knowledge",
+      "ru": "Нечестивое знание"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/obtain_ancient_debris.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.hell.obtain_ancient_debris.description",
+      "en": "Flesh from Long-Dead Gods",
+      "ru": "Плоть богов, умерших в незапамятные времена"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/obtain_ancient_debris.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.hell.obtain_ancient_debris.title",
+      "en": "Hidden in the Depths",
+      "ru": "Осколки прошлого"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/obtain_benzene.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.hell.obtain_benzene.description",
+      "en": "Obtain Reagents Forbidden by the Old Laws",
+      "ru": "Добудьте реагенты, запретные по древним законам"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/obtain_benzene.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.hell.obtain_benzene.title",
+      "en": "Forbidden Chemistry",
+      "ru": "Запретная химия"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/obtain_stabilised_estus.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.hell.obtain_stabilised_estus.description",
+      "en": "Tether Raw Estus into a Stable Form",
+      "ru": "Свяжите сырой эстус, придав ему устойчивую форму"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/obtain_stabilised_estus.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.hell.obtain_stabilised_estus.title",
+      "en": "Hellish Bindings",
+      "ru": "Адские узы"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/obtain_warding_stone.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.hell.obtain_warding_stone.description",
+      "en": "Construct a Warding Stone",
+      "ru": "Создайте камень-оберег"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/obtain_warding_stone.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.hell.obtain_warding_stone.title",
+      "en": "Holy Turret",
+      "ru": "Святая турель"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/root.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.hell.root.description",
+      "en": "",
+      "ru": ""
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/hell/root.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.hell.root.title",
+      "en": "Through Hell",
+      "ru": "Сквозь Ад"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/catch_everything.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.catch_everything.description",
+      "en": "Catch Everything!",
+      "ru": "Поймайте все виды рыбы!"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/catch_everything.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.catch_everything.title",
+      "en": "No More Fish in the Sea",
+      "ru": "В море больше нет рыбы"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/catch_fish.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.catch_fish.description",
+      "en": "Catch a fish",
+      "ru": "Поймайте рыбу"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/catch_fish.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.catch_fish.title",
+      "en": "What a Catch!",
+      "ru": "Вот это улов!"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/cook_food.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.cook_food.description",
+      "en": "Reveal the hidden aspect of a Food by cooking it on a Campfire or an Oven.",
+      "ru": "Раскройте скрытое свойство еды, приготовив её на костре или в духовой печи."
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/cook_food.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.cook_food.title",
+      "en": "Powerful Flavours",
+      "ru": "Сила вкуса"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/cook_secret_food.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.cook_secret_food.description",
+      "en": "Cook a secret ingredient",
+      "ru": "Приготовьте секретный ингредиент"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/cook_secret_food.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.cook_secret_food.title",
+      "en": "Hidden Flavours",
+      "ru": "Тайные вкусы"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/cook_secret_meal.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.cook_secret_meal.description",
+      "en": "Cook a secret meal",
+      "ru": "Приготовьте секретное блюдо"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/cook_secret_meal.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.cook_secret_meal.title",
+      "en": "Wait, you can make that?",
+      "ru": "Постойте, так можно?"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/enter_nether.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.enter_nether.description",
+      "en": "Descend Into Hell",
+      "ru": "Спуститесь в Ад"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/enter_nether.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.enter_nether.title",
+      "en": "Orpheus",
+      "ru": "Орфей"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/find_stronghold.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.find_stronghold.description",
+      "en": "Their Time is near",
+      "ru": "Их час близок"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/find_stronghold.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.find_stronghold.title",
+      "en": "The End of Dreams",
+      "ru": "Конец Сна"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/kill_villager.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.kill_villager.description",
+      "en": "Commit great evil",
+      "ru": "Совершите великое зло"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/kill_villager.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.kill_villager.title",
+      "en": "God help you...",
+      "ru": "Да поможет вам Бог…"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/light_campfire.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.light_campfire.description",
+      "en": "Light Kindling using Tinder or a Flint Firestarter.",
+      "ru": "Подожгите растопку трутом или кремнёвым огнивом."
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/light_campfire.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.light_campfire.title",
+      "en": "Prometheus be Damned",
+      "ru": "Проклят будь Прометей"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_adamant.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_adamant.description",
+      "en": "Adamant grants the weilder a Divine Constitution",
+      "ru": "Адамант дарует владельцу божественную стойкость"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_adamant.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_adamant.title",
+      "en": "A Divine Alloy",
+      "ru": "Божественный сплав"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_amber.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_amber.description",
+      "en": "Exhume the Pilgrim's Trails",
+      "ru": "Извлеките Янтарь из руин тропы"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_amber.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_amber.title",
+      "en": "Canto III",
+      "ru": "Песнь III"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_avil.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_avil.description",
+      "en": "Anvils, made from Steel or Iron blocks, can repair Equipment with its corresponding Base-Metal Nugget or Ingot.",
+      "ru": "Наковальни из стальных или железных блоков чинят снаряжение самородком или слитком соответствующего основного металла."
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_avil.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_avil.title",
+      "en": "Repair & Reuse",
+      "ru": "Чини и пользуйся"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_blast_furnace.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_blast_furnace.description",
+      "en": "Blast Furnaces burn hotter than Kilns, able to melt more durable Metals",
+      "ru": "Плавильные печи жарче саманных и способны плавить более тугоплавкие металлы"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_blast_furnace.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_blast_furnace.title",
+      "en": "Burgeoning Metallurge",
+      "ru": "Начинающий металлург"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_bowl.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_bowl.description",
+      "en": "Make a Ceramic Bowl from Bricks",
+      "ru": "Сделайте керамическую миску из кирпичей"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_bowl.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_bowl.title",
+      "en": "Manners First",
+      "ru": "Манеры прежде всего"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_bronze_tool.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_bronze_tool.description",
+      "en": "Smith a piece of Bronze Equipment",
+      "ru": "Выкуйте предмет бронзового снаряжения"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_bronze_tool.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_bronze_tool.title",
+      "en": "Brilliant Bronze",
+      "ru": "Блистательная бронза"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_bronze.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_bronze.description",
+      "en": "Bronze grants Copper Equipment unrivaled Speed",
+      "ru": "Бронза наделяет медное снаряжение непревзойдённой скоростью"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_bronze.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_bronze.title",
+      "en": "A Keen Alloy",
+      "ru": "Стремительный сплав"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_carbon_rich_iron.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_carbon_rich_iron.description",
+      "en": "Craft Carbon-Rich Alloy with Iron and a Coal Block",
+      "ru": "Создайте высокоуглеродистое железо из железа и блока угля"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_carbon_rich_iron.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_carbon_rich_iron.title",
+      "en": "A Brittle Alloy?",
+      "ru": "Хрупкий сплав?"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_copper.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_copper.description",
+      "en": "Use a Mud Kiln to Smelt Copper",
+      "ru": "Выплавьте медь в саманной печи"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_copper.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_copper.title",
+      "en": "Brazier",
+      "ru": "Жаровня"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_diamond.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_diamond.description",
+      "en": "Diamonds have no Intrinsics, but are capable of Hosting Electrum and Adamant",
+      "ru": "У алмазов нет собственных свойств, но они могут служить основой для электрума и адаманта"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_diamond.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_diamond.title",
+      "en": "The Resilient Mineral",
+      "ru": "Прочный минерал"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_divine_fragment.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_divine_fragment.description",
+      "en": "A Relic only obtained by breaking Spawners, or vanquishing powerful Forces.",
+      "ru": "Реликвию можно добыть, только разрушая рассадники монстров или одолевая могучих врагов."
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_divine_fragment.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_divine_fragment.title",
+      "en": "Spark of Divinity",
+      "ru": "Искра божественности"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_dry_grass.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_dry_grass.description",
+      "en": "Use a Hoe to harvest Grass and dry it on a Campfire",
+      "ru": "Соберите траву мотыгой и высушите её на костре"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_dry_grass.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_dry_grass.title",
+      "en": "Harvester",
+      "ru": "Жнец"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_electrum_tool.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_electrum_tool.description",
+      "en": "Smith a piece of Electrum Equipment",
+      "ru": "Выкуйте предмет электрумового снаряжения"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_electrum_tool.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_electrum_tool.title",
+      "en": "Electric Electrum",
+      "ru": "Электрум под током"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_electrum.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_electrum.description",
+      "en": "Electrum enhances the Fortune and Looting Properties of Gold, but only Titanium can host the Alloy",
+      "ru": "Электрум усиливает присущие золоту Удачу и Добычу, но основой для этого сплава может служить лишь титан"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_electrum.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_electrum.title",
+      "en": "A Zealous Alloy",
+      "ru": "Рьяный сплав"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_estus_flask.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_estus_flask.description",
+      "en": "Bottle Estus Ash into an Estus Flask",
+      "ru": "Приготовьте флягу с эстусом из праха эстуса"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_estus_flask.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_estus_flask.title",
+      "en": "Alchemically Curious",
+      "ru": "Тяга к алхимии"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_estus.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_estus.description",
+      "en": "It Radiates Holy Power. It kind of smells like Curry...maybe Cinnamon?",
+      "ru": "Он излучает святую силу. И немного пахнет карри… или всё-таки корицей?"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_estus.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_estus.title",
+      "en": "Hellish Powder",
+      "ru": "Адский порошок"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_gold.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_gold.description",
+      "en": "Gold has Fortune and Looting Intrinsics",
+      "ru": "Золоту присущи Удача и Добыча"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_gold.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_gold.title",
+      "en": "The Generous Metal",
+      "ru": "Щедрый металл"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_green_curry.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_green_curry.description",
+      "en": "Make Green Curry",
+      "ru": "Приготовьте зелёный карри"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_green_curry.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_green_curry.title",
+      "en": "Too Spicy!",
+      "ru": "Слишком остро!"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_heart.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_heart.description",
+      "en": "A Permanent Boon, as long as you don't die",
+      "ru": "Постоянный дар — до первой смерти"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_heart.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_heart.title",
+      "en": "Heart Container!",
+      "ru": "Контейнер сердца!"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_iron_ingot.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_iron_ingot.description",
+      "en": "Iron has no Intrinsic Properties, and can only Host Steel",
+      "ru": "У железа нет собственных свойств, и оно может служить основой лишь для стали"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_iron_ingot.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_iron_ingot.title",
+      "en": "The Stalwart Metal",
+      "ru": "Стойкий металл"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_japanese_curry.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_japanese_curry.description",
+      "en": "Make Japanese Curry",
+      "ru": "Приготовьте японское карри"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_japanese_curry.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_japanese_curry.title",
+      "en": "Hearty Curry",
+      "ru": "Сытное карри"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_kiln.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_kiln.description",
+      "en": "Construct a Kiln made from Mudbricks",
+      "ru": "Сложите печь из саманных кирпичей"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_kiln.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_kiln.title",
+      "en": "Ancient Technology",
+      "ru": "Древняя технология"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_mattock.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_mattock.description",
+      "en": "Mattocks and Dolabras work as two tools in one, but mine slower than their base tools",
+      "ru": "Мотыги-лопаты и долабры сочетают в себе по два инструмента, но работают медленнее обычных аналогов"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_mattock.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_mattock.title",
+      "en": "Two in One",
+      "ru": "Два в одном"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_nazar.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_nazar.description",
+      "en": "Holding a Lapis Nazar will Ward the Dead, it can also be attached to some Equipment",
+      "ru": "Лазуритовый назар в руке оберегает от мёртвых; его также можно прикрепить к некоторым предметам снаряжения"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_nazar.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_nazar.title",
+      "en": "Apotropaic Jewelry",
+      "ru": "Апотропейное украшение"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_obol.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_obol.description",
+      "en": "Obtain an Obol",
+      "ru": "Получите обол"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_obol.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_obol.title",
+      "en": "You're Rich!",
+      "ru": "Вы богаты!"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_opal.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_opal.description",
+      "en": "Defeat the Sea God",
+      "ru": "Получите Опал, победив Морского Бога"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_opal.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_opal.title",
+      "en": "Canto I",
+      "ru": "Песнь I"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_oven.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_oven.description",
+      "en": "Construct an Oven from Bricks and Iron",
+      "ru": "Сложите духовую печь из кирпичей и железа"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_oven.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_oven.title",
+      "en": "Now You're Cooking",
+      "ru": "Вот теперь готовим!"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_palatinate_tool.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_palatinate_tool.description",
+      "en": "Craft a piece of Palatinate Equipment",
+      "ru": "Создайте предмет палатинатового снаряжения"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_palatinate_tool.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_palatinate_tool.title",
+      "en": "Palatinate Perfection",
+      "ru": "Палатинатовое совершенство"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_paneer_mahkani.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_paneer_mahkani.description",
+      "en": "Make Paneer Makhani, all Foods have viable Vegetarian Options",
+      "ru": "Приготовьте панир махани — у каждого блюда есть полноценный вегетарианский вариант"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_paneer_mahkani.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_paneer_mahkani.title",
+      "en": "Sweet and Spicy",
+      "ru": "Сладко и остро"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_ramen.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_ramen.description",
+      "en": "Make Ramen",
+      "ru": "Приготовьте рамэн"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_ramen.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_ramen.title",
+      "en": "The Best Soup",
+      "ru": "Лучший суп"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_ruby.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_ruby.description",
+      "en": "Pillage the Remnants of Pandaemonium",
+      "ru": "Найдите Рубин в руинах Пандемониума"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_ruby.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_ruby.title",
+      "en": "Canto II",
+      "ru": "Песнь II"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_shakudo.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_shakudo.description",
+      "en": "Shakudo grants Copper Equipment Silk Touch and Cleansing Properties",
+      "ru": "Сякудо наделяет медное снаряжение «Шёлковым касанием» и очищающими свойствами"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_shakudo.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_shakudo.title",
+      "en": "A Gentle Alloy",
+      "ru": "Деликатный сплав"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_silver.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_silver.description",
+      "en": "Silver, a rare Apotropaic Metal found only in Mountains, enhances Aspects of Alloys and Base Metals",
+      "ru": "Серебро — редкий апотропейный металл, встречающийся только в горах. Оно усиливает свойства сплавов и основных металлов"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_silver.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_silver.title",
+      "en": "The Warding Metal",
+      "ru": "Металл-оберег"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_smithing_table.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_smithing_table.description",
+      "en": "Smithing Tables allow you to modify Base-Metal tools using Alloys",
+      "ru": "Кузнечный стол позволяет изменять инструменты из основных металлов с помощью сплавов"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_smithing_table.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_smithing_table.title",
+      "en": "Master Metallurge",
+      "ru": "Мастер-металлург"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_smithing_upgrade.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_smithing_upgrade.description",
+      "en": "Smithing Upgrades are used to Modify and Upgrade Mattocks and Dolabras.",
+      "ru": "Шаблоны кузнечного улучшения позволяют изменять и улучшать мотыги-лопаты и долабры"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_smithing_upgrade.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_smithing_upgrade.title",
+      "en": "Upgrades",
+      "ru": "Улучшения"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_smooth_stone.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_smooth_stone.description",
+      "en": "Kilns excel at processing Earthen Materials",
+      "ru": "Саманные печи отлично подходят для обработки минерального сырья"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_smooth_stone.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_smooth_stone.title",
+      "en": "Mason",
+      "ru": "Каменщик"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_steel_tool.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_steel_tool.description",
+      "en": "Smith a piece of Steel Equipment",
+      "ru": "Выкуйте стальное снаряжение"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_steel_tool.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_steel_tool.title",
+      "en": "Sturdy Steel",
+      "ru": "Надёжная сталь"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_steel.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_steel.description",
+      "en": "Made by blasting Carbon-Rich Iron, Steel grants Iron Equipment Knockback and greatly increased Durability",
+      "ru": "Сталь получают, переплавляя высокоуглеродистое железо в плавильной печи. Она наделяет железное снаряжение Отдачей и значительно повышает его долговечность"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_steel.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_steel.title",
+      "en": "A Tough Alloy",
+      "ru": "Прочный сплав"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_topaz.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.obtain_topaz.description",
+      "en": "Raid Tartarus",
+      "ru": "Найдите Топаз в Тартаре"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/obtain_topaz.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.obtain_topaz.title",
+      "en": "Canto IV",
+      "ru": "Песнь IV"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/preserve_everything.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.preserve_everything.description",
+      "en": "Preserve Everything!",
+      "ru": "Законсервируйте всё!"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/preserve_everything.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.preserve_everything.title",
+      "en": "Doomsday Prepper",
+      "ru": "Готов к концу света"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/preserve_food.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.preserve_food.description",
+      "en": "Preserve a food to boost its flavour profile",
+      "ru": "Законсервируйте продукт, чтобы сделать его вкус насыщеннее"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/preserve_food.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.preserve_food.title",
+      "en": "Pickles & Jam",
+      "ru": "Соленья и варенье"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/root.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.root.description",
+      "en": "",
+      "ru": ""
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/root.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.root.title",
+      "en": "From Earth",
+      "ru": "Из земли"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/smith_silver_sword.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.smith_silver_sword.description",
+      "en": "Affix a Nazar to an Iron Sword, inlaid with Silver, in a Smithing Table",
+      "ru": "На кузнечном столе инкрустируйте железный меч серебром и закрепите на нём назар"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/smith_silver_sword.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.smith_silver_sword.title",
+      "en": "Sabbatarian",
+      "ru": "Саббатарианец"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/smith_warding_shield.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.smith_warding_shield.description",
+      "en": "Affix a Nazar to an Shield, inlaid with Silver, in a Smithing Table",
+      "ru": "На кузнечном столе инкрустируйте щит серебром и закрепите на нём назар"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/smith_warding_shield.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.smith_warding_shield.title",
+      "en": "Convoymaster",
+      "ru": "Предводитель конвоя"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/smith_warding_sword.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.smith_warding_sword.description",
+      "en": "Affix a Nazar to an Iron Sword in a Smithing Table",
+      "ru": "На кузнечном столе закрепите назар на железном мече"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/smith_warding_sword.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.smith_warding_sword.title",
+      "en": "Fae-Slayer",
+      "ru": "Погибель фей"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/trade_fish.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.trade_fish.description",
+      "en": "Sell caught fish to a Fisherman",
+      "ru": "Продайте пойманную рыбу рыбаку"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/trade_fish.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.trade_fish.title",
+      "en": "Fishmonger",
+      "ru": "Торговец рыбой"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/trade_for_asylum_seeker.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.trade_for_asylum_seeker.description",
+      "en": "Take in an Asylum Seeker",
+      "ru": "Приютите просителя убежища"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/trade_for_asylum_seeker.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.trade_for_asylum_seeker.title",
+      "en": "A Good Samaritan",
+      "ru": "Добрый самаритянин"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/upgrade_mattock.json",
+      "jsonPath": "display.description",
+      "key": "advancements.kleispack.tutorial.upgrade_mattock.description",
+      "en": "Upgrade a Mattock or Dolabra",
+      "ru": "Улучшите мотыгу-лопату или долабру"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/advancement/tutorial/upgrade_mattock.json",
+      "jsonPath": "display.title",
+      "key": "advancements.kleispack.tutorial.upgrade_mattock.title",
+      "en": "Three in One?",
+      "ru": "Три в одном?"
+    },
+    {
+      "kind": "mcfunction",
+      "file": "data/main/function/enchantment_effects/bloodrage.mcfunction",
+      "line": 1,
+      "componentIndex": 0,
+      "key": "message.kleispack.bloodrage",
+      "en": "Bloodrage",
+      "ru": "Кровавая ярость"
+    },
+    {
+      "kind": "mcfunction",
+      "file": "data/main/function/mechanic/first_dragon_killed_reward.mcfunction",
+      "line": 2,
+      "componentIndex": 0,
+      "key": "message.kleispack.dragon.surface_cleansed",
+      "en": "Evil has been banished from the surface.",
+      "ru": "Зло изгнано с поверхности."
+    },
+    {
+      "kind": "mcfunction",
+      "file": "data/main/function/setup/load.mcfunction",
+      "line": 4,
+      "componentIndex": 0,
+      "key": "message.kleispack.load.ready",
+      "en": "🍵 Matcha Flavoured is now loaded",
+      "ru": "🍵 Matcha Flavoured загружен"
+    },
+    {
+      "kind": "mcfunction",
+      "file": "data/main/function/setup/load.mcfunction",
+      "line": 5,
+      "componentIndex": 0,
+      "key": "message.kleispack.load.help_intro",
+      "en": "If you get lost or confused",
+      "ru": "Если вы потерялись или запутались,"
+    },
+    {
+      "kind": "mcfunction",
+      "file": "data/main/function/setup/load.mcfunction",
+      "line": 5,
+      "componentIndex": 1,
+      "key": "message.kleispack.load.help_advancements",
+      "en": " check the advancements",
+      "ru": " загляните в достижения"
+    },
+    {
+      "kind": "mcfunction",
+      "file": "data/main/function/test_function_working.mcfunction",
+      "line": 1,
+      "componentIndex": 0,
+      "key": "message.kleispack.test.marker",
+      "en": "[!]",
+      "ru": "[!]"
+    },
+    {
+      "kind": "mcfunction",
+      "file": "data/main/function/test_function_working.mcfunction",
+      "line": 1,
+      "componentIndex": 1,
+      "key": "message.kleispack.test.function",
+      "en": " Function is ",
+      "ru": " Функция "
+    },
+    {
+      "kind": "mcfunction",
+      "file": "data/main/function/test_function_working.mcfunction",
+      "line": 1,
+      "componentIndex": 2,
+      "key": "message.kleispack.test.working",
+      "en": "WORKING",
+      "ru": "РАБОТАЕТ"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/jukebox_song/dry_hands.json",
+      "jsonPath": "description",
+      "key": "jukebox_song.kleispack.dry_hands",
+      "en": "C418 - Dry Hands",
+      "ru": "C418 - Dry Hands"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/jukebox_song/golden.json",
+      "jsonPath": "description",
+      "key": "jukebox_song.kleispack.golden",
+      "en": "Ciren - Golden",
+      "ru": "Ciren - Golden"
+    },
+    {
+      "kind": "json",
+      "file": "data/main/jukebox_song/labyrinthine.json",
+      "jsonPath": "description",
+      "key": "jukebox_song.kleispack.labyrinthine",
+      "en": "Lena Raine - Labyrinthine",
+      "ru": "Lena Raine - Labyrinthine"
+    }
+  ],
+  "languageOnly": [
+    {
+      "key": "item.kleispack.axolotl",
+      "en": "Axolotl",
+      "ru": "Аксолотль"
+    },
+    {
+      "key": "item.kleispack.fish.axolotl",
+      "en": "Axolotl",
+      "ru": "Аксолотль"
+    },
+    {
+      "key": "item.kleispack.fish.blind_cave_fish",
+      "en": "Blind Cave Fish",
+      "ru": "Слепая пещерная рыба"
+    },
+    {
+      "key": "item.kleispack.fish.blind_minnow",
+      "en": "Blind Minnow",
+      "ru": "Слепой гольян"
+    },
+    {
+      "key": "item.kleispack.gnocchi",
+      "en": "Gnocchi",
+      "ru": "Ньокки"
+    },
+    {
+      "key": "item.kleispack.puerquito",
+      "en": "Puerquito",
+      "ru": "Пуэркито"
+    },
+    {
+      "key": "item.kleispack.pupusa",
+      "en": "Pupusa",
+      "ru": "Пупуса"
+    }
+  ],
+  "vanillaFallbackKeys": [
+    "filled_map.buried_treasure",
+    "filled_map.explorer_jungle",
+    "filled_map.explorer_swamp",
+    "filled_map.mansion",
+    "filled_map.monument",
+    "filled_map.trial_chambers",
+    "filled_map.village_desert",
+    "filled_map.village_plains",
+    "filled_map.village_savanna",
+    "filled_map.village_snowy",
+    "filled_map.village_taiga"
+  ]
+}

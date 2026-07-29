@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Реликвию можно добыть, только разрушая рассадники монстров или одолевая могучих врагов."
+      "translate": "advancements.kleispack.tutorial.obtain_divine_fragment.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:turtle_scute"
     },
     "title": {
-      "text": "Искра божественности"
+      "translate": "advancements.kleispack.tutorial.obtain_divine_fragment.title"
     },
     "frame": "goal",
     "show_toast": true,

@@ -3,9 +3,11 @@
     "icon": {
       "id": "minecraft:grass_block"
     },
-    "title": "Из земли",
+    "title": {
+      "translate": "advancements.kleispack.tutorial.root.title"
+    },
     "description": {
-      "text": ""
+      "translate": "advancements.kleispack.tutorial.root.description"
     },
     "background": "minecraft:block/dirt",
     "show_toast": false,

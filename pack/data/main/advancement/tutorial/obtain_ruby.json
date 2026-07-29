@@ -16,7 +16,7 @@
   },
   "display": {
     "description": {
-      "text": "Разграбьте руины Пандемониума"
+      "translate": "advancements.kleispack.tutorial.obtain_ruby.description"
     },
     "icon": {
       "components": {
@@ -26,7 +26,7 @@
       "id": "minecraft:emerald"
     },
     "title": {
-      "text": "Песнь II"
+      "translate": "advancements.kleispack.tutorial.obtain_ruby.title"
     }
   },
   "requirements": [

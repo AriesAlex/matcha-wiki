@@ -32,8 +32,8 @@ jobs:
       - name: Upload corrected pack
         uses: actions/upload-artifact@v7
         with:
-          name: Matcha-Flavoured-1.03-RU
+          name: Matcha-Flavoured-RU
           path: |
-            dist/Matcha_Flavoured_1_03_RU.zip
+            dist/*.zip
             dist/SHA256SUMS.txt
           if-no-files-found: error

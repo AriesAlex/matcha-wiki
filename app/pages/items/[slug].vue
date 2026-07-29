@@ -10,14 +10,14 @@
         <img
           v-if="item.icon"
           :src="useAssetPath(item.icon)"
-          :alt="stripMinecraftFormatting(item.name)"
+          :alt="stripMinecraftFormatting(item.title)"
           width="80"
           height="80"
         >
       </span>
       <div>
         <p class="eyebrow">{{ item.category }}</p>
-        <h1>{{ stripMinecraftFormatting(item.name) }}</h1>
+        <h1>{{ stripMinecraftFormatting(item.title) }}</h1>
         <code>{{ item.model }}</code>
       </div>
     </header>
@@ -140,11 +140,11 @@ const recipes = computed(() => item.value
   : [])
 
 useSeoMeta({
-  title: () => stripMinecraftFormatting(item.value?.name ?? 'Предмет'),
+  title: () => stripMinecraftFormatting(item.value?.title ?? 'Предмет'),
   description: () => {
     const current = item.value
     if (!current) return ''
-    return `${stripMinecraftFormatting(current.name)} в Matcha Flavoured: получение, рецепты, эффекты и техническая основа ${current.carrier}.`
+    return `${stripMinecraftFormatting(current.title)} в Matcha Flavoured: получение, рецепты, эффекты и техническая основа ${current.carrier}.`
   }
 })
 </script>

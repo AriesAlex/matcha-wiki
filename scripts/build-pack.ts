@@ -10,10 +10,24 @@ import {
 import { relative, resolve, sep } from 'node:path'
 import { unzipSync, zipSync, type Zippable } from 'fflate'
 
+interface ProjectManifest {
+  pack: {
+    version: string
+    artifactName: string
+  }
+}
+
 const rootDir = resolve(import.meta.dir, '..')
 const packDir = resolve(rootDir, 'pack')
 const distDir = resolve(rootDir, 'dist')
-const archivePath = resolve(distDir, 'Matcha_Flavoured_1_03_RU.zip')
+const project = JSON.parse(
+  readFileSync(resolve(rootDir, 'wiki-data/project.json'), 'utf8')
+) as ProjectManifest
+const versionSegment = project.pack.version.replaceAll('.', '_')
+const archivePath = resolve(
+  distDir,
+  `${project.pack.artifactName}_${versionSegment}_RU.zip`
+)
 // ZIP stores local calendar fields rather than an instant. Constructing the
 // date in local time keeps the header identical in every runner timezone.
 const archiveMtime = new Date(2000, 0, 1, 0, 0, 0)

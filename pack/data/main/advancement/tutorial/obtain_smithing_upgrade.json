@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Шаблоны кузнечного улучшения позволяют изменять и улучшать мотыги-лопаты и долабры"
+      "translate": "advancements.kleispack.tutorial.obtain_smithing_upgrade.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:netherite_upgrade_smithing_template"
     },
     "title": {
-      "text": "Улучшения"
+      "translate": "advancements.kleispack.tutorial.obtain_smithing_upgrade.title"
     },
     "hidden": false
   },

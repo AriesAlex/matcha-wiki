@@ -94,7 +94,7 @@
   },
   "display": {
     "description": {
-      "text": "Законсервируйте всё!"
+      "translate": "advancements.kleispack.tutorial.preserve_everything.description"
     },
     "icon": {
       "components": {
@@ -104,7 +104,7 @@
       "id": "minecraft:poisonous_potato"
     },
     "title": {
-      "text": "Готов к концу света"
+      "translate": "advancements.kleispack.tutorial.preserve_everything.title"
     },
     "frame": "challenge",
     "hidden": false

@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Добудьте реагенты, запретные по древним законам"
+      "translate": "advancements.kleispack.hell.obtain_benzene.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:endermite_spawn_egg"
     },
     "title": {
-      "text": "Запретная химия"
+      "translate": "advancements.kleispack.hell.obtain_benzene.title"
     },
     "hidden": false
   },

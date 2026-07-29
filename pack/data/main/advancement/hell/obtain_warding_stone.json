@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "Создайте камень-оберег"
+      "translate": "advancements.kleispack.hell.obtain_warding_stone.description"
     },
     "icon": {
       "components": {
@@ -20,7 +20,7 @@
       "id": "minecraft:chicken_spawn_egg"
     },
     "title": {
-      "text": "Святая турель"
+      "translate": "advancements.kleispack.hell.obtain_warding_stone.title"
     },
     "frame": "goal",
     "show_toast": true,

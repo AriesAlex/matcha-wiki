@@ -18,7 +18,7 @@
   },
   "display": {
     "description": {
-      "text": "Оскверните Сон Мёртвого Бога."
+      "translate": "advancements.kleispack.end.kill_dragon.description"
     },
     "frame": "challenge",
     "icon": {
@@ -26,7 +26,7 @@
       "id": "minecraft:nether_star"
     },
     "title": {
-      "text": "Иконоборец"
+      "translate": "advancements.kleispack.end.kill_dragon.title"
     }
   },
   "requirements": [

@@ -24,14 +24,14 @@
   },
   "display": {
     "description": {
-      "text": "Плоть богов, умерших в незапамятные времена"
+      "translate": "advancements.kleispack.hell.obtain_ancient_debris.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:ancient_debris"
     },
     "title": {
-      "text": "Осколки прошлого"
+      "translate": "advancements.kleispack.hell.obtain_ancient_debris.title"
     },
     "hidden": false
   },

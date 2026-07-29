@@ -1,6 +1,8 @@
 {
   "comparator_output": 1,
-  "description": "Ciren - Golden",
+  "description": {
+    "translate": "jukebox_song.kleispack.golden"
+  },
   "length_in_seconds": 188,
   "sound_event": {
     "sound_id": "minecraft:custom.golden"

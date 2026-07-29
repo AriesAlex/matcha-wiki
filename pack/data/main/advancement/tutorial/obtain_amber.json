@@ -16,7 +16,7 @@
   },
   "display": {
     "description": {
-      "text": "Откопайте следы паломника"
+      "translate": "advancements.kleispack.tutorial.obtain_amber.description"
     },
     "icon": {
       "components": {
@@ -26,7 +26,7 @@
       "id": "minecraft:emerald"
     },
     "title": {
-      "text": "Песнь III"
+      "translate": "advancements.kleispack.tutorial.obtain_amber.title"
     }
   },
   "requirements": [

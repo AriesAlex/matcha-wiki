@@ -15,7 +15,7 @@
   },
   "display": {
     "description": {
-      "text": "Продайте пойманную рыбу рыбаку"
+      "translate": "advancements.kleispack.tutorial.trade_fish.description"
     },
     "icon": {
       "components": {
@@ -25,7 +25,7 @@
       "id": "minecraft:emerald"
     },
     "title": {
-      "text": "Торговец рыбой"
+      "translate": "advancements.kleispack.tutorial.trade_fish.title"
     },
     "hidden": false
   },

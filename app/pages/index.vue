@@ -2,10 +2,10 @@
   <div class="home-page">
     <section class="home-intro">
       <div>
-        <p class="eyebrow">Проверено по исходникам · Minecraft {{ catalog.pack.minecraft }}</p>
+        <p class="eyebrow">Проверено по исходникам пака</p>
         <h1>Matcha Flavoured без догадок</h1>
         <p class="lead">
-          Русская энциклопедия локальной редакции 1.03: реальные рецепты,
+          Русская энциклопедия актуальной редакции: реальные рецепты,
           способы добычи, изменённые механики и маршрут от первого костра до пост-Энда.
         </p>
         <button
@@ -54,11 +54,11 @@
           </span>
           <PhArrowRight :size="20" />
         </NuxtLink>
-        <NuxtLink to="/known-issues">
+        <NuxtLink to="/fork">
           <PhWrench :size="28" />
           <span>
-            <strong>Что исправлено в нашей версии</strong>
-            <small>Подтверждённые ошибки, точные причины и безопасные патчи.</small>
+            <strong>Попробовать форк ArieX</strong>
+            <small>Ручная локализация, проверенные исправления, установка и один ZIP.</small>
           </span>
           <PhArrowRight :size="20" />
         </NuxtLink>
@@ -90,12 +90,12 @@
 
       <aside class="version-note">
         <p class="eyebrow">Редакция вики</p>
-        <h2>1.03 для 26.2</h2>
+        <h2>Актуальный проверенный срез</h2>
         <p>
-          Локальная русификация не меняла баланс оригинала. Наша ветка добавляет
-          только проверенные исправления и сохраняет лицензию автора.
+          Форк ArieX сохраняет баланс оригинала, добавляет ручной русский перевод
+          и только проверенные технические исправления.
         </p>
-        <NuxtLink to="/vanilla-differences">Как это проверено</NuxtLink>
+        <NuxtLink to="/fork">О редакции ArieX</NuxtLink>
       </aside>
     </section>
 
@@ -143,7 +143,7 @@ const milestones = computed(() => catalog.advancements
 
 useSeoMeta({
   title: 'Русская энциклопедия Matcha Flavoured',
-  description: 'Рецепты, предметы, механики и подробное прохождение Matcha Flavoured 1.03 для Minecraft 26.2.'
+  description: 'Рецепты, предметы, механики и подробное прохождение актуальной редакции Matcha Flavoured.'
 })
 </script>
 

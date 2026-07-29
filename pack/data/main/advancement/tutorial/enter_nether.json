@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "Спуститесь в Ад"
+      "translate": "advancements.kleispack.tutorial.enter_nether.description"
     },
     "icon": {
       "components": {
@@ -20,7 +20,7 @@
       "id": "minecraft:blaze_rod"
     },
     "title": {
-      "text": "Орфей"
+      "translate": "advancements.kleispack.tutorial.enter_nether.title"
     },
     "frame": "goal"
   },

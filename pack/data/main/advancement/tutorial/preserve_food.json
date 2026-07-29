@@ -94,7 +94,7 @@
   },
   "display": {
     "description": {
-      "text": "Законсервируйте продукт, чтобы сделать его вкус насыщеннее"
+      "translate": "advancements.kleispack.tutorial.preserve_food.description"
     },
     "icon": {
       "components": {
@@ -104,7 +104,7 @@
       "id": "minecraft:poisonous_potato"
     },
     "title": {
-      "text": "Соленья и варенье"
+      "translate": "advancements.kleispack.tutorial.preserve_food.title"
     },
     "hidden": false
   },

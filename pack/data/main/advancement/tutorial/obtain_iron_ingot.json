@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "У железа нет собственных свойств, и оно может служить основой лишь для стали"
+      "translate": "advancements.kleispack.tutorial.obtain_iron_ingot.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:iron_ingot"
     },
     "title": {
-      "text": "Стойкий металл"
+      "translate": "advancements.kleispack.tutorial.obtain_iron_ingot.title"
     },
     "hidden": false
   },

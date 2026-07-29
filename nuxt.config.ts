@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { COLOR_THEME_BOOTSTRAP_SCRIPT } from './app/utils/colorTheme'
 
 interface GeneratedRouteData {
   items?: Array<{ slug: string }>
@@ -31,7 +32,7 @@ export default defineNuxtConfig({
   ],
   css: [
     '@fontsource-variable/onest/index.css',
-    '@fontsource/tiny5/cyrillic-400.css',
+    '@fontsource/tiny5/400.css',
     '~/assets/styles/main.scss'
   ],
   app: {
@@ -44,11 +45,18 @@ export default defineNuxtConfig({
       meta: [
         {
           name: 'description',
-          content: 'Русская энциклопедия и руководство по Matcha Flavoured для Minecraft 26.2.'
+          content: 'Русская энциклопедия и руководство по Matcha Flavoured.'
         },
         {
           name: 'theme-color',
           content: '#203529'
+        }
+      ],
+      script: [
+        {
+          key: 'color-theme',
+          tagPosition: 'head',
+          textContent: COLOR_THEME_BOOTSTRAP_SCRIPT
         }
       ],
       link: [

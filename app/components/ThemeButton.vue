@@ -2,27 +2,29 @@
   <button
     class="icon-button"
     type="button"
-    :title="theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'"
+    title="Сменить цветовую тему"
+    aria-label="Сменить цветовую тему"
     @click="toggle"
   >
     <PhMoon
-      v-if="theme === 'light'"
+      class="light-theme-icon"
       :size="20"
       weight="bold"
+      aria-hidden="true"
     />
     <PhSun
-      v-else
+      class="dark-theme-icon"
       :size="20"
       weight="bold"
+      aria-hidden="true"
     />
-    <span class="visually-hidden">Сменить цветовую тему</span>
   </button>
 </template>
 
 <script setup lang="ts">
 import { PhMoon, PhSun } from '@phosphor-icons/vue'
 
-const { theme, toggle } = useColorTheme()
+const { toggle } = useColorTheme()
 </script>
 
 <style scoped lang="scss">
@@ -40,5 +42,13 @@ const { theme, toggle } = useColorTheme()
     color: var(--accent);
     background: var(--surface-quiet);
   }
+}
+
+.light-theme-icon {
+  display: var(--light-theme-icon-display);
+}
+
+.dark-theme-icon {
+  display: var(--dark-theme-icon-display);
 }
 </style>

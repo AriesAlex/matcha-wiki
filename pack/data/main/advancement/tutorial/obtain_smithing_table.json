@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Кузнечный стол позволяет изменять инструменты из основных металлов с помощью сплавов"
+      "translate": "advancements.kleispack.tutorial.obtain_smithing_table.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:smithing_table"
     },
     "title": {
-      "text": "Мастер-металлург"
+      "translate": "advancements.kleispack.tutorial.obtain_smithing_table.title"
     },
     "hidden": false
   },

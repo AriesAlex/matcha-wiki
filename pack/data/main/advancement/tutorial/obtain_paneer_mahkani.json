@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "Приготовьте панир махани — у каждого блюда есть полноценный вегетарианский вариант"
+      "translate": "advancements.kleispack.tutorial.obtain_paneer_mahkani.description"
     },
     "icon": {
       "components": {
@@ -20,7 +20,7 @@
       "id": "minecraft:rabbit_stew"
     },
     "title": {
-      "text": "Сладко и остро"
+      "translate": "advancements.kleispack.tutorial.obtain_paneer_mahkani.title"
     },
     "hidden": false
   },

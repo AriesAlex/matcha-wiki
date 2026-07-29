@@ -134,7 +134,7 @@
   },
   "display": {
     "description": {
-      "text": "Раскройте скрытое свойство еды, приготовив её на костре или в духовой печи."
+      "translate": "advancements.kleispack.tutorial.cook_food.description"
     },
     "icon": {
       "components": {
@@ -144,7 +144,7 @@
       "id": "minecraft:poisonous_potato"
     },
     "title": {
-      "text": "Сила вкуса"
+      "translate": "advancements.kleispack.tutorial.cook_food.title"
     },
     "hidden": false
   },

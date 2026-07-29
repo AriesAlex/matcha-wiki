@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Выплавьте медь в саманной печи"
+      "translate": "advancements.kleispack.tutorial.obtain_copper.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:copper_ingot"
     },
     "title": {
-      "text": "Жаровня"
+      "translate": "advancements.kleispack.tutorial.obtain_copper.title"
     },
     "show_toast": true,
     "announce_to_chat": true,

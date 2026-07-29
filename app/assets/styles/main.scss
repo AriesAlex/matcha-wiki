@@ -1,3 +1,22 @@
+@mixin dark-theme {
+  color-scheme: dark;
+  --page: #0f1812;
+  --surface: #18251b;
+  --surface-quiet: #223226;
+  --surface-deep: #304335;
+  --ink: #edf4e9;
+  --muted: #adbaad;
+  --edge: #405244;
+  --accent: #72cf69;
+  --accent-bright: #72cf69;
+  --accent-ink: #a7e99f;
+  --code: #0b100c;
+  --code-ink: #eaf3e6;
+  --shadow: rgba(0, 0, 0, 0.32);
+  --light-theme-icon-display: none;
+  --dark-theme-icon-display: block;
+}
+
 :root {
   color-scheme: light;
   --page: #ececde;
@@ -24,23 +43,18 @@
   --recipe-highlight: #fff;
   --recipe-shadow: #555;
   --recipe-link: #2449aa;
+  --light-theme-icon-display: block;
+  --dark-theme-icon-display: none;
 }
 
 :root[data-theme='dark'] {
-  color-scheme: dark;
-  --page: #0f1812;
-  --surface: #18251b;
-  --surface-quiet: #223226;
-  --surface-deep: #304335;
-  --ink: #edf4e9;
-  --muted: #adbaad;
-  --edge: #405244;
-  --accent: #72cf69;
-  --accent-bright: #72cf69;
-  --accent-ink: #a7e99f;
-  --code: #0b100c;
-  --code-ink: #eaf3e6;
-  --shadow: rgba(0, 0, 0, 0.32);
+  @include dark-theme;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    @include dark-theme;
+  }
 }
 
 * {

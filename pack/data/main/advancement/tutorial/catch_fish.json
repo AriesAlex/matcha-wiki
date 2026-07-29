@@ -36,7 +36,7 @@
   },
   "display": {
     "description": {
-      "text": "Поймайте рыбу"
+      "translate": "advancements.kleispack.tutorial.catch_fish.description"
     },
     "icon": {
       "components": {
@@ -46,7 +46,7 @@
       "id": "minecraft:cod"
     },
     "title": {
-      "text": "Вот это улов!"
+      "translate": "advancements.kleispack.tutorial.catch_fish.title"
     },
     "hidden": false
   },

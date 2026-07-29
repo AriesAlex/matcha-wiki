@@ -13,7 +13,7 @@
   },
   "display": {
     "description": {
-      "text": "Приютите просителя убежища"
+      "translate": "advancements.kleispack.tutorial.trade_for_asylum_seeker.description"
     },
     "icon": {
       "components": {
@@ -23,7 +23,7 @@
       "id": "minecraft:emerald"
     },
     "title": {
-      "text": "Добрый самаритянин"
+      "translate": "advancements.kleispack.tutorial.trade_for_asylum_seeker.title"
     },
     "hidden": false
   },

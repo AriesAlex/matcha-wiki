@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "Приготовьте рамэн"
+      "translate": "advancements.kleispack.tutorial.obtain_ramen.description"
     },
     "icon": {
       "components": {
@@ -20,7 +20,7 @@
       "id": "minecraft:rabbit_stew"
     },
     "title": {
-      "text": "Лучший суп"
+      "translate": "advancements.kleispack.tutorial.obtain_ramen.title"
     },
     "hidden": false
   },

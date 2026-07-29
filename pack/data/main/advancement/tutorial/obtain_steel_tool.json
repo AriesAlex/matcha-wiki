@@ -76,7 +76,7 @@
   },
   "display": {
     "description": {
-      "text": "Выкуйте стальное снаряжение"
+      "translate": "advancements.kleispack.tutorial.obtain_steel_tool.description"
     },
     "icon": {
       "components": {
@@ -86,7 +86,7 @@
       "id": "minecraft:iron_shovel"
     },
     "title": {
-      "text": "Надёжная сталь"
+      "translate": "advancements.kleispack.tutorial.obtain_steel_tool.title"
     },
     "frame": "goal",
     "hidden": false

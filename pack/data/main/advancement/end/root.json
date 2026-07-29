@@ -11,7 +11,7 @@
     "announce_to_chat": false,
     "background": "minecraft:block/black_concrete",
     "description": {
-      "text": ""
+      "translate": "advancements.kleispack.end.root.description"
     },
     "icon": {
       "count": 1,
@@ -19,7 +19,7 @@
     },
     "show_toast": false,
     "title": {
-      "text": "Ко Сну"
+      "translate": "advancements.kleispack.end.root.title"
     }
   },
   "requirements": [

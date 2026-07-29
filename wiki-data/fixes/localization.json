@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "area": "localization",
+  "packVersion": "1.03",
+  "minecraftVersion": "26.2",
+  "fixes": [
+    {
+      "id": "LOCALIZATION-01",
+      "files": [
+        "package.json",
+        "scripts/localize-pack-text.ts",
+        "tests/localization.test.ts",
+        "wiki-data/localization/README.md",
+        "wiki-data/localization/runtime-text.json",
+        "wiki-data/localization/deferred-literals.json",
+        "pack/assets/minecraft/lang/en_au.json",
+        "pack/assets/minecraft/lang/en_ca.json",
+        "pack/assets/minecraft/lang/en_gb.json",
+        "pack/assets/minecraft/lang/en_us.json",
+        "pack/assets/minecraft/lang/ru_ru.json",
+        "pack/data/main/advancement/tutorial/root.json",
+        "pack/data/main/function/enchantment_effects/bloodrage.mcfunction",
+        "pack/data/main/function/mechanic/first_dragon_killed_reward.mcfunction",
+        "pack/data/main/function/setup/load.mcfunction",
+        "pack/data/main/function/test_function_working.mcfunction",
+        "pack/data/main/jukebox_song/dry_hands.json",
+        "pack/data/main/jukebox_song/golden.json",
+        "pack/data/main/jukebox_song/labyrinthine.json"
+      ],
+      "targetRegistry": "wiki-data/localization/runtime-text.json",
+      "affectedPackFiles": 79,
+      "summary": "Безопасные UI-тексты достижений, jukebox songs и исполняемых функций вынесены в стабильные translate-ключи с английскими и русскими таблицами; забытые автором английские значения семи уже используемых ключей восстановлены, а четыре лорных описания Песней уточнены без изменения их совместимых ID.",
+      "evidence": [
+        "Реестр содержит 145 точных runtime-targets: 134 advancement components, 3 jukebox descriptions и 8 mcfunction components.",
+        "Песни I-IV теперь называют получаемый камень и реальное место поиска; техническое условие item_model отдельно документирует вики.",
+        "Все пять языковых таблиц синхронизируются одним генератором; read-only аудит входит в data, test и validate.",
+        "Официальный dedicated server 26.2 загрузил итоговое дерево без data errors."
+      ]
+    }
+  ],
+  "deferred": [
+    {
+      "id": "LOCALIZATION-DEFERRED-01",
+      "subject": "Literal-компоненты предметов в recipes, loot tables и villager trades",
+      "status": "intentionally_preserved_for_compatibility",
+      "inventory": "wiki-data/localization/deferred-literals.json",
+      "entries": 939,
+      "byReason": {
+        "persistent_recipe_result_component": 552,
+        "persistent_loot_component": 260,
+        "persistent_trade_component": 122,
+        "technical_component_identifier": 2,
+        "commented_out_command": 3
+      },
+      "reason": "Замена literal на translate меняет сериализованный TextComponent внутри ItemStack и может нарушить stacking, predicates, сохранённые торговые офферы и совместимость старых миров."
+    }
+  ],
+  "validation": {
+    "jsonFilesParsed": 3135,
+    "mcmetaFilesParsed": 24,
+    "localizationRegistryEntries": 145,
+    "languageOnlyEntries": 7,
+    "usedTranslateKeys": 506,
+    "unresolvedTranslateKeys": 0,
+    "safeSurfaceLiterals": 0,
+    "deferredInventoryEntries": 939,
+    "officialServerVersion": "26.2",
+    "officialServerJarSha256": "CDACDFB25898DE5E4B4B0E5DDCC2722F77067E46605709C2D886C000EBB63EC5",
+    "serverStarted": true,
+    "loadedRecipeCount": 2330,
+    "loadedAdvancementCount": 1781,
+    "serverLogErrorLines": 0,
+    "serverLogWarningLines": 4,
+    "serverLogWarningScope": "Только ожидаемое предупреждение о validation-запуске с online-mode=false.",
+    "serverDoneSeconds": 1.377
+  }
+}

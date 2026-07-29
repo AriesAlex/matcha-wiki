@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Сложите духовую печь из кирпичей и железа"
+      "translate": "advancements.kleispack.tutorial.obtain_oven.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:furnace"
     },
     "title": {
-      "text": "Вот теперь готовим!"
+      "translate": "advancements.kleispack.tutorial.obtain_oven.title"
     },
     "hidden": false
   },

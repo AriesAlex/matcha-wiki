@@ -12,36 +12,52 @@
       aria-labelledby="related-heading"
     >
       <h2 id="related-heading">Читайте дальше</h2>
-      <NuxtLink
-        v-for="relatedPage in relatedPages"
-        :key="relatedPage.path"
-        :to="relatedPage.path"
-      >
-        <strong>{{ relatedPage.title }}</strong>
-        <span v-if="relatedPage.description">{{ relatedPage.description }}</span>
-      </NuxtLink>
+      <ul role="list">
+        <li
+          v-for="relatedPage in relatedPages"
+          :key="relatedPage.path"
+        >
+          <NuxtLink :to="relatedPage.path">
+            <strong>{{ relatedPage.title }}</strong>
+            <span v-if="relatedPage.description">{{ relatedPage.description }}</span>
+          </NuxtLink>
+        </li>
+      </ul>
     </nav>
     <footer
       v-if="page.sourcePaths?.length"
       class="article-sources"
     >
       <h2>Источники в паке</h2>
-      <code
-        v-for="source in page.sourcePaths"
-        :key="source"
-      >{{ source }}</code>
+      <ul role="list">
+        <li
+          v-for="source in page.sourcePaths"
+          :key="source"
+        >
+          <code>{{ source }}</code>
+        </li>
+      </ul>
     </footer>
   </article>
 </template>
 
 <script setup lang="ts">
 const route = useRoute()
-const { data: page } = await useAsyncData(
-  `wiki:${route.path}`,
-  () => queryCollection('wiki').path(route.path).first()
+const pagePath = computed(() => normalizeWikiPath(route.path))
+const {
+  data: page,
+  error: pageError,
+  status: pageStatus
+} = await useAsyncData(
+  () => `wiki:${pagePath.value}`,
+  () => queryCollection('wiki').path(pagePath.value).first()
 )
 
-if (!page.value) {
+if (pageError.value) {
+  throw pageError.value
+}
+
+if (isMissingWikiPage(pageStatus.value, page.value)) {
   throw createError({
     statusCode: 404,
     statusMessage: 'Статья не найдена'
@@ -75,12 +91,18 @@ useSeoMeta({
   :deep(h2) {
     margin-top: 64px;
     margin-bottom: 20px;
+    scroll-margin-top: 88px;
   }
 
   :deep(h3) {
     margin-top: 40px;
     margin-bottom: 14px;
     font-size: 1.35rem;
+    scroll-margin-top: 88px;
+  }
+
+  :deep(h4) {
+    scroll-margin-top: 88px;
   }
 
   :deep(p),
@@ -143,6 +165,16 @@ useSeoMeta({
       margin-bottom: 16px;
     }
 
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li + li {
+      border-top: 1px solid var(--edge);
+    }
+
     a {
       display: flex;
       flex-direction: column;
@@ -150,10 +182,6 @@ useSeoMeta({
       padding: 15px 0;
       color: var(--ink);
       text-decoration: none;
-
-      + a {
-        border-top: 1px solid var(--edge);
-      }
 
       &:hover strong {
         color: var(--accent);
@@ -171,9 +199,6 @@ useSeoMeta({
   }
 
   .article-sources {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
     margin-top: 72px;
     padding: 22px;
     background: var(--surface-quiet);
@@ -181,6 +206,15 @@ useSeoMeta({
     h2 {
       margin: 0 0 10px;
       font-size: 1.25rem;
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
 
     code {

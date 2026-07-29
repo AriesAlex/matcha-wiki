@@ -83,6 +83,7 @@
 import coreManifest from '../../wiki-data/fixes/core.json'
 import equipmentManifest from '../../wiki-data/fixes/equipment.json'
 import foodManifest from '../../wiki-data/fixes/food.json'
+import localizationManifest from '../../wiki-data/fixes/localization.json'
 import recipesManifest from '../../wiki-data/fixes/recipes.json'
 import systemsManifest from '../../wiki-data/fixes/systems.json'
 
@@ -132,6 +133,12 @@ const groups = [
     name: 'Рецепты',
     description: 'Дубли, пересечения с ванилью и нормализация pack-фильтра.',
     fixes: recipesManifest.fixes as FixEntry[]
+  },
+  {
+    label: 'Языковые ключи и совместимость',
+    name: 'Локализация',
+    description: 'Экранные строки вынесены из игровой логики без изменения компонентов существующих предметов.',
+    fixes: localizationManifest.fixes as FixEntry[]
   }
 ]
 
@@ -139,7 +146,7 @@ const deferred = equipmentManifest.deferred as DeferredEntry[]
 const totalFixes = groups.reduce((total, group) => total + group.fixes.length, 0)
 
 const evidenceLabels: Record<string, string> = {
-  runtime_reload_log: 'журнал загрузки Minecraft 26.2',
+  runtime_reload_log: 'журнал загрузки целевой версии Minecraft',
   static_reference_graph: 'граф ссылок ресурсов',
   cross_file_invariant: 'согласованность нескольких игровых источников',
   command_semantics: 'семантика команд Minecraft',

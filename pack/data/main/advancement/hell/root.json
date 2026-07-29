@@ -11,7 +11,7 @@
     "announce_to_chat": false,
     "background": "minecraft:block/netherrack",
     "description": {
-      "text": ""
+      "translate": "advancements.kleispack.hell.root.description"
     },
     "icon": {
       "count": 1,
@@ -19,7 +19,7 @@
     },
     "show_toast": false,
     "title": {
-      "text": "Сквозь Ад"
+      "translate": "advancements.kleispack.hell.root.title"
     }
   },
   "requirements": [

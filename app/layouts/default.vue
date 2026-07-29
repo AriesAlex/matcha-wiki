@@ -25,7 +25,7 @@
           >
           <span>
             <strong>Matcha Wiki</strong>
-            <small>русская редакция 1.03</small>
+            <small>редакция {{ catalog.pack.version }} · {{ catalog.pack.minecraft }}</small>
           </span>
         </NuxtLink>
 
@@ -61,37 +61,10 @@
     </header>
 
     <div class="site-grid">
-      <aside
-        id="site-sidebar"
-        class="site-sidebar"
-        :class="{ open: navigationOpen }"
-      >
-        <nav aria-label="Разделы вики">
-          <section
-            v-for="section in navigation"
-            :key="section.label"
-            class="nav-section"
-          >
-            <p>{{ section.label }}</p>
-            <NuxtLink
-              v-for="link in section.links"
-              :key="link.to"
-              :to="link.to"
-            >
-              {{ link.label }}
-            </NuxtLink>
-          </section>
-        </nav>
-
-        <div class="sidebar-release">
-          <PhDownloadSimple :size="19" />
-          <div>
-            <strong>Исправленный ZIP</strong>
-            <p>Один файл для datapacks и resourcepacks.</p>
-            <a href="https://github.com/AriesAlex/matcha-wiki/releases/latest">Скачать релиз</a>
-          </div>
-        </div>
-      </aside>
+      <WikiSidebar
+        :open="navigationOpen"
+        @close="navigationOpen = false"
+      />
 
       <main id="main-content" class="main-content">
         <slot />
@@ -128,7 +101,6 @@ import {
   PhBookOpenText,
   PhBugBeetle,
   PhCompass,
-  PhDownloadSimple,
   PhGithubLogo,
   PhList,
   PhMagnifyingGlass,
@@ -137,36 +109,9 @@ import {
 } from '@phosphor-icons/vue'
 
 const route = useRoute()
+const catalog = useWikiCatalog()
 const { open: openSearch } = useSearchDialog()
 const navigationOpen = ref(false)
-
-const navigation = [
-  {
-    label: 'Играть',
-    links: [
-      { to: '/start', label: 'Начало игры' },
-      { to: '/progression', label: 'Путь прохождения' },
-      { to: '/guides/endgame', label: 'Эндгейм' }
-    ]
-  },
-  {
-    label: 'Справочник',
-    links: [
-      { to: '/items', label: 'Предметы' },
-      { to: '/recipes', label: 'Рецепты' },
-      { to: '/mechanics', label: 'Механики' },
-      { to: '/world', label: 'Мир и добыча' }
-    ]
-  },
-  {
-    label: 'О паке',
-    links: [
-      { to: '/vanilla-differences', label: 'Отличия от ванили' },
-      { to: '/known-issues', label: 'Исправления и баги' },
-      { to: '/about', label: 'Версия и авторство' }
-    ]
-  }
-]
 
 watch(() => route.fullPath, () => {
   navigationOpen.value = false
@@ -311,81 +256,6 @@ watch(() => route.fullPath, () => {
     padding: 34px 24px 96px;
   }
 
-  .site-sidebar {
-    align-self: start;
-    position: sticky;
-    top: 98px;
-
-    nav {
-      display: flex;
-      flex-direction: column;
-      gap: 26px;
-    }
-  }
-
-  .nav-section {
-    display: flex;
-    flex-direction: column;
-
-    p {
-      margin: 0 0 7px;
-      color: var(--muted);
-      font-family: 'Tiny5', monospace;
-      font-size: 17px;
-    }
-
-    a {
-      min-height: 38px;
-      display: flex;
-      align-items: center;
-      padding: 4px 10px;
-      color: var(--ink);
-      font-size: 14px;
-      text-decoration: none;
-
-      &:hover,
-      &.router-link-active {
-        color: var(--accent);
-        background: var(--surface-quiet);
-      }
-
-      &.router-link-active {
-        box-shadow: inset 3px 0 0 var(--accent);
-      }
-    }
-  }
-
-  .sidebar-release {
-    display: flex;
-    gap: 10px;
-    margin-top: 34px;
-    padding: 14px;
-    background: var(--surface-quiet);
-
-    svg {
-      flex: none;
-      margin-top: 2px;
-      color: var(--accent);
-    }
-
-    strong,
-    p,
-    a {
-      display: block;
-      font-size: 12px;
-    }
-
-    p {
-      margin: 3px 0 8px;
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
-    a {
-      font-weight: 800;
-    }
-  }
-
   .main-content {
     width: min(100%, 1040px);
     min-width: 0;
@@ -451,27 +321,6 @@ watch(() => route.fullPath, () => {
     .site-grid {
       display: block;
       padding-top: 28px;
-    }
-
-    .site-sidebar {
-      position: fixed;
-      inset: 64px auto 0 0;
-      z-index: 35;
-      width: min(340px, 90vw);
-      overflow: auto;
-      padding: 28px 24px;
-      background: var(--surface);
-      box-shadow: 24px 0 60px var(--shadow);
-      transform: translateX(-110%);
-      transition: transform 180ms ease;
-      visibility: hidden;
-      pointer-events: none;
-
-      &.open {
-        transform: translateX(0);
-        visibility: visible;
-        pointer-events: auto;
-      }
     }
 
     .main-content {

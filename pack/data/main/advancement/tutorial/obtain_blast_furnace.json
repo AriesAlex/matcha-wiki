@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Плавильные печи жарче саманных и способны плавить более тугоплавкие металлы"
+      "translate": "advancements.kleispack.tutorial.obtain_blast_furnace.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:blast_furnace"
     },
     "title": {
-      "text": "Начинающий металлург"
+      "translate": "advancements.kleispack.tutorial.obtain_blast_furnace.title"
     },
     "hidden": false
   },

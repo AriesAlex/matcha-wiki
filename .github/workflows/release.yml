@@ -30,10 +30,10 @@ jobs:
       - name: Publish GitHub Release
         run: >-
           gh release create "$GITHUB_REF_NAME"
-          dist/Matcha_Flavoured_1_03_RU.zip
+          dist/*.zip
           dist/SHA256SUMS.txt
           --verify-tag
           --generate-notes
-          --title "Matcha Flavoured 1.03 RU — $GITHUB_REF_NAME"
+          --title "Matcha Flavoured RU — $GITHUB_REF_NAME"
         env:
           GH_TOKEN: ${{ github.token }}

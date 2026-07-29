@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "У алмазов нет собственных свойств, но они могут служить основой для электрума и адаманта"
+      "translate": "advancements.kleispack.tutorial.obtain_diamond.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:diamond"
     },
     "title": {
-      "text": "Прочный минерал"
+      "translate": "advancements.kleispack.tutorial.obtain_diamond.title"
     },
     "hidden": false
   },

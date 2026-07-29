@@ -76,7 +76,7 @@
   },
   "display": {
     "description": {
-      "text": "Выкуйте предмет бронзового снаряжения"
+      "translate": "advancements.kleispack.tutorial.obtain_bronze_tool.description"
     },
     "icon": {
       "components": {
@@ -86,7 +86,7 @@
       "id": "minecraft:wooden_pickaxe"
     },
     "title": {
-      "text": "Блистательная бронза"
+      "translate": "advancements.kleispack.tutorial.obtain_bronze_tool.title"
     },
     "frame": "goal",
     "hidden": false

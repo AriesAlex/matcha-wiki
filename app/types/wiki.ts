@@ -59,6 +59,7 @@ export interface ItemView {
   model: string
   carrier: string
   name: string
+  title: string
   nameKey?: string
   description?: string
   icon?: string
@@ -85,6 +86,22 @@ export interface AdvancementView {
   frame: string
   hidden: boolean
   sourcePath: string
+  guide?: AdvancementGuide
+}
+
+export interface AdvancementGuideLink {
+  label: string
+  to: string
+}
+
+export interface AdvancementGuide {
+  spoiler: boolean
+  note?: string
+  intendedPath?: string
+  exactCondition: string
+  link?: AdvancementGuideLink
+  entries: AdvancementGuideLink[]
+  searchTerms: string[]
 }
 
 export interface WikiCatalog {
@@ -105,4 +122,11 @@ export interface WikiCatalog {
   items: ItemView[]
   recipes: RecipeView[]
   advancements: AdvancementView[]
+}
+
+export interface WikiTocLink {
+  id: string
+  text: string
+  depth: number
+  children?: WikiTocLink[]
 }

@@ -136,7 +136,7 @@
   },
   "display": {
     "description": {
-      "text": "Похитьте молитвы у Мёртвого Бога"
+      "translate": "advancements.kleispack.hell.craft_blessing.description"
     },
     "icon": {
       "components": {
@@ -149,7 +149,7 @@
       "id": "minecraft:enchanted_book"
     },
     "title": {
-      "text": "Апокрифы"
+      "translate": "advancements.kleispack.hell.craft_blessing.title"
     },
     "frame": "goal",
     "hidden": false

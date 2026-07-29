@@ -16,7 +16,7 @@
   },
   "display": {
     "description": {
-      "text": "Победите Морского Бога"
+      "translate": "advancements.kleispack.tutorial.obtain_opal.description"
     },
     "icon": {
       "components": {
@@ -26,7 +26,7 @@
       "id": "minecraft:emerald"
     },
     "title": {
-      "text": "Песнь I"
+      "translate": "advancements.kleispack.tutorial.obtain_opal.title"
     }
   },
   "requirements": [

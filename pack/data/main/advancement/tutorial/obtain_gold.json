@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Золоту присущи Удача и Добыча"
+      "translate": "advancements.kleispack.tutorial.obtain_gold.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:gold_ingot"
     },
     "title": {
-      "text": "Щедрый металл"
+      "translate": "advancements.kleispack.tutorial.obtain_gold.title"
     },
     "hidden": false
   },

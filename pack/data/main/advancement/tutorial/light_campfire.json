@@ -25,14 +25,14 @@
   },
   "display": {
     "description": {
-      "text": "Подожгите растопку трутом или кремнёвым огнивом."
+      "translate": "advancements.kleispack.tutorial.light_campfire.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:campfire"
     },
     "title": {
-      "text": "Проклят будь Прометей"
+      "translate": "advancements.kleispack.tutorial.light_campfire.title"
     },
     "hidden": false
   },

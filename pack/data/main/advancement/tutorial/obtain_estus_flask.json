@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "Приготовьте флягу с эстусом из праха эстуса"
+      "translate": "advancements.kleispack.tutorial.obtain_estus_flask.description"
     },
     "icon": {
       "components": {
@@ -22,7 +22,7 @@
       "id": "minecraft:potion"
     },
     "title": {
-      "text": "Тяга к алхимии"
+      "translate": "advancements.kleispack.tutorial.obtain_estus_flask.title"
     },
     "frame": "task",
     "show_toast": true,

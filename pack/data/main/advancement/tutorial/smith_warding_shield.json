@@ -10,7 +10,7 @@
   },
   "display": {
     "description": {
-      "text": "На кузнечном столе инкрустируйте щит серебром и закрепите на нём назар"
+      "translate": "advancements.kleispack.tutorial.smith_warding_shield.description"
     },
     "icon": {
       "components": {
@@ -46,7 +46,7 @@
       "id": "minecraft:shield"
     },
     "title": {
-      "text": "Предводитель конвоя"
+      "translate": "advancements.kleispack.tutorial.smith_warding_shield.title"
     },
     "frame": "task",
     "show_toast": true,

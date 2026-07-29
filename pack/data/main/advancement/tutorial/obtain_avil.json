@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Наковальни из стальных или железных блоков чинят снаряжение самородком или слитком соответствующего основного металла."
+      "translate": "advancements.kleispack.tutorial.obtain_avil.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:anvil"
     },
     "title": {
-      "text": "Чини и пользуйся"
+      "translate": "advancements.kleispack.tutorial.obtain_avil.title"
     },
     "hidden": false
   },

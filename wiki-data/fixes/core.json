@@ -140,6 +140,44 @@
       ],
       "summary": "Модель ссылается на существующую texture в unused вместо отсутствующего item-path.",
       "evidenceType": "asset_reference_graph"
+    },
+    {
+      "id": "core-blind-fish-models",
+      "files": [
+        "pack/assets/minecraft/items/blind_cave_fish.json",
+        "pack/assets/minecraft/items/blind_minnow.json",
+        "pack/assets/minecraft/models/item/blind_cave_fish.json",
+        "pack/assets/minecraft/models/item/blind_minnow.json"
+      ],
+      "summary": "Слепая пещерная рыба и слепой гольян больше не показывают отсутствующую модель: два готовых авторских placeholder-спрайта подключены к item_model, которые уже выдавали fishing loot tables.",
+      "evidenceType": "asset_reference_graph"
+    },
+    {
+      "id": "core-orphan-item-models",
+      "files": [],
+      "removedFiles": [
+        "pack/assets/minecraft/items/buttered_apple.json",
+        "pack/assets/minecraft/items/lyre.json",
+        "pack/assets/minecraft/items/raw_curry.json",
+        "pack/assets/minecraft/items/raw_green_curry.json",
+        "pack/assets/minecraft/items/raw_paneer_makhani.json",
+        "pack/assets/minecraft/items/raw_ramen.json",
+        "pack/assets/minecraft/items/titanium_dolabra.json",
+        "pack/assets/minecraft/items/titanium_mattock.json",
+        "pack/assets/minecraft/items/titanium_reinforced_bow.json",
+        "pack/assets/minecraft/models/item/buttered_apple.json",
+        "pack/assets/minecraft/models/item/lyre.json",
+        "pack/assets/minecraft/models/item/raw_curry.json",
+        "pack/assets/minecraft/models/item/raw_green_curry.json",
+        "pack/assets/minecraft/models/item/raw_paneer_makhani.json",
+        "pack/assets/minecraft/models/item/raw_ramen.json",
+        "pack/assets/minecraft/models/item/titanium_reinforced_bow.json",
+        "pack/assets/minecraft/models/item/titanium_reinforced_bow_pulling_0.json",
+        "pack/assets/minecraft/models/item/titanium_reinforced_bow_pulling_1.json",
+        "pack/assets/minecraft/models/item/titanium_reinforced_bow_pulling_2.json"
+      ],
+      "summary": "Удалены девять недостижимых item definition и их обрывки моделей: на них не ссылались recipes, loot, trades или functions, а необходимые текстуры отсутствовали. Рабочие uncooked-блюда и действующее titanium-снаряжение не затронуты.",
+      "evidenceType": "asset_reference_graph_and_usage_scan"
     }
   ]
 }

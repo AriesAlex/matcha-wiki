@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Электрум усиливает присущие золоту Удачу и Добычу, но основой для этого сплава может служить лишь титан"
+      "translate": "advancements.kleispack.tutorial.obtain_electrum.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:heart_of_the_sea"
     },
     "title": {
-      "text": "Рьяный сплав"
+      "translate": "advancements.kleispack.tutorial.obtain_electrum.title"
     },
     "hidden": false
   },

@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Адамант дарует владельцу божественную стойкость"
+      "translate": "advancements.kleispack.tutorial.obtain_adamant.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:netherite_ingot"
     },
     "title": {
-      "text": "Божественный сплав"
+      "translate": "advancements.kleispack.tutorial.obtain_adamant.title"
     },
     "hidden": true
   },

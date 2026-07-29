@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Саманные печи отлично подходят для обработки минерального сырья"
+      "translate": "advancements.kleispack.tutorial.obtain_smooth_stone.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:smooth_stone"
     },
     "title": {
-      "text": "Каменщик"
+      "translate": "advancements.kleispack.tutorial.obtain_smooth_stone.title"
     },
     "hidden": false
   },

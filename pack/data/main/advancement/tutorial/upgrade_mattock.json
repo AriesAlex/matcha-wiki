@@ -52,7 +52,7 @@
   },
   "display": {
     "description": {
-      "text": "Улучшите мотыгу-лопату или долабру"
+      "translate": "advancements.kleispack.tutorial.upgrade_mattock.description"
     },
     "icon": {
       "components": {
@@ -62,7 +62,7 @@
       "id": "minecraft:wooden_axe"
     },
     "title": {
-      "text": "Три в одном?"
+      "translate": "advancements.kleispack.tutorial.upgrade_mattock.title"
     },
     "frame": "goal",
     "hidden": false

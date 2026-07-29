@@ -1,5 +1,6 @@
 {
   "minecraftVersion": "26.2",
+  "sourceConfig": "wiki-data/project.json",
   "assetIndex": "32",
   "objectSha1": "44f2a01ff488842431bb3a9f33c0d3d2dc8e9a2f",
   "sourceUrl": "https://resources.download.minecraft.net/44/44f2a01ff488842431bb3a9f33c0d3d2dc8e9a2f",

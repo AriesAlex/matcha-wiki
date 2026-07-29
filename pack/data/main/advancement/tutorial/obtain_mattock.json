@@ -40,7 +40,7 @@
   },
   "display": {
     "description": {
-      "text": "Мотыги-лопаты и долабры сочетают в себе по два инструмента, но работают медленнее обычных аналогов"
+      "translate": "advancements.kleispack.tutorial.obtain_mattock.description"
     },
     "icon": {
       "components": {
@@ -50,7 +50,7 @@
       "id": "minecraft:stone_axe"
     },
     "title": {
-      "text": "Два в одном"
+      "translate": "advancements.kleispack.tutorial.obtain_mattock.title"
     },
     "frame": "goal",
     "hidden": false

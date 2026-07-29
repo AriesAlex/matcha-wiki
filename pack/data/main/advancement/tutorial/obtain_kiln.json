@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Сложите печь из саманных кирпичей"
+      "translate": "advancements.kleispack.tutorial.obtain_kiln.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:smoker"
     },
     "title": {
-      "text": "Древняя технология"
+      "translate": "advancements.kleispack.tutorial.obtain_kiln.title"
     },
     "hidden": false
   },

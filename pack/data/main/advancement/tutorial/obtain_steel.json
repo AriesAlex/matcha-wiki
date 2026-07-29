@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Сталь получают, переплавляя высокоуглеродистое железо в плавильной печи. Она наделяет железное снаряжение Отдачей и значительно повышает его долговечность"
+      "translate": "advancements.kleispack.tutorial.obtain_steel.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:resin_brick"
     },
     "title": {
-      "text": "Прочный сплав"
+      "translate": "advancements.kleispack.tutorial.obtain_steel.title"
     },
     "hidden": false
   },

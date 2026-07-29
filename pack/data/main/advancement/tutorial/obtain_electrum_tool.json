@@ -76,7 +76,7 @@
   },
   "display": {
     "description": {
-      "text": "Выкуйте предмет электрумового снаряжения"
+      "translate": "advancements.kleispack.tutorial.obtain_electrum_tool.description"
     },
     "icon": {
       "components": {
@@ -86,7 +86,7 @@
       "id": "minecraft:stone_sword"
     },
     "title": {
-      "text": "Электрум под током"
+      "translate": "advancements.kleispack.tutorial.obtain_electrum_tool.title"
     },
     "frame": "challenge",
     "hidden": false

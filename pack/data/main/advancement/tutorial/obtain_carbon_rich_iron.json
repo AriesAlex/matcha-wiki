@@ -16,14 +16,14 @@
   },
   "display": {
     "description": {
-      "text": "Создайте высокоуглеродистое железо из железа и блока угля"
+      "translate": "advancements.kleispack.tutorial.obtain_carbon_rich_iron.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:piglin_brute_spawn_egg"
     },
     "title": {
-      "text": "Хрупкий сплав?"
+      "translate": "advancements.kleispack.tutorial.obtain_carbon_rich_iron.title"
     },
     "hidden": false
   },

@@ -10,7 +10,9 @@ import {
   writeFileSync
 } from 'node:fs'
 import { dirname, extname, relative, resolve, sep } from 'node:path'
+import { unzipSync } from 'fflate'
 import type {
+  AdvancementGuide,
   AdvancementView,
   IngredientView,
   ItemAttribute,
@@ -43,19 +45,76 @@ interface VanillaLanguageSnapshot {
   entries: Record<string, string>
 }
 
+interface ProjectManifest {
+  pack: {
+    title: string
+    version: string
+  }
+  minecraftVersion: string
+}
+
+interface RawAdvancementGuide {
+  spoiler?: boolean
+  note?: string
+  intendedPath?: string
+  exactCondition: string
+  link?: {
+    label: string
+    to: string
+  }
+  itemModels?: string[]
+  recipeIds?: string[]
+  searchTerms?: string[]
+}
+
+interface AdvancementGuideRegistry {
+  schemaVersion: 1
+  entries: Record<string, RawAdvancementGuide>
+}
+
 const rootDir = resolve(import.meta.dir, '..')
 const packDir = resolve(rootDir, 'pack')
 const generatedDir = resolve(rootDir, 'generated')
 const publicGeneratedDir = resolve(rootDir, 'public/generated')
 const dataDir = resolve(packDir, 'data')
 const assetsDir = resolve(packDir, 'assets/minecraft')
+const project = readJson<ProjectManifest>(resolve(rootDir, 'wiki-data/project.json'))
+const vanillaAssetsPath = resolve(
+  rootDir,
+  `.cache/minecraft/wiki-assets-${project.minecraftVersion}.zip`
+)
+const vanillaAssets = existsSync(vanillaAssetsPath)
+  ? unzipSync(readFileSync(vanillaAssetsPath))
+  : {}
+const vanillaJson = new Map<string, JsonObject>()
 
 const vanillaRu = readJson<VanillaLanguageSnapshot>(
-  resolve(rootDir, 'wiki-data/vanilla-ru-26.2.json')
+  resolve(rootDir, 'wiki-data/vanilla-ru.json')
 )
 const packRu = readJson<Record<string, string>>(resolve(assetsDir, 'lang/ru_ru.json'))
 const ru = { ...vanillaRu.entries, ...packRu }
 const en = readJson<Record<string, string>>(resolve(assetsDir, 'lang/en_us.json'))
+const advancementGuideRegistry = readJson<AdvancementGuideRegistry>(
+  resolve(rootDir, 'wiki-data/advancement-guides.json')
+)
+const bannerColours: Record<string, string> = {
+  black: '#1d1d21',
+  blue: '#3c44aa',
+  brown: '#835432',
+  cyan: '#169c9c',
+  gray: '#474f52',
+  green: '#5e7c16',
+  light_blue: '#3ab3da',
+  light_gray: '#9d9d97',
+  lime: '#80c71f',
+  magenta: '#c74ebd',
+  orange: '#f9801d',
+  pink: '#f38baa',
+  purple: '#8932b8',
+  red: '#b02e26',
+  white: '#f9fffe',
+  yellow: '#fed83d'
+}
 
 const effectNames: Record<string, string> = {
   absorption: 'Поглощение',
@@ -104,20 +163,15 @@ function main(): void {
   const recipes = loadRecipes(tags)
   const variants = captureVariants()
   const items = buildItems(recipes, variants)
-  const advancements = loadAdvancements()
-  const packMeta = readJson<JsonObject>(resolve(packDir, 'pack.mcmeta'))
-  const versionText = flattenText((packMeta.pack as JsonObject | undefined)?.description)
-  const packVersion = versionText.match(/Matcha Flavou?red\D*(\d+\.\d+)/i)?.[1]
-    ?? versionText.match(/(\d+\.\d+)\s+для/i)?.[1]
-    ?? '1.03'
+  const advancements = loadAdvancements(items, recipes)
   const files = walkFiles(packDir)
 
   const catalog: WikiCatalog = {
     generatedAt: new Date().toISOString(),
     pack: {
-      title: 'Matcha Flavoured',
-      version: packVersion,
-      minecraft: versionText.match(/\b26\.\d+(?:\.\d+)?\b/)?.[0] ?? '26.2',
+      title: project.pack.title,
+      version: project.pack.version,
+      minecraft: project.minecraftVersion,
       sha256: hashTree(files)
     },
     stats: {
@@ -152,7 +206,10 @@ function assertSourceTree(): void {
     resolve(packDir, 'pack.mcmeta'),
     resolve(packDir, 'assets/minecraft/lang/ru_ru.json'),
     resolve(packDir, 'data'),
-    resolve(rootDir, 'wiki-data/vanilla-ru-26.2.json')
+    resolve(rootDir, 'wiki-data/project.json'),
+    resolve(rootDir, 'wiki-data/vanilla-ru.json'),
+    resolve(rootDir, 'wiki-data/advancement-guides.json'),
+    vanillaAssetsPath
   ]) {
     if (!existsSync(requiredPath)) {
       throw new Error(`Не найден обязательный источник: ${relative(rootDir, requiredPath)}`)
@@ -218,19 +275,23 @@ function copyIfExists(source: string, target: string): void {
 function loadItemTags(): Map<string, string[]> {
   const directTags = new Map<string, string[]>()
 
+  for (const path of Object.keys(vanillaAssets)
+    .filter(path => /^data\/[^/]+\/tags\/item\/.+\.json$/.test(path))
+    .sort((left, right) => left.localeCompare(right, 'en'))) {
+    const [, namespace, , , ...nameParts] = path.split('/')
+    mergeItemTag(
+      directTags,
+      `${namespace}:${nameParts.join('/').replace(/\.json$/, '')}`,
+      readVanillaJson(path),
+      namespace
+    )
+  }
+
   for (const path of walkFiles(dataDir, file => extname(file) === '.json' && normalizePath(file).includes('/tags/item/'))) {
     const relativePath = normalizePath(relative(dataDir, path))
     const [namespace, , , ...nameParts] = relativePath.split('/')
     const tagId = `${namespace}:${nameParts.join('/').replace(/\.json$/, '')}`
-    const data = readJson<JsonObject>(path)
-    const values = Array.isArray(data.values) ? data.values : []
-    directTags.set(
-      tagId,
-      values
-        .map(value => typeof value === 'string' ? value : isObject(value) ? value.id : undefined)
-        .filter((value): value is string => typeof value === 'string')
-        .map(value => value.startsWith('#') ? `#${normalizeResource(value.slice(1), namespace)}` : normalizeResource(value, namespace))
-    )
+    mergeItemTag(directTags, tagId, readJson<JsonObject>(path), namespace)
   }
 
   const resolved = new Map<string, string[]>()
@@ -257,6 +318,23 @@ function loadItemTags(): Map<string, string[]> {
   }
 
   return resolved
+}
+
+function mergeItemTag(
+  tags: Map<string, string[]>,
+  tagId: string,
+  data: JsonObject,
+  namespace: string
+): void {
+  const values = Array.isArray(data.values) ? data.values : []
+  const normalizedValues = values
+    .map(value => typeof value === 'string' ? value : isObject(value) ? value.id : undefined)
+    .filter((value): value is string => typeof value === 'string')
+    .map(value => value.startsWith('#')
+      ? `#${normalizeResource(value.slice(1), namespace)}`
+      : normalizeResource(value, namespace))
+  const inherited = data.replace === true ? [] : tags.get(tagId) ?? []
+  tags.set(tagId, [...inherited, ...normalizedValues])
 }
 
 function loadRecipes(tags: Map<string, string[]>): RecipeView[] {
@@ -334,7 +412,7 @@ function captureVariants(): Map<string, CapturedVariant[]> {
     const source = sourceFromPath(sourcePath)
     const data = readJson<JsonValue>(path)
 
-    walkJson(data, undefined, value => {
+    walkJson(data, undefined, (value, inheritedCarrier) => {
       if (!isObject(value) || !isObject(value.components)) {
         return
       }
@@ -344,28 +422,16 @@ function captureVariants(): Map<string, CapturedVariant[]> {
         return
       }
 
-      const stack = parseStack(value)
-      if (!stack?.model) {
-        return
-      }
-
-      const bucket = variants.get(stack.model) ?? []
-      bucket.push({ stack, source })
-      variants.set(stack.model, bucket)
-    })
-
-    walkJson(data, undefined, (value, inheritedCarrier) => {
-      if (
-        !isObject(value)
-        || value.function !== 'minecraft:set_components'
-        || !isObject(value.components)
-        || typeof value.components['minecraft:item_model'] !== 'string'
-      ) {
+      const ownCarrier = [value.id, value.name]
+        .find(candidate => typeof candidate === 'string' && isResourceLocation(candidate))
+      const carrier = typeof ownCarrier === 'string' ? ownCarrier : inheritedCarrier
+      if (!carrier) {
         return
       }
 
       const stack = parseStack({
-        id: inheritedCarrier,
+        ...value,
+        id: carrier,
         components: value.components
       })
       if (!stack?.model) {
@@ -373,7 +439,11 @@ function captureVariants(): Map<string, CapturedVariant[]> {
       }
 
       const bucket = variants.get(stack.model) ?? []
-      bucket.push({ stack, source })
+      const occurrence = { stack, source }
+      const signature = JSON.stringify(occurrence)
+      if (!bucket.some(candidate => JSON.stringify(candidate) === signature)) {
+        bucket.push(occurrence)
+      }
       variants.set(stack.model, bucket)
     })
   }
@@ -485,9 +555,10 @@ function buildItems(
       model,
       carrier,
       name,
+      title: name,
       nameKey: candidateNameKey,
       description,
-      icon: iconFor(carrier, model),
+      icon: iconFor(carrier, model, components),
       category: itemCategory(modelPath, carrier, components),
       isCustom,
       lore: extractLore(components),
@@ -506,10 +577,32 @@ function buildItems(
     })
   }
 
+  disambiguateItemTitles(items)
   return items.sort((left, right) => {
     const customOrder = Number(right.isCustom) - Number(left.isCustom)
-    return customOrder || left.name.localeCompare(right.name, 'ru')
+    return customOrder || left.title.localeCompare(right.title, 'ru')
   })
+}
+
+function disambiguateItemTitles(items: ItemView[]): void {
+  const groups = new Map<string, ItemView[]>()
+  for (const item of items) {
+    const group = groups.get(item.name) ?? []
+    group.push(item)
+    groups.set(item.name, group)
+  }
+
+  for (const group of groups.values()) {
+    if (group.length < 2) {
+      continue
+    }
+    for (const item of group) {
+      const qualifier = item.lore[0]
+        ?? item.description
+        ?? formatIdentifier(item.model)
+      item.title = `${item.name}: ${qualifier}`
+    }
+  }
 }
 
 function loadAssetItems(): AssetItem[] {
@@ -520,22 +613,20 @@ function loadAssetItems(): AssetItem[] {
 
   return walkFiles(itemDir, file => extname(file) === '.json').map(path => {
     const idPath = normalizePath(relative(itemDir, path)).replace(/\.json$/, '')
-    const data = readJson<JsonObject>(path)
-    const modelData = isObject(data.model) ? data.model : {}
-    const modelReference = typeof modelData.model === 'string'
-      ? modelData.model
-      : `minecraft:item/${idPath}`
+    const id = `minecraft:${idPath}`
 
     return {
-      id: `minecraft:${idPath}`,
-      model: normalizeModelId(modelReference)
+      id,
+      model: normalizeModelId(id)
     }
   })
 }
 
-function loadAdvancements(): AdvancementView[] {
+function loadAdvancements(items: ItemView[], recipes: RecipeView[]): AdvancementView[] {
   const advancementDir = resolve(dataDir, 'main/advancement')
   const advancements: AdvancementView[] = []
+  const itemsByModel = new Map(items.map(item => [item.model, item]))
+  const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]))
 
   for (const path of walkFiles(advancementDir, file => extname(file) === '.json')) {
     const data = readJson<JsonObject>(path)
@@ -545,6 +636,7 @@ function loadAdvancements(): AdvancementView[] {
 
     const relativePath = normalizePath(relative(advancementDir, path)).replace(/\.json$/, '')
     const section = relativePath.includes('/') ? relativePath.split('/')[0] : 'other'
+    const id = `main:${relativePath}`
     const icon = parseStack(data.display.icon) ?? {
       carrier: 'minecraft:knowledge_book',
       count: 1,
@@ -553,7 +645,7 @@ function loadAdvancements(): AdvancementView[] {
     }
 
     advancements.push({
-      id: `main:${relativePath}`,
+      id,
       slug: slugify(relativePath),
       section,
       parent: typeof data.parent === 'string' ? data.parent : undefined,
@@ -562,11 +654,67 @@ function loadAdvancements(): AdvancementView[] {
       icon,
       frame: typeof data.display.frame === 'string' ? data.display.frame : 'task',
       hidden: data.display.hidden === true,
-      sourcePath: normalizePath(relative(rootDir, path))
+      sourcePath: normalizePath(relative(rootDir, path)),
+      guide: resolveAdvancementGuide(
+        id,
+        advancementGuideRegistry.entries[id],
+        itemsByModel,
+        recipesById
+      )
     })
   }
 
+  const advancementIds = new Set(advancements.map(advancement => advancement.id))
+  const staleGuides = Object.keys(advancementGuideRegistry.entries)
+    .filter(id => !advancementIds.has(id))
+  if (staleGuides.length > 0) {
+    throw new Error(`Гайды ссылаются на отсутствующие достижения: ${staleGuides.join(', ')}`)
+  }
+
   return sortAdvancements(advancements)
+}
+
+function resolveAdvancementGuide(
+  advancementId: string,
+  raw: RawAdvancementGuide | undefined,
+  itemsByModel: Map<string, ItemView>,
+  recipesById: Map<string, RecipeView>
+): AdvancementGuide | undefined {
+  if (!raw) {
+    return undefined
+  }
+
+  const entries: AdvancementGuide['entries'] = []
+  for (const model of raw.itemModels ?? []) {
+    const item = itemsByModel.get(model)
+    if (!item) {
+      throw new Error(`${advancementId}: не найден предмет гайда ${model}`)
+    }
+    entries.push({
+      label: item.title,
+      to: `/items/${item.slug}`
+    })
+  }
+  for (const recipeId of raw.recipeIds ?? []) {
+    const recipe = recipesById.get(recipeId)
+    if (!recipe) {
+      throw new Error(`${advancementId}: не найден рецепт гайда ${recipeId}`)
+    }
+    entries.push({
+      label: recipe.result?.name ?? recipe.id,
+      to: `/recipes/${recipe.namespace}/${recipe.path}`
+    })
+  }
+
+  return {
+    spoiler: raw.spoiler === true,
+    note: raw.note,
+    intendedPath: raw.intendedPath,
+    exactCondition: raw.exactCondition,
+    link: raw.link,
+    entries,
+    searchTerms: raw.searchTerms ?? []
+  }
 }
 
 function sortAdvancements(advancements: AdvancementView[]): AdvancementView[] {
@@ -683,7 +831,7 @@ function parseStack(value: unknown): StackView | undefined {
     model,
     name,
     nameKey,
-    icon: iconFor(carrier, model),
+    icon: iconFor(carrier, model, components),
     components
   }
 }
@@ -835,49 +983,300 @@ function stationName(type: string): string {
   return 'Особый рецепт'
 }
 
-function iconFor(carrier: string, model?: string): string | undefined {
+function iconFor(
+  carrier: string,
+  model?: string,
+  components: JsonObject = {}
+): string | undefined {
   if (model) {
-    const modelTexture = textureForModel(model)
+    const modelTexture = textureForItemDefinition(model, components)
+      ?? textureForModel(model)
     if (modelTexture) {
       return modelTexture
     }
   }
 
-  const path = resourcePath(carrier)
+  const specialPreview = specialPreviewForItem(carrier)
+  if (specialPreview) {
+    return specialPreview
+  }
+
+  const carrierTexture = textureForItemDefinition(carrier, components)
+  if (carrierTexture) {
+    return carrierTexture
+  }
+
+  const normalizedCarrier = normalizeResource(carrier)
+  const path = resourcePath(normalizedCarrier)
+  const blockModelTexture = textureForModel(
+    `${resourceNamespace(normalizedCarrier)}:block/${path}`
+  )
+  if (blockModelTexture) {
+    return blockModelTexture
+  }
+
   for (const type of ['item', 'block']) {
-    const source = resolve(assetsDir, `textures/${type}/${path}.png`)
-    if (existsSync(source)) {
-      return `/generated/textures/${type}/${path}.png`
+    const texture = publicTexture(`${resourceNamespace(normalizedCarrier)}:${type}/${path}`)
+    if (texture) {
+      return texture
     }
   }
 
   return undefined
 }
 
-function textureForModel(model: string, seen = new Set<string>()): string | undefined {
-  const normalized = normalizeModelId(model)
-  if (seen.has(normalized)) {
+function textureForItemDefinition(
+  item: string,
+  components: JsonObject = {}
+): string | undefined {
+  const normalized = normalizeModelId(item)
+  const path = resourcePath(normalized)
+  const definition = readAssetJson(`items/${path}.json`)
+  const model = definition
+    ? firstModelReference(definition.model, components)
+    : undefined
+  return model ? textureForModel(model) : undefined
+}
+
+function firstModelReference(
+  value: unknown,
+  components: JsonObject = {}
+): string | undefined {
+  if (typeof value === 'string') {
+    return normalizeResource(value)
+  }
+  if (!isObject(value)) {
     return undefined
   }
-  seen.add(normalized)
-
-  const path = resourcePath(normalized).replace(/^item\//, '')
-  const modelPath = resolve(assetsDir, `models/item/${path}.json`)
-  if (!existsSync(modelPath)) {
-    return iconFor(`minecraft:${path}`)
+  if (typeof value.model === 'string') {
+    return normalizeResource(value.model)
   }
 
-  const data = readJson<JsonObject>(modelPath)
-  if (isObject(data.textures)) {
-    const layer = data.textures.layer0 ?? data.textures.all
-    if (typeof layer === 'string' && !layer.startsWith('#')) {
-      return publicTexture(layer)
+  if (
+    typeof value.type === 'string'
+    && value.type.replace(/^minecraft:/, '') === 'select'
+    && typeof value.property === 'string'
+    && value.property.replace(/^minecraft:/, '') === 'custom_model_data'
+    && Array.isArray(value.cases)
+  ) {
+    const customModelData = components['minecraft:custom_model_data']
+    const selectedValues = isObject(customModelData) && Array.isArray(customModelData.strings)
+      ? customModelData.strings.filter((entry): entry is string => typeof entry === 'string')
+      : []
+    const selectedCase = value.cases.find(entry => {
+      if (!isObject(entry)) {
+        return false
+      }
+      const expected = Array.isArray(entry.when) ? entry.when : [entry.when]
+      return expected.some(candidate =>
+        typeof candidate === 'string' && selectedValues.includes(candidate)
+      )
+    })
+    const selectedModel = isObject(selectedCase)
+      ? firstModelReference(selectedCase.model, components)
+      : undefined
+    if (selectedModel) {
+      return selectedModel
     }
   }
 
-  return typeof data.parent === 'string'
-    ? textureForModel(data.parent, seen)
-    : iconFor(`minecraft:${path}`)
+  for (const key of ['fallback', 'on_false', 'on_true', 'base']) {
+    const nested = firstModelReference(value[key], components)
+    if (nested) {
+      return nested
+    }
+  }
+
+  for (const key of ['models', 'entries', 'cases']) {
+    const collection = value[key]
+    if (!Array.isArray(collection)) {
+      continue
+    }
+    for (const entry of collection) {
+      const nested = firstModelReference(
+        isObject(entry) && entry.model !== undefined ? entry.model : entry,
+        components
+      )
+      if (nested) {
+        return nested
+      }
+    }
+  }
+
+  return undefined
+}
+
+function specialPreviewForItem(item: string): string | undefined {
+  const path = resourcePath(item)
+  const banner = path.match(/^(.+)_banner$/)
+  if (banner && bannerColours[banner[1]]) {
+    return writeSpecialPreview(path, `
+      <rect width="32" height="32" fill="none"/>
+      <rect x="8" y="2" width="3" height="28" fill="#5b432d"/>
+      <rect x="10" y="3" width="17" height="20" fill="#151515"/>
+      <path d="M11 4h15v17h-4v3h-4v-3h-7z" fill="${bannerColours[banner[1]]}"/>
+      <path d="M11 4h15v3H11zm0 14h11v3H11z" fill="#fff" opacity=".18"/>
+    `)
+  }
+
+  if (path === 'chest' || path === 'trapped_chest') {
+    const metal = path === 'trapped_chest' ? '#a43f32' : '#d9aa36'
+    return writeSpecialPreview(path, `
+      <path d="M4 7h24v19H4z" fill="#2a1a0f"/>
+      <path d="M6 9h20v6H6zm0 9h20v6H6z" fill="#9a5b2d"/>
+      <path d="M6 9h20v2H6zm0 9h20v2H6z" fill="#c77a38"/>
+      <rect x="14" y="14" width="5" height="7" fill="#3b2a18"/>
+      <rect x="15" y="15" width="3" height="4" fill="${metal}"/>
+    `)
+  }
+
+  if (path === 'shield') {
+    return writeSpecialPreview(path, `
+      <path d="M5 3h22v16h-3v5h-4v4h-8v-4H8v-5H5z" fill="#24180f"/>
+      <path d="M8 6h16v12h-3v5h-3v3h-4v-3h-3v-5H8z" fill="#8a5a32"/>
+      <path d="M10 8h12v3H10zm0 5h12v3H10z" fill="#b07a47"/>
+    `)
+  }
+
+  const copper = path.match(/^(?:(exposed|weathered|oxidized)_)?copper_golem_statue$/)
+  if (copper) {
+    const colour = {
+      exposed: '#c77b55',
+      weathered: '#5f9e82',
+      oxidized: '#4f8f78'
+    }[copper[1] ?? ''] ?? '#c8794f'
+    return writeSpecialPreview(path, `
+      <rect x="10" y="3" width="12" height="9" fill="#2b1e18"/>
+      <rect x="11" y="4" width="10" height="7" fill="${colour}"/>
+      <rect x="8" y="13" width="16" height="9" fill="#2b1e18"/>
+      <rect x="10" y="14" width="12" height="7" fill="${colour}"/>
+      <rect x="5" y="14" width="4" height="10" fill="${colour}"/>
+      <rect x="23" y="14" width="4" height="10" fill="${colour}"/>
+      <rect x="10" y="22" width="5" height="7" fill="${colour}"/>
+      <rect x="18" y="22" width="5" height="7" fill="${colour}"/>
+      <rect x="13" y="6" width="2" height="2" fill="#f3d479"/>
+      <rect x="18" y="6" width="2" height="2" fill="#f3d479"/>
+    `)
+  }
+
+  return undefined
+}
+
+function writeSpecialPreview(id: string, body: string): string {
+  const fileName = `${slugify(id)}.svg`
+  const target = resolve(publicGeneratedDir, `previews/${fileName}`)
+  if (!existsSync(target)) {
+    mkdirSync(dirname(target), { recursive: true })
+    writeFileSync(
+      target,
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">${body}</svg>`
+    )
+  }
+  return `/generated/previews/${fileName}`
+}
+
+function textureForModel(model: string): string | undefined {
+  const normalized = normalizeResource(model)
+  const path = resourcePath(normalized)
+  const modelPath = /^(?:block|item)\//.test(path) ? path : `item/${path}`
+  const textures = collectModelTextures(
+    `${resourceNamespace(normalized)}:${modelPath}`,
+    new Set<string>()
+  )
+  for (const key of ['layer0', 'front', 'all', 'side', 'top', 'end', 'particle', 'bottom']) {
+    const reference = resolveTextureReference(textures[key], textures)
+    if (!reference) {
+      continue
+    }
+    const texture = publicTexture(reference)
+    if (texture) {
+      return texture
+    }
+  }
+
+  for (const reference of Object.values(textures)) {
+    const resolvedReference = resolveTextureReference(reference, textures)
+    if (!resolvedReference) {
+      continue
+    }
+    const texture = publicTexture(resolvedReference)
+    if (texture) {
+      return texture
+    }
+  }
+
+  return publicTexture(`${resourceNamespace(normalized)}:${modelPath}`)
+}
+
+function collectModelTextures(
+  model: string,
+  seen: Set<string>
+): Record<string, string> {
+  const normalized = normalizeResource(model)
+  if (seen.has(normalized)) {
+    return {}
+  }
+  seen.add(normalized)
+
+  const data = readAssetJson(`models/${resourcePath(normalized)}.json`)
+  if (!data) {
+    return {}
+  }
+
+  const inherited = typeof data.parent === 'string'
+    ? collectModelTextures(normalizeResource(data.parent), seen)
+    : {}
+  const own = isObject(data.textures)
+    ? Object.fromEntries(
+        Object.entries(data.textures)
+          .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+      )
+    : {}
+  return { ...inherited, ...own }
+}
+
+function resolveTextureReference(
+  reference: string | undefined,
+  textures: Record<string, string>,
+  seen = new Set<string>()
+): string | undefined {
+  if (!reference) {
+    return undefined
+  }
+  if (!reference.startsWith('#')) {
+    return normalizeResource(reference)
+  }
+
+  const key = reference.slice(1)
+  if (seen.has(key)) {
+    return undefined
+  }
+  seen.add(key)
+  return resolveTextureReference(textures[key], textures, seen)
+}
+
+function readAssetJson(path: string): JsonObject | undefined {
+  const packPath = resolve(packDir, `assets/minecraft/${path}`)
+  if (existsSync(packPath)) {
+    return readJson<JsonObject>(packPath)
+  }
+
+  return readVanillaJson(`assets/minecraft/${path}`)
+}
+
+function readVanillaJson(path: string): JsonObject | undefined {
+  if (vanillaJson.has(path)) {
+    return vanillaJson.get(path)
+  }
+
+  const source = vanillaAssets[path]
+  if (!source) {
+    return undefined
+  }
+
+  const value = JSON.parse(Buffer.from(source).toString('utf8')) as JsonObject
+  vanillaJson.set(path, value)
+  return value
 }
 
 function publicTexture(reference: string): string | undefined {
@@ -889,7 +1288,21 @@ function publicTexture(reference: string): string | undefined {
 
   const path = resourcePath(normalized)
   const source = resolve(packDir, `assets/${namespace}/textures/${path}.png`)
-  return existsSync(source) ? `/generated/textures/${path}.png` : undefined
+  if (existsSync(source)) {
+    return `/generated/textures/${path}.png`
+  }
+
+  const vanillaSource = vanillaAssets[`assets/${namespace}/textures/${path}.png`]
+  if (!vanillaSource) {
+    return undefined
+  }
+
+  const target = resolve(publicGeneratedDir, `textures/${path}.png`)
+  if (!existsSync(target)) {
+    mkdirSync(dirname(target), { recursive: true })
+    writeFileSync(target, vanillaSource)
+  }
+  return `/generated/textures/${path}.png`
 }
 
 function nameForResource(resource: string): string {
@@ -944,11 +1357,12 @@ function createSearchIndex(catalog: WikiCatalog): Array<Record<string, unknown>>
   return [
     ...catalog.items.map(item => ({
       kind: 'item',
-      title: item.name,
+      title: item.title,
       description: item.description ?? item.category,
       path: `/items/${item.slug}`,
       icon: item.icon,
       terms: [
+        item.title,
         item.name,
         item.description,
         item.category,
@@ -978,20 +1392,41 @@ function createSearchIndex(catalog: WikiCatalog): Array<Record<string, unknown>>
       kind: 'advancement',
       title: advancement.title,
       description: advancement.description,
-      path: '/progression',
+      path: `/progression#${advancement.slug}`,
       icon: advancement.icon.icon,
-      terms: `${advancement.title} ${advancement.description} ${advancement.id}`
+      terms: [
+        advancement.title,
+        advancement.description,
+        advancement.id,
+        advancement.guide?.note,
+        advancement.guide?.intendedPath,
+        advancement.guide?.exactCondition,
+        advancement.guide?.link?.label,
+        ...(advancement.guide?.searchTerms ?? []),
+        ...(advancement.guide?.entries.map(entry => entry.label) ?? [])
+      ].filter(Boolean).join(' ')
     }))
   ]
 }
 
 function validateCatalog(catalog: WikiCatalog): void {
+  const missingIcons: string[] = []
   const itemSlugs = new Set<string>()
+  const itemTitles = new Set<string>()
   for (const item of catalog.items) {
     if (itemSlugs.has(item.slug)) {
       throw new Error(`Повторяющийся slug предмета: ${item.slug}`)
     }
     itemSlugs.add(item.slug)
+    if (itemTitles.has(item.title)) {
+      throw new Error(`Неоднозначный заголовок предмета: ${item.title}`)
+    }
+    itemTitles.add(item.title)
+    if (!item.icon) {
+      missingIcons.push(`предмет ${item.id}`)
+    } else {
+      validatePublicIcon(item.icon, `предмет ${item.id}`)
+    }
     for (const recipeId of item.recipeIds) {
       if (!catalog.recipes.some(recipe => recipe.id === recipeId)) {
         throw new Error(`Предмет ${item.id} ссылается на отсутствующий рецепт ${recipeId}`)
@@ -1005,10 +1440,45 @@ function validateCatalog(catalog: WikiCatalog): void {
       throw new Error(`Повторяющийся ID рецепта: ${recipe.id}`)
     }
     recipeIds.add(recipe.id)
+    if (recipe.result) {
+      if (!recipe.result.icon) {
+        missingIcons.push(`результат ${recipe.id}`)
+      } else {
+        validatePublicIcon(recipe.result.icon, `результат ${recipe.id}`)
+      }
+    }
+    for (const ingredient of recipe.ingredients) {
+      if (ingredient.icons.length === 0) {
+        missingIcons.push(`ингредиент ${ingredient.tag ?? ingredient.ids.join(', ')} в ${recipe.id}`)
+      } else {
+        for (const icon of ingredient.icons) {
+          validatePublicIcon(icon, `ингредиент в ${recipe.id}`)
+        }
+      }
+    }
+  }
+
+  if (missingIcons.length > 0) {
+    throw new Error(
+      `Каталог содержит ${missingIcons.length} слотов без иконок:\n`
+      + missingIcons.slice(0, 30).map(value => `- ${value}`).join('\n')
+    )
   }
 
   if (catalog.stats.files < 4_000 || catalog.stats.recipes < 900 || catalog.stats.items < 200) {
     throw new Error(`Каталог подозрительно мал: ${JSON.stringify(catalog.stats)}`)
+  }
+}
+
+function validatePublicIcon(icon: string, context: string): void {
+  const prefix = '/generated/'
+  if (!icon.startsWith(prefix)) {
+    throw new Error(`Некорректный путь иконки ${icon}: ${context}`)
+  }
+
+  const path = resolve(publicGeneratedDir, icon.slice(prefix.length))
+  if (!path.startsWith(`${publicGeneratedDir}${sep}`) || !existsSync(path)) {
+    throw new Error(`Иконка ${icon} не существует: ${context}`)
   }
 }
 

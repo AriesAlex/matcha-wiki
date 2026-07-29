@@ -2,17 +2,25 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
-interface VersionManifest {
-  versions: Array<{
-    id: string
-    url: string
-  }>
-}
-
 interface VersionMetadata {
   assetIndex: {
     id: string
     url: string
+  }
+}
+
+interface VanillaVersion {
+  pack: {
+    version: string
+  }
+  minecraftVersion: string
+  versionMetadataUrl: string
+  assetIndex: {
+    id: string
+  }
+  language: {
+    key: string
+    sha1: string
   }
 }
 
@@ -25,31 +33,27 @@ interface AssetIndex {
 
 interface VanillaLanguageSnapshot {
   minecraftVersion: string
+  sourceConfig: string
   assetIndex: string
   objectSha1: string
   sourceUrl: string
   entries: Record<string, string>
 }
 
-const minecraftVersion = '26.2'
-const expectedAssetIndex = '32'
-const expectedLanguageSha1 = '44f2a01ff488842431bb3a9f33c0d3d2dc8e9a2f'
-const languageKey = 'minecraft/lang/ru_ru.json'
-const manifestUrl = 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'
-const outputPath = resolve(import.meta.dir, '../wiki-data/vanilla-ru-26.2.json')
+const version = JSON.parse(
+  readFileSync(resolve(import.meta.dir, '../wiki-data/project.json'), 'utf8')
+) as VanillaVersion
+const minecraftVersion = version.minecraftVersion
+const expectedAssetIndex = version.assetIndex.id
+const expectedLanguageSha1 = version.language.sha1
+const languageKey = version.language.key
+const outputPath = resolve(import.meta.dir, '../wiki-data/vanilla-ru.json')
 const checkOnly = process.argv.includes('--check')
 
 await main()
 
 async function main(): Promise<void> {
-  const manifest = await fetchJson<VersionManifest>(manifestUrl)
-  const version = manifest.versions.find(entry => entry.id === minecraftVersion)
-
-  if (!version) {
-    throw new Error(`Minecraft ${minecraftVersion} отсутствует в официальном manifest`)
-  }
-
-  const metadata = await fetchJson<VersionMetadata>(version.url)
+  const metadata = await fetchJson<VersionMetadata>(version.versionMetadataUrl)
   if (metadata.assetIndex.id !== expectedAssetIndex) {
     throw new Error(
       `Для Minecraft ${minecraftVersion} ожидался asset index ${expectedAssetIndex}, `
@@ -81,6 +85,7 @@ async function main(): Promise<void> {
   )
   const snapshot: VanillaLanguageSnapshot = {
     minecraftVersion,
+    sourceConfig: 'wiki-data/project.json',
     assetIndex: metadata.assetIndex.id,
     objectSha1: expectedLanguageSha1,
     sourceUrl,

@@ -14,14 +14,14 @@
   },
   "display": {
     "description": {
-      "text": "Сделайте керамическую миску из кирпичей"
+      "translate": "advancements.kleispack.tutorial.obtain_bowl.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:bowl"
     },
     "title": {
-      "text": "Манеры прежде всего"
+      "translate": "advancements.kleispack.tutorial.obtain_bowl.title"
     },
     "hidden": false
   },

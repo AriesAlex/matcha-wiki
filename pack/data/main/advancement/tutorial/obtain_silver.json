@@ -24,14 +24,14 @@
   },
   "display": {
     "description": {
-      "text": "Серебро — редкий апотропейный металл, встречающийся только в горах. Оно усиливает свойства сплавов и основных металлов"
+      "translate": "advancements.kleispack.tutorial.obtain_silver.description"
     },
     "icon": {
       "count": 1,
       "id": "minecraft:prismarine_crystals"
     },
     "title": {
-      "text": "Металл-оберег"
+      "translate": "advancements.kleispack.tutorial.obtain_silver.title"
     },
     "frame": "goal",
     "hidden": false
