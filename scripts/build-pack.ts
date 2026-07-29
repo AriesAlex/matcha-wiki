@@ -14,6 +14,9 @@ const rootDir = resolve(import.meta.dir, '..')
 const packDir = resolve(rootDir, 'pack')
 const distDir = resolve(rootDir, 'dist')
 const archivePath = resolve(distDir, 'Matcha_Flavoured_1_03_RU.zip')
+// ZIP stores local calendar fields rather than an instant. Constructing the
+// date in local time keeps the header identical in every runner timezone.
+const archiveMtime = new Date(2000, 0, 1, 0, 0, 0)
 
 if (!existsSync(resolve(packDir, 'pack.mcmeta'))) {
   throw new Error('Не найден pack/pack.mcmeta')
@@ -30,7 +33,7 @@ for (const path of walkFiles(packDir)) {
   const archiveName = relative(packDir, path).replaceAll('\\', '/')
   files[archiveName] = [
     new Uint8Array(readFileSync(path)),
-    { mtime: new Date('2000-01-01T00:00:00Z') }
+    { mtime: archiveMtime }
   ]
 }
 
@@ -42,7 +45,7 @@ for (const [sourceName, archiveName] of [
   if (existsSync(source)) {
     files[archiveName] = [
       new TextEncoder().encode(readFileSync(source, 'utf8')),
-      { mtime: new Date('2000-01-01T00:00:00Z') }
+      { mtime: archiveMtime }
     ]
   }
 }
