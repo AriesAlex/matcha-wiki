@@ -31,8 +31,8 @@
       </header>
       <ul class="ingredient-list">
         <li
-          v-for="(entry, index) in ingredientEntries"
-          :key="`${entry.ingredient.label}:${index}`"
+          v-for="entry in ingredientEntries"
+          :key="entry.key"
         >
           <ItemSlot :ingredient="entry.ingredient" />
           <span>
@@ -41,11 +41,27 @@
               :item="entry.item"
               class="ingredient-link"
             >
-              <strong><MinecraftText :text="entry.item.title" /></strong>
+              <strong>
+                <MinecraftText :text="entry.item.title" />
+                <template v-if="entry.count > 1"> ×{{ entry.count }}</template>
+              </strong>
             </ItemReference>
-            <strong v-else>
-              <MinecraftText :text="entry.ingredient.label" />
-            </strong>
+            <ItemReference
+              v-else
+              :ingredient="entry.ingredient"
+              class="ingredient-reference"
+            >
+              <strong>
+                <MinecraftText :text="entry.ingredient.label" />
+                <template v-if="entry.count > 1"> ×{{ entry.count }}</template>
+              </strong>
+            </ItemReference>
+            <span
+              v-if="entry.explanation"
+              class="ingredient-explanation"
+            >
+              {{ entry.explanation }}
+            </span>
             <code v-if="entry.ingredient.tag">#{{ entry.ingredient.tag }}</code>
             <code v-else>{{ entry.ingredient.ids.join(' | ') }}</code>
           </span>
@@ -78,6 +94,7 @@
 
 <script setup lang="ts">
 import { PhArrowLeft, PhCode, PhGitBranch } from '@phosphor-icons/vue'
+import type { IngredientView } from '~/types/wiki'
 
 const route = useRoute()
 const catalog = useWikiCatalog()
@@ -107,12 +124,44 @@ const resultItem = computed(() => {
   if (!result) return undefined
   return resolveStackItem(catalog.items, result)
 })
-const ingredientEntries = computed(() => (
-  recipe.value?.ingredients.map(ingredient => ({
-    ingredient,
-    item: resolveIngredientItem(catalog.items, ingredient)
-  })) ?? []
-))
+const ingredientEntries = computed(() => {
+  const entries = new Map<string, {
+    key: string
+    ingredient: IngredientView
+    count: number
+  }>()
+  for (const ingredient of recipe.value?.ingredients ?? []) {
+    const key = JSON.stringify({
+      label: ingredient.label,
+      tag: ingredient.tag,
+      ids: ingredient.ids
+    })
+    const entry = entries.get(key) ?? { key, ingredient, count: 0 }
+    entry.count += 1
+    entries.set(key, entry)
+  }
+  return [...entries.values()].map(entry => ({
+    ...entry,
+    item: resolveIngredientItem(catalog.items, entry.ingredient),
+    explanation: ingredientExplanation(entry.ingredient)
+  }))
+})
+
+function ingredientExplanation(ingredient: IngredientView): string {
+  const entries = ingredient.ids
+    .map(id => catalog.ingredientGlossary[id])
+    .filter(entry => entry !== undefined)
+  const renamed = entries
+    .filter(entry => entry.vanillaName && entry.vanillaName !== entry.name)
+    .map(entry => `${entry.name} — это ${entry.vanillaName} (${entry.id})`)
+  const hints = [...new Set(entries
+    .filter(entry => entry.curated || (
+      entry.vanillaName !== undefined && entry.vanillaName !== entry.name
+    ))
+    .map(entry => entry.obtainHint)
+    .filter(Boolean))]
+  return [...renamed, ...hints].join('. ')
+}
 
 useSeoMeta({
   title: () => `Рецепт: ${stripMinecraftFormatting(
@@ -194,6 +243,19 @@ useSeoMeta({
 
       .ingredient-link {
         width: fit-content;
+      }
+
+      .ingredient-reference {
+        width: fit-content;
+        cursor: help;
+      }
+
+      .ingredient-explanation {
+        max-width: 680px;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
       }
     }
   }

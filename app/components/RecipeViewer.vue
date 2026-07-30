@@ -142,14 +142,18 @@
           >
             <MinecraftText :text="entry.item.title" />
           </ItemReference>
-          <MinecraftText
+          <ItemReference
             v-else
-            :text="entry.ingredient.label"
-          />
+            :ingredient="entry.ingredient"
+            class="ingredient-reference"
+          >
+            <MinecraftText :text="entry.ingredient.label" />
+          </ItemReference>
         </template>
       </template>
     </p>
     <NuxtLink
+      v-if="showDetailsLink"
       class="details"
       :to="detailsLink"
     >
@@ -167,6 +171,7 @@ const props = defineProps<{
 }>()
 
 const catalog = useWikiCatalog()
+const route = useRoute()
 const kind = computed(() => props.recipe.type.replace(/^.*:/, ''))
 const typeTitles: Record<string, string> = {
   crafting_shaped: 'Верстак: рецепт с формой',
@@ -228,6 +233,7 @@ const ingredientReferences = computed(() => {
   }))
 })
 const detailsLink = computed(() => `/recipes/${props.recipe.namespace}/${props.recipe.path}`)
+const showDetailsLink = computed(() => normalizeWikiPath(route.path) !== detailsLink.value)
 </script>
 
 <style scoped lang="scss">
@@ -300,7 +306,7 @@ const detailsLink = computed(() => `/recipes/${props.recipe.namespace}/${props.r
       overflow-wrap: anywhere;
     }
 
-    .result small .item-reference {
+    .result small .item-reference.linked {
       color: var(--recipe-link);
       text-decoration: underline;
       text-underline-offset: 0.2em;
@@ -325,11 +331,15 @@ const detailsLink = computed(() => `/recipes/${props.recipe.namespace}/${props.r
     font-size: 13px;
     overflow-wrap: anywhere;
 
-    .summary-link {
+    .summary-link.linked {
       color: var(--recipe-link);
       font-weight: 700;
       text-decoration: underline;
       text-underline-offset: 0.2em;
+    }
+
+    .ingredient-reference {
+      cursor: help;
     }
   }
 

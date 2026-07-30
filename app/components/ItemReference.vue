@@ -1,8 +1,12 @@
 <template>
-  <NuxtLink
+  <component
+    :is="referenceComponent"
     v-bind="$attrs"
     class="item-reference"
-    :to="`/items/${item.slug}`"
+    :class="{ linked: referencePath }"
+    :to="referencePath || undefined"
+    :tabindex="referencePath ? undefined : 0"
+    :role="referencePath ? undefined : 'note'"
     :aria-describedby="visible ? tooltipId : undefined"
     @pointerenter="showAtPointer"
     @pointermove="moveWithPointer"
@@ -12,7 +16,7 @@
     @keydown.esc="hide"
   >
     <slot />
-  </NuxtLink>
+  </component>
 
   <Teleport to="body">
     <aside
@@ -23,31 +27,88 @@
       role="tooltip"
       :style="{ left: `${left}px`, top: `${top}px` }"
     >
-      <strong><MinecraftText :text="item.title" /></strong>
+      <strong><MinecraftText :text="tooltipTitle" /></strong>
       <p
-        v-for="line in item.lore.slice(0, 3)"
+        v-for="line in tooltipLore"
         :key="line"
       >
         <MinecraftText :text="line" />
       </p>
-      <code>{{ item.model ?? item.carrier }}</code>
-      <small v-if="item.model">Основа: {{ item.carrier }}</small>
-      <small v-else>Вариант задаётся components</small>
+      <template v-if="ingredientEntries.length">
+        <div
+          v-for="entry in ingredientEntries"
+          :key="entry.id"
+          class="identity"
+        >
+          <span v-if="entry.vanillaName && entry.vanillaName !== entry.name">
+            В обычном Minecraft: <b>{{ entry.vanillaName }}</b>
+          </span>
+          <span v-else>Ванильный предмет: <b>{{ entry.name }}</b></span>
+          <code>{{ entry.id }}</code>
+          <small v-if="entry.obtainHint">{{ entry.obtainHint }}</small>
+        </div>
+      </template>
+      <template v-else-if="item">
+        <code>{{ item.model ?? item.carrier }}</code>
+        <small v-if="item.model">
+          Техническая основа: {{ itemBaseName }} · {{ item.carrier }}
+        </small>
+        <small v-else>Вариант задаётся components</small>
+      </template>
+      <code v-else-if="stack">{{ stack.carrier }}</code>
     </aside>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import type { ItemView } from '../types/wiki'
+import type { IngredientView, ItemView, StackView } from '../types/wiki'
 
 defineOptions({
   inheritAttrs: false
 })
 
-defineProps<{
-  item: ItemView
-}>()
+const props = withDefaults(defineProps<{
+  item?: ItemView
+  ingredient?: IngredientView
+  stack?: StackView
+}>(), {
+  item: undefined,
+  ingredient: undefined,
+  stack: undefined
+})
 
+const route = useRoute()
+const catalog = useWikiCatalog()
+const itemPath = computed(() => props.item ? `/items/${props.item.slug}` : '')
+const referencePath = computed(() => (
+  itemPath.value && normalizeWikiPath(route.path) !== itemPath.value
+    ? itemPath.value
+    : ''
+))
+const referenceComponent = computed(() => (
+  referencePath.value ? resolveComponent('NuxtLink') : 'span'
+))
+const tooltipTitle = computed(() => (
+  props.item?.title
+  ?? props.ingredient?.label
+  ?? props.stack?.name
+  ?? 'Неизвестный предмет'
+))
+const tooltipLore = computed(() => props.item?.lore.slice(0, 3) ?? [])
+const glossaryIds = computed(() => (
+  props.ingredient?.ids ?? (props.stack ? [props.stack.carrier] : [])
+))
+const ingredientEntries = computed(() => (
+  glossaryIds.value
+    .map(id => catalog.ingredientGlossary[id])
+    .filter(entry => entry !== undefined)
+    .slice(0, 4)
+))
+const itemBaseName = computed(() => (
+  props.item
+    ? catalog.ingredientGlossary[props.item.carrier]?.vanillaName ?? props.item.carrier
+    : ''
+))
 const tooltipId = useId()
 const tooltip = useTemplateRef<HTMLElement>('tooltip')
 const visible = ref(false)
@@ -99,8 +160,8 @@ function hide(): void {
   color: inherit;
   text-decoration: none;
 
-  &:hover,
-  &:focus-visible {
+  &.linked:hover,
+  &.linked:focus-visible {
     color: var(--accent);
   }
 }
@@ -139,6 +200,24 @@ function hide(): void {
     color: #bfbfbf;
   }
 
+  .identity {
+    margin-top: 6px;
+
+    span,
+    code,
+    small {
+      display: block;
+    }
+
+    span {
+      color: #bfbfbf;
+    }
+
+    b {
+      color: #fff;
+    }
+  }
+
   code {
     margin-top: 5px;
     color: #aaa;
@@ -147,7 +226,7 @@ function hide(): void {
 
   small {
     margin-top: 2px;
-    color: #5555ff;
+    color: #aaaaff;
     font-size: 11px;
   }
 }

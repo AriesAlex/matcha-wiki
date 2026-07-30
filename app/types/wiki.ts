@@ -30,6 +30,14 @@ export interface IngredientView {
   icons: string[]
 }
 
+export interface IngredientGlossaryEntry {
+  id: string
+  name: string
+  vanillaName?: string
+  obtainHint?: string
+  curated?: boolean
+}
+
 export interface RecipeView {
   id: string
   namespace: string
@@ -119,6 +127,7 @@ export interface WikiCatalog {
     recipes: number
     advancements: number
   }
+  ingredientGlossary: Record<string, IngredientGlossaryEntry>
   items: ItemView[]
   recipes: RecipeView[]
   advancements: AdvancementView[]

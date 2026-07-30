@@ -7,8 +7,8 @@
     <li v-for="heading in links" :key="heading.id">
       <NuxtLink
         class="article-anchor"
-        :class="{ current: route.hash === `#${heading.id}` }"
-        :to="{ path: route.path, hash: `#${heading.id}` }"
+        :class="{ current: isCurrent(heading.id) }"
+        :to="{ path, hash: `#${heading.id}` }"
       >
         {{ heading.text }}
       </NuxtLink>
@@ -16,8 +16,8 @@
         <li v-for="child in heading.children" :key="child.id">
           <NuxtLink
             class="article-anchor"
-            :class="{ current: route.hash === `#${child.id}` }"
-            :to="{ path: route.path, hash: `#${child.id}` }"
+            :class="{ current: isCurrent(child.id) }"
+            :to="{ path, hash: `#${child.id}` }"
           >
             {{ child.text }}
           </NuxtLink>
@@ -30,11 +30,17 @@
 <script setup lang="ts">
 import type { WikiTocLink } from '~/types/wiki'
 
-defineProps<{
+const props = defineProps<{
   links: WikiTocLink[]
+  path: string
 }>()
 
 const route = useRoute()
+
+function isCurrent(id: string): boolean {
+  return normalizeWikiPath(route.path) === normalizeWikiPath(props.path)
+    && route.hash === `#${id}`
+}
 </script>
 
 <style scoped lang="scss">

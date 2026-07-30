@@ -50,8 +50,9 @@
               class="branch-panel"
             >
               <WikiArticleToc
-                v-if="isCurrent(link.to)"
-                :links="articleHeadings"
+                v-if="headingsFor(link.to).length"
+                :links="headingsFor(link.to)"
+                :path="link.to"
               />
 
               <ul v-if="link.children?.length" class="nav-children">
@@ -78,10 +79,11 @@
                     </button>
                   </div>
                   <WikiArticleToc
-                    v-if="isCurrent(child.to)"
+                    v-if="headingsFor(child.to).length"
                     v-show="isExpanded(child.to)"
                     :id="panelId(child.to)"
-                    :links="articleHeadings"
+                    :links="headingsFor(child.to)"
+                    :path="child.to"
                   />
                 </li>
               </ul>
@@ -125,27 +127,28 @@ const emit = defineEmits<{
 const route = useRoute()
 const currentPath = computed(() => normalizeWikiPath(route.path))
 
-const { data: currentArticle } = await useAsyncData(
-  () => `wiki:sidebar-article:${currentPath.value}`,
-  () => queryCollection('wiki')
-    .path(currentPath.value)
-    .first()
+const { data: articles } = await useAsyncData(
+  'wiki:sidebar-articles',
+  () => queryCollection('wiki').all()
 )
 
-const articleHeadings = computed<WikiTocLink[]>(
-  () => (currentArticle.value?.body?.toc?.links as WikiTocLink[] | undefined) ?? []
-)
+const headingsByPath = computed(() => new Map(
+  (articles.value ?? []).map(article => [
+    normalizeWikiPath(article.path),
+    (article.body?.toc?.links as WikiTocLink[] | undefined) ?? []
+  ])
+))
 const expandedPaths = ref<string[]>([])
 
 watch(
-  [currentPath, () => articleHeadings.value.length],
+  currentPath,
   () => {
     const activePaths = wikiNavigation.flatMap(section => section.links.flatMap((link) => {
       const paths: string[] = []
       if (isBranchActive(link)) paths.push(link.to)
-      if (isCurrent(link.to) && articleHeadings.value.length) paths.push(link.to)
+      if (isCurrent(link.to) && headingsFor(link.to).length) paths.push(link.to)
       link.children?.forEach((child) => {
-        if (isCurrent(child.to) && articleHeadings.value.length) paths.push(child.to)
+        if (isCurrent(child.to) && headingsFor(child.to).length) paths.push(child.to)
       })
       return paths
     }))
@@ -163,7 +166,11 @@ function isBranchActive(link: WikiNavigationLink): boolean {
 }
 
 function hasExpandableContent(link: WikiNavigationLink): boolean {
-  return Boolean(link.children?.length || (isCurrent(link.to) && articleHeadings.value.length))
+  return Boolean(link.children?.length || headingsFor(link.to).length)
+}
+
+function headingsFor(path: string): WikiTocLink[] {
+  return headingsByPath.value.get(normalizeWikiPath(path)) ?? []
 }
 
 function isExpanded(path: string): boolean {

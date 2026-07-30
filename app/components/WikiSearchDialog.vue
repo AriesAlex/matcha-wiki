@@ -62,8 +62,8 @@
               >
             </span>
             <span>
-              <small>{{ kindLabels[entry.kind] }}</small>
               <strong><MinecraftText :text="entry.title" /></strong>
+              <small>{{ kindLabels[entry.kind] }}</small>
               <span><MinecraftText :text="entry.description" /></span>
             </span>
             <PhArrowRight
@@ -267,9 +267,16 @@ function normalizeSearch(value: string): string {
     }
 
     small {
+      margin-top: 1px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    strong {
       color: var(--accent);
       font-family: 'Tiny5', monospace;
-      font-size: 15px;
+      font-size: 17px;
+      line-height: 1.1;
     }
 
     strong,

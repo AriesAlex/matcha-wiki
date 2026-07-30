@@ -175,6 +175,32 @@ describe('generated wiki catalog', () => {
     }
   })
 
+  it('explains renamed vanilla ingredients and how to obtain opaque resources', () => {
+    const ingredientIds = new Set(catalog.recipes.flatMap(recipe =>
+      recipe.ingredients.flatMap(ingredient => ingredient.ids)
+    ))
+
+    for (const id of ingredientIds) {
+      expect(catalog.ingredientGlossary[id], `Missing ingredient glossary entry for ${id}`)
+        .toBeDefined()
+    }
+
+    expect(catalog.ingredientGlossary['minecraft:gunpowder']).toMatchObject({
+      name: 'Кусок серы',
+      vanillaName: 'Порох',
+      curated: true
+    })
+    expect(catalog.ingredientGlossary['minecraft:gunpowder']?.obtainHint)
+      .toContain('серных кубов')
+    expect(catalog.ingredientGlossary['minecraft:azure_bluet']).toMatchObject({
+      name: 'Хаустония серая',
+      vanillaName: 'Хаустония серая',
+      curated: true
+    })
+    expect(catalog.ingredientGlossary['minecraft:azure_bluet']?.obtainHint)
+      .toContain('равнинах')
+  })
+
   it('documents cryptic and secret advancements with stable deep links', () => {
     const advancements = new Map(catalog.advancements.map(entry => [entry.id, entry]))
 

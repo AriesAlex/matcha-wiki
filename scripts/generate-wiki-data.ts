@@ -14,6 +14,7 @@ import { unzipSync } from 'fflate'
 import type {
   AdvancementGuide,
   AdvancementView,
+  IngredientGlossaryEntry,
   IngredientView,
   ItemAttribute,
   ItemEffect,
@@ -76,6 +77,11 @@ interface AdvancementGuideRegistry {
   entries: Record<string, RawAdvancementGuide>
 }
 
+interface IngredientGuideRegistry {
+  schemaVersion: 1
+  entries: Record<string, string>
+}
+
 const rootDir = resolve(import.meta.dir, '..')
 const packDir = resolve(rootDir, 'pack')
 const generatedDir = resolve(rootDir, 'generated')
@@ -100,6 +106,9 @@ const ru = { ...vanillaRu.entries, ...packRu }
 const en = readJson<Record<string, string>>(resolve(assetsDir, 'lang/en_us.json'))
 const advancementGuideRegistry = readJson<AdvancementGuideRegistry>(
   resolve(rootDir, 'wiki-data/advancement-guides.json')
+)
+const ingredientGuideRegistry = readJson<IngredientGuideRegistry>(
+  resolve(rootDir, 'wiki-data/ingredient-guides.ru.json')
 )
 const bannerColours: Record<string, string> = {
   black: '#1d1d21',
@@ -165,6 +174,7 @@ function main(): void {
 
   const tags = loadItemTags()
   const recipes = loadRecipes(tags)
+  const ingredientGlossary = buildIngredientGlossary(recipes)
   const variants = captureVariants()
   const items = buildItems(recipes, variants)
   const advancements = loadAdvancements(items, recipes)
@@ -185,6 +195,7 @@ function main(): void {
       recipes: recipes.length,
       advancements: advancements.length
     },
+    ingredientGlossary,
     items,
     recipes,
     advancements
@@ -213,6 +224,7 @@ function assertSourceTree(): void {
     resolve(rootDir, 'wiki-data/project.json'),
     resolve(rootDir, 'wiki-data/vanilla-ru.json'),
     resolve(rootDir, 'wiki-data/advancement-guides.json'),
+    resolve(rootDir, 'wiki-data/ingredient-guides.ru.json'),
     vanillaAssetsPath
   ]) {
     if (!existsSync(requiredPath)) {
@@ -875,6 +887,120 @@ function normalizeIngredient(value: unknown, tags: Map<string, string[]>): Ingre
   }
 }
 
+function buildIngredientGlossary(
+  recipes: RecipeView[]
+): Record<string, IngredientGlossaryEntry> {
+  const ids = new Set(recipes.flatMap(recipe => [
+    ...recipe.ingredients.flatMap(ingredient => ingredient.ids),
+    ...(recipe.result ? [recipe.result.carrier] : [])
+  ]))
+  const sourceIndex = collectIngredientSources(ids)
+
+  return Object.fromEntries([...ids].sort().map((id) => {
+    const automaticHint = describeIngredientSources(id, recipes, sourceIndex.get(id))
+    return [id, {
+      id,
+      name: nameForResource(id),
+      vanillaName: vanillaNameForResource(id),
+      obtainHint: ingredientGuideRegistry.entries[id] ?? automaticHint,
+      curated: ingredientGuideRegistry.entries[id] ? true : undefined
+    }]
+  }))
+}
+
+interface IngredientSources {
+  entities: Set<string>
+  blocks: Set<string>
+  chests: boolean
+  fishing: boolean
+  archaeology: boolean
+  trading: boolean
+}
+
+function collectIngredientSources(ids: Set<string>): Map<string, IngredientSources> {
+  const result = new Map<string, IngredientSources>()
+  const sourceFor = (id: string): IngredientSources => {
+    const existing = result.get(id)
+    if (existing) return existing
+    const created = {
+      entities: new Set<string>(),
+      blocks: new Set<string>(),
+      chests: false,
+      fishing: false,
+      archaeology: false,
+      trading: false
+    }
+    result.set(id, created)
+    return created
+  }
+
+  for (const path of walkFiles(dataDir, file => extname(file) === '.json')) {
+    const sourcePath = normalizePath(relative(dataDir, path))
+    const isLootTable = sourcePath.includes('/loot_table/')
+    const isTrade = sourcePath.includes('/villager_trade/')
+    if (!isLootTable && !isTrade) continue
+
+    const data = readJson<JsonValue>(path)
+    walkJson(data, undefined, (value) => {
+      if (!isObject(value)) return
+      const rawId = isLootTable && value.type === 'minecraft:item'
+        ? value.name
+        : isTrade
+          ? value.id
+          : undefined
+      if (typeof rawId !== 'string') return
+
+      const id = normalizeResource(rawId)
+      if (!ids.has(id)) return
+      const sources = sourceFor(id)
+      if (isTrade) {
+        sources.trading = true
+        return
+      }
+
+      const entity = sourcePath.match(/\/loot_table\/entities\/(.+)\.json$/)
+      const block = sourcePath.match(/\/loot_table\/blocks\/(.+)\.json$/)
+      if (entity) sources.entities.add(entitySourceName(entity[1]))
+      else if (block) sources.blocks.add(nameForResource(`minecraft:${block[1]}`))
+      else if (sourcePath.includes('/loot_table/chests/')) sources.chests = true
+      else if (sourcePath.includes('/loot_table/gameplay/fishing')) sources.fishing = true
+      else if (sourcePath.includes('/loot_table/archaeology/')) sources.archaeology = true
+    })
+  }
+
+  return result
+}
+
+function describeIngredientSources(
+  id: string,
+  recipes: RecipeView[],
+  sources?: IngredientSources
+): string | undefined {
+  const clauses: string[] = []
+  const recipeCount = recipes.filter(recipe => recipe.result?.carrier === id).length
+  const entities = [...(sources?.entities ?? [])].slice(0, 3)
+  const blocks = [...(sources?.blocks ?? [])].slice(0, 3)
+
+  if (entities.length) clauses.push(`Выпадает из: ${entities.join(', ')}`)
+  if (blocks.length) clauses.push(`Добывается из блоков: ${blocks.join(', ')}`)
+  if (sources?.fishing) clauses.push('Можно выловить')
+  if (sources?.trading) clauses.push('Можно получить торговлей')
+  if (sources?.archaeology) clauses.push('Встречается в археологии')
+  if (sources?.chests) clauses.push('Встречается в сундуках')
+  if (recipeCount) {
+    const recipeWord = recipeCount === 1 ? 'рецепт' : recipeCount < 5 ? 'рецепта' : 'рецептов'
+    clauses.push(`Есть ${recipeCount} ${recipeWord} получения`)
+  }
+
+  return clauses.length ? `${clauses.join('. ')}.` : undefined
+}
+
+function entitySourceName(id: string): string {
+  const spawnEgg = ru[`item.minecraft.${id.replaceAll('/', '.')}_spawn_egg`]
+  return spawnEgg?.replace(/^Яйцо призыва /, '').toLocaleLowerCase('ru-RU')
+    ?? formatIdentifier(id)
+}
+
 function parseStack(value: unknown): StackView | undefined {
   if (typeof value === 'string') {
     const carrier = normalizeResource(value)
@@ -1393,6 +1519,14 @@ function nameForResource(resource: string): string {
   ]) ?? formatIdentifier(resource)
 }
 
+function vanillaNameForResource(resource: string): string | undefined {
+  const path = resourcePath(resource).replaceAll('/', '.')
+  return [
+    `item.minecraft.${path}`,
+    `block.minecraft.${path}`
+  ].map(key => vanillaRu.entries[key]).find(Boolean)
+}
+
 function firstTranslation(keys: string[]): string | undefined {
   const key = firstTranslationKey(keys)
   return key ? translateKey(key) : undefined
@@ -1473,7 +1607,10 @@ function createSearchIndex(catalog: WikiCatalog): Array<Record<string, unknown>>
             ingredientTitles[index],
             ingredient.label,
             ingredient.tag,
-            ...ingredient.ids
+            ...ingredient.ids.flatMap((id) => {
+              const glossary = catalog.ingredientGlossary[id]
+              return [id, glossary?.name, glossary?.vanillaName, glossary?.obtainHint]
+            })
           ])
         ].filter(Boolean).join(' ')
       }

@@ -1,33 +1,37 @@
 <template>
-  <component
-    :is="resolvedItem ? ItemReference : 'span'"
+  <span
     class="slot"
     :class="{ large, empty: isEmpty }"
-    :item="resolvedItem"
-    :role="resolvedItem ? undefined : 'img'"
-    :aria-label="displayName"
-    :title="resolvedItem ? undefined : displayName"
   >
-    <img
-      v-if="!isEmpty && iconUrl"
-      class="icon"
-      :src="iconUrl"
-      :alt="displayName"
-      width="32"
-      height="32"
-      draggable="false"
+    <ItemReference
+      v-if="!isEmpty"
+      class="slot-target"
+      :item="resolvedItem"
+      :ingredient="ingredient"
+      :stack="stack"
+      :aria-label="displayName"
     >
-    <span
-      v-else-if="!isEmpty"
-      class="fallback"
-      aria-hidden="true"
-    >{{ fallbackMark }}</span>
+      <img
+        v-if="iconUrl"
+        class="icon"
+        :src="iconUrl"
+        :alt="displayName"
+        width="32"
+        height="32"
+        draggable="false"
+      >
+      <span
+        v-else
+        class="fallback"
+        aria-hidden="true"
+      >{{ fallbackMark }}</span>
+    </ItemReference>
     <b
       v-if="showCount"
       class="count"
       aria-hidden="true"
     >{{ stack?.count }}</b>
-  </component>
+  </span>
 </template>
 
 <script setup lang="ts">
@@ -107,6 +111,14 @@ const showCount = computed(() => Boolean(props.stack && props.stack.count > 1))
     object-fit: contain;
     image-rendering: pixelated;
     user-select: none;
+  }
+
+  > :deep(.slot-target) {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .fallback {
