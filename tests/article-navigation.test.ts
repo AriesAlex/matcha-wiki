@@ -52,6 +52,14 @@ describe('article heading navigation', () => {
     ], 88)).toBe('nested')
   })
 
+  it('tolerates subpixel scroll-margin rounding at the activation line', () => {
+    expect(pickActiveHeading([
+      { id: 'first', top: -120 },
+      { id: 'nested', top: 88.5 },
+      { id: 'last', top: 240 }
+    ], 88)).toBe('nested')
+  })
+
   it('has no active subsection before the first heading', () => {
     expect(pickActiveHeading([
       { id: 'first', top: 140 },

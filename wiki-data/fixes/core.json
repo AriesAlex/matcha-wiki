@@ -178,6 +178,14 @@
       ],
       "summary": "Удалены девять недостижимых item definition и их обрывки моделей: на них не ссылались recipes, loot, trades или functions, а необходимые текстуры отсутствовали. Рабочие uncooked-блюда и действующее titanium-снаряжение не затронуты.",
       "evidenceType": "asset_reference_graph_and_usage_scan"
+    },
+    {
+      "id": "core-fisherman-opah-trade",
+      "files": [
+        "pack/data/minecraft/tags/villager_trade/fisherman/custom_level_4.json"
+      ],
+      "summary": "Опах добавлен в активный набор Рыбака четвёртого уровня. Набор снова содержит все 11 сделок, которые запрашивает его trade_set.",
+      "evidenceType": "trade_set_tag_invariant"
     }
   ]
 }

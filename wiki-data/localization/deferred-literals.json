@@ -5220,7 +5220,7 @@
       "source": "json",
       "file": "data/minecraft/villager_trade/weaponsmith/1/iou.json",
       "jsonPointer": "/gives/components/minecraft:item_name",
-      "literal": "IOU",
+      "literal": "Записка оружейника",
       "reason": "persistent_trade_component"
     },
     {

@@ -2,7 +2,7 @@
   "pack": {
     "title": "Matcha Flavoured",
     "version": "1.03",
-    "forkRevision": 4,
+    "forkRevision": 5,
     "artifactName": "Matcha_Flavoured"
   },
   "minecraftVersion": "26.2",

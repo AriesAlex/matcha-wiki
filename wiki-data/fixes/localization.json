@@ -36,6 +36,20 @@
         "Все пять языковых таблиц синхронизируются одним генератором; read-only аудит входит в data, test и validate.",
         "Официальный dedicated server 26.2 загрузил итоговое дерево без data errors."
       ]
+    },
+    {
+      "id": "LOCALIZATION-02",
+      "files": [
+        "pack/data/minecraft/villager_trade/weaponsmith/1/iou.json",
+        "tests/localization.test.ts",
+        "wiki-data/localization/deferred-literals.json"
+      ],
+      "summary": "Активная книга оружейника больше не выдаёт англоязычную авторскую заметку за игровую награду: русское имя и текст честно обозначают её временной заглушкой без игровой пользы. ID сделки и структура выдаваемого предмета сохранены.",
+      "evidence": [
+        "Сделка minecraft:weaponsmith/1/iou остаётся в исходном trade set и по-прежнему выдаёт writable_book за один блок земли.",
+        "Регрессия проверяет русские literal-строки и отсутствие исходного англоязычного сообщения.",
+        "Deferred-инвентарь обновлён штатным генератором без преобразования persistent trade literals в translate-компоненты."
+      ]
     }
   ],
   "deferred": [

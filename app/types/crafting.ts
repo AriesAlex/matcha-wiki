@@ -36,6 +36,16 @@ export interface CraftingPlannerSupplement {
   recipesByResult: Record<string, CraftingSupplementRecipe[]>
 }
 
+export type CraftingSourceKind = 'location' | 'mob' | 'trader'
+
+export interface CraftingSourceView {
+  id: string
+  kind: CraftingSourceKind
+  title: string
+  detail: string
+  path: string
+}
+
 export interface CraftingTargetView {
   key: string
   kind: 'item' | 'resource'
@@ -45,6 +55,7 @@ export interface CraftingTargetView {
   item?: ItemView
   vanillaName?: string
   obtainHint?: string
+  sources?: readonly CraftingSourceView[]
 }
 
 export interface CraftingIndex {

@@ -1,73 +1,113 @@
 <template>
-  <section class="crafting-path">
+  <section
+    v-if="canBuildPath"
+    class="crafting-path"
+    aria-labelledby="crafting-path-heading"
+  >
     <header>
       <div>
         <p class="eyebrow">Путь изготовления</p>
-        <h2>С чего начать</h2>
+        <h2 id="crafting-path-heading">С чего начать</h2>
         <p>
-          Отмечайте то, что уже лежит в инвентаре. Ветка пересчитается и
-          оставит только недостающие шаги.
+          Это живая карта подготовки. Нажмите предмет, который уже получили:
+          он и всё под ним будут отмечены готовыми.
         </p>
       </div>
+
       <button
-        v-if="hasProgress"
+        v-if="hasRouteProgress"
         type="button"
-        @click="progress.reset"
+        @click="clearRouteProgress"
       >
         <PhArrowCounterClockwise :size="17" aria-hidden="true" />
-        Сбросить отметки
+        Сбросить готовое
       </button>
     </header>
 
-    <div
-      class="path"
-      aria-live="polite"
-      aria-atomic="false"
-    >
-      <CraftingPathNode :node="plan" />
-    </div>
+    <CraftingGraphCanvas
+      :graph="graphView"
+      :completed-node-ids="completedNodeIds"
+      @toggle-subtree="toggleSubtree"
+      @select-mode="progress.setMode"
+      @select-recipe="progress.selectRecipe"
+      @select-option="progress.selectOption"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import { PhArrowCounterClockwise } from '@phosphor-icons/vue'
 import craftingPlannerSource from '../../generated/crafting-planner.json'
-import CraftingPathNode from './crafting/CraftingPathNode.vue'
-import type { CraftingPlannerSupplement } from '../types/crafting'
-import type { ItemView } from '../types/wiki'
+import type {
+  CraftingPlannerSupplement,
+  CraftingTargetView
+} from '../types/crafting'
 
 const props = defineProps<{
-  item: ItemView
+  target: CraftingTargetView
 }>()
 
 const catalog = useWikiCatalog()
 const craftingPlanner = craftingPlannerSource as CraftingPlannerSupplement
 const index = createCraftingIndex(catalog, craftingPlanner)
-const progress = provideCraftingProgress()
-const target = computed(() => targetForItem(props.item))
-const plan = computed(() => buildCraftingPlan(
+const progress = useCraftingProgress()
+const canBuildPath = computed(() => (
+  index.recipesByTarget.has(props.target.key)
+  || Boolean(props.target.sources?.length)
+))
+const structuralPlan = computed(() => buildCraftingPlan(
   index,
-  target.value,
+  props.target,
   1,
   {
     modeByTarget: progress.state.value.modeByTarget,
     recipeByTarget: progress.state.value.recipeByTarget,
     optionByRequirement: progress.state.value.optionByRequirement
   },
+  {}
+))
+const graphModel = computed(() => buildCraftingGraph(structuralPlan.value))
+const graphView = computed(() => layoutCraftingGraph(graphModel.value))
+const routeProgress = computed(() => craftingSubtreeProgress(
+  graphModel.value,
+  graphModel.value.rootId,
   progress.state.value.ownedByTarget
 ))
-const hasProgress = computed(() => (
-  Object.keys(progress.state.value.ownedByTarget).length > 0
-  || Object.keys(progress.state.value.modeByTarget).length > 0
-  || Object.keys(progress.state.value.recipeByTarget).length > 0
-  || Object.keys(progress.state.value.optionByRequirement).length > 0
+const hasRouteProgress = computed(() => routeProgress.value.targetKeys.some(
+  targetKey => (progress.state.value.ownedByTarget[targetKey] ?? 0) > 0
 ))
+const completedNodeIds = computed(() => graphModel.value.nodes.flatMap((node) => {
+  if (node.kind !== 'item') return []
+  return (progress.state.value.ownedByTarget[node.target.key] ?? 0)
+    >= node.demand.required
+    ? [node.instanceId]
+    : []
+}))
+
+function toggleSubtree(instanceId: string): void {
+  const subtree = craftingSubtreeProgress(
+    graphModel.value,
+    instanceId,
+    progress.state.value.ownedByTarget
+  )
+  if (!subtree.targetKeys.length) return
+
+  if (subtree.complete) {
+    progress.clearOwnedBatch([...subtree.targetKeys])
+  } else {
+    progress.setOwnedBatch({ ...subtree.ownedByTarget })
+  }
+}
+
+function clearRouteProgress(): void {
+  progress.clearOwnedBatch([...routeProgress.value.targetKeys])
+}
 </script>
 
 <style scoped lang="scss">
 .crafting-path {
-  max-width: 960px;
-  margin-top: 64px;
+  max-width: 1040px;
+  margin-top: 72px;
 
   > header {
     display: flex;
@@ -83,7 +123,7 @@ const hasProgress = computed(() => (
     }
 
     > button {
-      min-height: 42px;
+      min-height: 44px;
       flex: none;
       display: inline-flex;
       align-items: center;
@@ -101,29 +141,15 @@ const hasProgress = computed(() => (
       }
     }
   }
-
-  .path {
-    padding: 4px 20px 4px 24px;
-    background:
-      linear-gradient(
-        110deg,
-        color-mix(in srgb, var(--surface-quiet) 72%, transparent),
-        transparent 70%
-      );
-    border-top: 1px solid var(--edge);
-    border-bottom: 1px solid var(--edge);
-  }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 720px) {
   .crafting-path {
+    margin-top: 56px;
+
     > header {
       align-items: flex-start;
       flex-direction: column;
-    }
-
-    .path {
-      padding-inline: 10px;
     }
   }
 }

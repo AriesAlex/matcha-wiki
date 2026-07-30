@@ -9,6 +9,7 @@ import {
   resolveIngredientItem,
   resolveStackItem
 } from '../app/utils/itemReference'
+import { resolveAcquisitionTargetForStack } from '../app/utils/acquisition'
 
 const rootDir = resolve(import.meta.dirname, '..')
 const catalog = JSON.parse(
@@ -21,7 +22,10 @@ const searchIndex = JSON.parse(
 describe('player-facing search index', () => {
   it('uses each item page as the single result for its recipes', () => {
     const itemEntries = searchIndex.filter(entry => entry.kind === 'item')
-    expect(itemEntries).toHaveLength(catalog.items.length)
+    expect(itemEntries).toHaveLength(
+      catalog.items.length
+      + catalog.acquisition.targets.filter(target => !target.itemSlug).length
+    )
 
     for (const recipe of catalog.recipes) {
       if (!recipe.result) continue
@@ -33,6 +37,19 @@ describe('player-facing search index', () => {
       const recipeEntry = searchIndex.find(entry => entry.path === recipePath)
 
       if (!resultItem) {
+        const resultTarget = resolveAcquisitionTargetForStack(
+          catalog.acquisition,
+          recipe.result
+        )
+        if (resultTarget && !resultTarget.itemSlug) {
+          const targetEntry = searchIndex.find(entry => (
+            entry.path === `/items/${resultTarget.slug}`
+          ))
+          expect(targetEntry?.terms, recipe.id).toContain(recipe.id)
+          expect(recipeEntry, recipe.id).toBeUndefined()
+          continue
+        }
+
         const groupedRecipeEntry = searchIndex.find(entry => (
           entry.kind === 'recipe' && entry.terms.includes(recipe.id)
         ))
@@ -77,8 +94,46 @@ describe('player-facing search index', () => {
     expect(copperPickaxe?.terms).toContain('Медный слиток')
   })
 
+  it('finds acquisition guides by player-facing names and aliases', () => {
+    const acquisitionEntries = searchIndex.filter(entry => (
+      entry.kind === 'location' || entry.kind === 'mob'
+    ))
+
+    expect(acquisitionEntries).toHaveLength(
+      catalog.acquisition.locations.length + catalog.acquisition.mobs.length
+    )
+    expect(acquisitionEntries.every(entry => entry.icon)).toBe(true)
+
+    const elderGuardian = acquisitionEntries.find(entry => (
+      entry.path === '/mobs/elder-guardian'
+    ))
+    expect(elderGuardian).toMatchObject({
+      kind: 'mob',
+      title: 'Древний страж',
+      category: 'Моб и добыча'
+    })
+    expect(elderGuardian?.terms).toContain('Морской Бог')
+    expect(elderGuardian?.terms).toContain('Опал')
+  })
+
+  it('finds one page for each trader and all of their offers', () => {
+    const traderEntries = searchIndex.filter(entry => entry.kind === 'trader')
+    expect(traderEntries).toHaveLength(catalog.traders.length)
+
+    const herald = traderEntries.find(entry => entry.path === '/traders/librarian')
+    expect(herald).toMatchObject({
+      title: 'Глашатай',
+      category: 'Торговец'
+    })
+    expect(herald?.terms).toContain('Авеста')
+    expect(herald?.terms).toContain('Офуда: Молитва Ахура-Мазде')
+  })
+
   it('shows one search result per player-facing result', () => {
-    const normalizedTitles = searchIndex.map(entry => (
+    const recipeAndItemEntries = searchIndex.filter(entry => (
+      entry.kind === 'item' || entry.kind === 'recipe'
+    ))
+    const normalizedTitles = recipeAndItemEntries.map(entry => (
       stripFormatting(entry.title)
         .toLocaleLowerCase('ru-RU')
         .replaceAll('ё', 'е')
@@ -92,10 +147,32 @@ describe('player-facing search index', () => {
 
     const sulfurChunk = searchIndex.find(entry => entry.title === 'Кусок серы')
     expect(sulfurChunk).toMatchObject({
-      kind: 'recipe',
-      category: '2 способа изготовления'
+      kind: 'item',
+      category: 'Переосмысленный ресурс'
     })
-    expect(sulfurChunk?.path).toBe('/recipes?q=%D0%9A%D1%83%D1%81%D0%BE%D0%BA%20%D1%81%D0%B5%D1%80%D1%8B')
+    expect(sulfurChunk?.path).toBe('/items/kusok-sery')
+  })
+
+  it('links renamed stack resources to exact player-facing pages', () => {
+    for (const title of [
+      'Кусок серы',
+      'Обол',
+      'Слиток серебра',
+      'Сплав гепатизона',
+      'Солома',
+      'Семена помидоров'
+    ]) {
+      const entry = searchIndex.find(candidate => candidate.title === title)
+      expect(entry, title).toMatchObject({ kind: 'item' })
+      expect(entry?.path, title).toMatch(/^\/items\/[a-z0-9-]+$/)
+      expect(entry?.path, title).not.toBe('/recipes')
+    }
+
+    const voidEntries = searchIndex.filter(entry => (
+      entry.title.startsWith('Стабильная пустота:')
+    ))
+    expect(voidEntries).toHaveLength(2)
+    expect(new Set(voidEntries.map(entry => entry.path)).size).toBe(2)
   })
 })
 

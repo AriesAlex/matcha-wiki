@@ -14,6 +14,11 @@ import { unzipSync } from 'fflate'
 import type {
   CraftingPlannerSupplement
 } from '../app/types/crafting'
+import {
+  allTradeOffers,
+  type TradeOfferView,
+  type TraderView
+} from '../app/types/entities'
 import type {
   AdvancementGuide,
   AdvancementView,
@@ -39,8 +44,13 @@ import {
   smithingRequirementRoles,
   type SmithingIngredients
 } from './lib/recipeRequirements'
-import { russianWordForm } from './lib/russianGrammar'
+import { buildAcquisitionCatalog } from './lib/acquisition'
 import { createSearchIndex } from './lib/searchIndex'
+import {
+  buildTraderViews,
+  loadActiveTradeGraph,
+  type TraderGuideRegistry
+} from './lib/tradeEntities'
 import {
   buildVanillaPlannerSupplement,
   type PackFilterEntry
@@ -108,12 +118,11 @@ interface ItemGuideRegistry {
   tradeProfessions: Record<string, string>
 }
 
-interface TradeRecord {
-  sourcePath: string
-  profession: string
-  level?: number
-  wants: StackView
-  gives: StackView
+interface SourceGuideRegistry {
+  schemaVersion: 1
+  mobs: Record<string, {
+    name: string
+  }>
 }
 
 interface LootTableRecord {
@@ -144,6 +153,9 @@ const vanillaRu = readJson<VanillaLanguageSnapshot>(
 const packRu = readJson<Record<string, string>>(resolve(assetsDir, 'lang/ru_ru.json'))
 const ru = { ...vanillaRu.entries, ...packRu }
 const en = readJson<Record<string, string>>(resolve(assetsDir, 'lang/en_us.json'))
+const runtimeRu: Record<string, string> = {
+  'filled_map.buried_treasure': 'Карта зарытого клада'
+}
 const advancementGuideRegistry = readJson<AdvancementGuideRegistry>(
   resolve(rootDir, 'wiki-data/advancement-guides.json')
 )
@@ -153,6 +165,13 @@ const ingredientGuideRegistry = readJson<IngredientGuideRegistry>(
 const itemGuideRegistry = readJson<ItemGuideRegistry>(
   resolve(rootDir, 'wiki-data/item-guides.ru.json')
 )
+const traderGuideRegistry = readJson<TraderGuideRegistry>(
+  resolve(rootDir, 'wiki-data/entity-guides.ru.json')
+)
+const sourceGuideRegistry = readJson<SourceGuideRegistry>(
+  resolve(rootDir, 'wiki-data/source-guides.ru.json')
+)
+const enchantmentNames = loadEnchantmentNames()
 const bannerColours: Record<string, string> = {
   black: '#1d1d21',
   blue: '#3c44aa',
@@ -204,8 +223,20 @@ const effectNames: Record<string, string> = {
 
 const equipmentPattern = /(axe|boots|bow|brush|chestplate|circlet|claymore|compass|crook|dolabra|earrings|elytra|hatchet|helmet|hoe|knife|laurel|leggings|mattock|pickaxe|shears|shield|shovel|spear|sword|trident)/
 const materialPattern = /(adamant|alloy|amber|bronze|carbon|copper|diamond|divine_fragment|electrum|emerald|gem|gold|ingot|iron|nugget|opal|raw_|ruby|shakudo|silver|steel|sulfur|tallow|titanium|topaz|vermeil)/
-const fishPattern = /(anchovy|arapaima|bass|blackfish|bluegill|bujurqui|carp|catfish|char$|crappie|eel|fish|flounder|flying_fish|gar$|gurnard|herring|killifish|lamprey|mahi_mahi|monkfish|moray|muskellunge|oarfish|opah|perch|pike|piranha|salmon|seabass|shad$|skate|sculpin|sturgeon|swordfish|tunisian_barb|walleye|whitefish|wolffish|wrasse)/
-const foodPattern = /(apple|braised|bread|brownie|bruschetta|butter|canned|carrot|chocolate|cookie|crumble|cupcake|curry|danish|empanada|egg|food|french_toast|gimmari|gnocchi|jam|latke|meal|mead|melon|mochi|mushroom|naan|paneer|pickle|pie|potato|puerquito|pumpkin|pupusa|ramen|sorbet|stew|stroganoff|tea|toast|tomato)/
+const fishPattern = /^(?:.*_)?(?:anchovy|arapaima|bass|blackfish|bluegill|bujurqui|carp|catfish|char|crappie|eel|fish|flounder|flying_fish|gar|gurnard|herring|killifish|lamprey|mahi_mahi|monkfish|moray|muskellunge|oarfish|opah|perch|pike|piranha|salmon|seabass|shad|skate|sculpin|sturgeon|swordfish|tunisian_barb|walleye|whitefish|wolffish|wrasse)(?:_.*)?$/
+const foodPattern = /^(?!.*spawn_egg$)(?:.*_)?(?:apple|braised|bread|brownie|bruschetta|butter|canned|carrot|chocolate|cookie|crumble|cupcake|curry|danish|empanada|egg|food|french_toast|gimmari|gnocchi|jam|latke|meal|mead|melon|mochi|mushroom|naan|paneer|pickle|pie|potato|puerquito|pumpkin|pupusa|ramen|sorbet|stew|stroganoff|tea|toast|tomato)(?:_.*)?$/
+const identityLoreNameKeys = new Set([
+  'item.kleispack.blessing',
+  'item.kleispack.cooking_recipe',
+  'item.kleispack.ofuda'
+])
+const refugeeOrigins: Record<string, string> = {
+  болотная: 'с болот',
+  джунглей: 'из джунглей',
+  пустынная: 'из пустыни',
+  равнинная: 'с равнин',
+  таёжная: 'из тайги'
+}
 
 main()
 
@@ -231,11 +262,32 @@ function main(): void {
   const ingredientGlossary = buildIngredientGlossary(recipes, craftingPlanner)
   const variants = captureVariants()
   const extractedItems = buildItems(recipes, variants)
-  attachItemRelations(extractedItems, recipes)
+  const tradeGraph = loadActiveTradeGraph({ dataDir, rootDir })
+  const traders = buildTraderViews({
+    graph: tradeGraph,
+    guides: traderGuideRegistry,
+    items: extractedItems,
+    parseStack,
+    displayTitle: (stack, items) => (
+      stackDisplayTitle(stack, resolveStackItem(items, stack))
+    ),
+    resultDetails: stackResultDetails,
+    translateText: flattenText
+  })
+  attachItemRelations(extractedItems, recipes, traders)
   const advancements = loadAdvancements(extractedItems, recipes)
   const items = extractedItems.filter(isPlayerFacingItem)
   disambiguateItemTitles(items)
   items.sort(compareItems)
+  const acquisition = buildAcquisitionCatalog({
+    dataDir,
+    sourceGuidesPath: resolve(rootDir, 'wiki-data/source-guides.ru.json'),
+    items,
+    ingredientGlossary,
+    parseStack,
+    vanillaNameForResource
+  })
+  replaceLegacyLootRelations(items, acquisition)
   const files = walkFiles(packDir)
 
   const catalog: WikiCatalog = {
@@ -254,6 +306,8 @@ function main(): void {
       advancements: advancements.length
     },
     ingredientGlossary,
+    acquisition,
+    traders,
     items,
     recipes,
     advancements
@@ -286,6 +340,8 @@ function assertSourceTree(): void {
     resolve(rootDir, 'wiki-data/advancement-guides.json'),
     resolve(rootDir, 'wiki-data/ingredient-guides.ru.json'),
     resolve(rootDir, 'wiki-data/item-guides.ru.json'),
+    resolve(rootDir, 'wiki-data/entity-guides.ru.json'),
+    resolve(rootDir, 'wiki-data/source-guides.ru.json'),
     vanillaAssetsPath
   ]) {
     if (!existsSync(requiredPath)) {
@@ -812,7 +868,11 @@ function compareItems(left: ItemView, right: ItemView): number {
   return customOrder || left.title.localeCompare(right.title, 'ru')
 }
 
-function attachItemRelations(items: ItemView[], recipes: RecipeView[]): void {
+function attachItemRelations(
+  items: ItemView[],
+  recipes: RecipeView[],
+  traders: TraderView[]
+): void {
   const knownItemIds = new Set(items.flatMap(item => [item.id, item.model].filter(Boolean)))
   const curatedItemIds = [
     ...Object.keys(itemGuideRegistry.entries),
@@ -846,32 +906,33 @@ function attachItemRelations(items: ItemView[], recipes: RecipeView[]): void {
     }
   }
 
-  const trades = loadTradeRecords()
-  const ambiguousTradeModels = findAmbiguousTradeModels(trades)
+  const trades = allTradeOffers(traders)
   for (const trade of trades) {
-    const wantedItem = resolveStackItem(items, trade.wants)
-    const givenItem = resolveStackItem(items, trade.gives)
-    const relation = tradeRelation(trade, wantedItem, givenItem)
+    const givenItem = resolveStackItem(items, trade.result.stack)
+    const relation = tradeRelation(trade)
 
-    if (wantedItem) {
+    for (const cost of trade.costs) {
+      const wantedItem = resolveStackItem(items, cost.stack)
+      if (!wantedItem) continue
+
       wantedItem.usedIn.push({
         kind: 'trade',
-        title: stackDisplayTitle(trade.gives, givenItem),
+        title: trade.result.title,
         description: `${relation.context} принимает этот предмет.`,
-        icon: trade.gives.icon,
-        to: exactStackItemPath(items, trade.gives, ambiguousTradeModels)
-          ?? '/mechanics/villagers',
+        icon: trade.result.stack.icon,
+        to: trade.to,
         ...relation,
         sourcePath: trade.sourcePath
       })
     }
     if (givenItem) {
+      const costTitles = trade.costs.map(cost => `«${cost.title}»`).join(' + ')
       givenItem.obtainedFrom.push({
         kind: 'trade',
-        title: 'Получение через обмен',
-        description: `${relation.context} попросит «${stackDisplayTitle(trade.wants, wantedItem)}».`,
-        icon: trade.wants.icon,
-        to: exactStackItemPath(items, trade.wants, ambiguousTradeModels),
+        title: `${trade.traderTitle}: обмен`,
+        description: `${relation.context} попросит ${costTitles}.`,
+        icon: trade.costs[0]?.stack.icon,
+        to: trade.to,
         ...relation,
         sourcePath: trade.sourcePath
       })
@@ -890,93 +951,69 @@ function attachItemRelations(items: ItemView[], recipes: RecipeView[]): void {
   }
 }
 
-function loadTradeRecords(): TradeRecord[] {
-  const records: TradeRecord[] = []
-
-  for (const path of walkFiles(dataDir, file => (
-    extname(file) === '.json'
-    && normalizePath(file).includes('/villager_trade/')
-  ))) {
-    const sourcePath = normalizePath(relative(rootDir, path))
-    const match = sourcePath.match(/\/villager_trade\/([^/]+)\/(.+)\.json$/)
-    const data = readJson<JsonObject>(path)
-    const wants = parseStack(data.wants)
-    const gives = parseStack(data.gives)
-    if (!match || !wants || !gives) {
-      continue
-    }
-
-    records.push({
-      sourcePath,
-      profession: match[1],
-      level: /^\d+\//.test(match[2])
-        ? Number(match[2].split('/')[0])
-        : undefined,
-      wants,
-      gives
-    })
-  }
-
-  return records
-}
-
-function findAmbiguousTradeModels(trades: TradeRecord[]): Set<string> {
-  const signatures = new Map<string, Set<string>>()
-  for (const stack of trades.flatMap(trade => [trade.wants, trade.gives])) {
-    if (!stack.model) {
-      continue
-    }
-    const modelSignatures = signatures.get(stack.model) ?? new Set<string>()
-    modelSignatures.add(JSON.stringify(stack.components ?? {}))
-    signatures.set(stack.model, modelSignatures)
-  }
-  return new Set(
-    [...signatures]
-      .filter(([, modelSignatures]) => modelSignatures.size > 1)
-      .map(([model]) => model)
-  )
-}
-
-function exactStackItemPath(
+function replaceLegacyLootRelations(
   items: ItemView[],
-  stack: StackView,
-  ambiguousModels: Set<string>
-): string | undefined {
-  if (stack.model && ambiguousModels.has(stack.model)) {
-    return undefined
+  acquisition: WikiCatalog['acquisition']
+): void {
+  const targetsByItemSlug = Map.groupBy(
+    acquisition.targets.filter(target => target.itemSlug),
+    target => target.itemSlug as string
+  )
+  const methodsByTargetId = Map.groupBy(
+    acquisition.methods,
+    method => method.targetId
+  )
+  const locationById = new Map(
+    acquisition.locations.map(source => [source.id, source])
+  )
+  const mobById = new Map(
+    acquisition.mobs.map(source => [source.id, source])
+  )
+
+  for (const item of items) {
+    const targets = targetsByItemSlug.get(item.slug) ?? []
+    if (!targets.length) continue
+
+    const exactRelations = targets.flatMap(target => (
+      (methodsByTargetId.get(target.id) ?? []).flatMap((method) => {
+        const mob = mobById.get(method.sourceId)
+        const location = locationById.get(method.sourceId)
+        const source = mob ?? location
+        if (!source) return []
+
+        const notes = method.notes.map(note => note.text)
+        return [{
+          kind: 'loot' as const,
+          title: source.name,
+          description: [method.context, ...notes].join(' · '),
+          icon: target.stack.icon,
+          to: mob
+            ? `/mobs/${mob.slug}`
+            : `/locations/${location?.slug}`,
+          sourcePath: method.sourcePath
+        }]
+      })
+    ))
+
+    item.obtainedFrom = dedupeItemRelations([
+      ...item.obtainedFrom.filter(relation => relation.kind !== 'loot'),
+      ...exactRelations
+    ])
   }
-  const item = resolveStackItem(items, stack)
-  return item ? `/items/${item.slug}` : undefined
 }
 
 function tradeRelation(
-  trade: TradeRecord,
-  wantedItem?: ItemView,
-  givenItem?: ItemView
+  trade: TradeOfferView
 ): Pick<
   ItemRelationView,
   'context' | 'contextDetail' | 'cost' | 'result' | 'details'
 > & { context: string } {
-  const translationKey = trade.profession === 'wandering_trader'
-    ? 'entity.minecraft.wandering_trader'
-    : `entity.minecraft.villager.${trade.profession}`
-  const profession = ru[translationKey]
-    ?? itemGuideRegistry.tradeProfessions[trade.profession]
-    ?? formatIdentifier(trade.profession)
-  const enchantments = stackEnchantments(trade.gives)
-
   return {
-    context: profession,
+    context: trade.traderTitle,
     contextDetail: trade.level ? `${trade.level}-й уровень` : undefined,
-    cost: [{
-      stack: trade.wants,
-      title: stackDisplayTitle(trade.wants, wantedItem)
-    }],
-    result: {
-      stack: trade.gives,
-      title: stackDisplayTitle(trade.gives, givenItem)
-    },
-    details: enchantments.length ? enchantments : undefined
+    cost: trade.costs,
+    result: trade.result,
+    details: trade.details.length ? trade.details : undefined
   }
 }
 
@@ -986,9 +1023,42 @@ function stackDisplayTitle(stack: StackView, item?: ItemView): string {
   if (stack.model === 'minecraft:application' && lore.length >= 2) {
     const age = lore[0].replace(/^Возраст:\s*/, '')
     const culture = lore[1].replace(/^Культура:\s*/, '')
-    return `${name}: ${age}, ${culture} культура`
+    const origin = refugeeOrigins[culture]
+    return origin
+      ? `${name}: ${age} ${origin}`
+      : culture === 'отсутствует'
+        ? `${name}: ${age}`
+        : `${name}: ${age}, культура — ${culture}`
   }
-  return lore[0] ? `${name}: ${lore[0]}` : name
+
+  return stackIdentityLoreCount(stack, lore) === 1
+    ? `${name}: ${lore[0]}`
+    : name
+}
+
+function stackResultDetails(stack: StackView): string[] {
+  const lore = extractLore(stack.components ?? {})
+  return [
+    ...lore.slice(stackIdentityLoreCount(stack, lore)),
+    ...stackEnchantments(stack)
+  ]
+}
+
+function stackIdentityLoreCount(stack: StackView, lore: string[]): number {
+  if (stack.model === 'minecraft:application' && lore.length >= 2) {
+    return 2
+  }
+  if (!lore.length) {
+    return 0
+  }
+
+  const modelPath = stack.model ? resourcePath(stack.model) : ''
+  return identityLoreNameKeys.has(stack.nameKey ?? '')
+    || modelPath.startsWith('blessing_')
+    || modelPath.endsWith('_recipe')
+    || modelPath === 'ofuda'
+    ? 1
+    : 0
 }
 
 function stackEnchantments(stack: StackView): string[] {
@@ -1005,11 +1075,28 @@ function stackEnchantments(stack: StackView): string[] {
     .filter((entry): entry is [string, number] => typeof entry[1] === 'number')
     .map(([id, level]) => {
       const normalized = normalizeResource(id)
-      const name = ru[`enchantment.${normalized.replace(':', '.')}`]
+      const name = enchantmentNames.get(normalized)
+        ?? ru[`enchantment.${normalized.replace(':', '.')}`]
         ?? formatIdentifier(resourcePath(normalized))
       return `${name} ${romanLevel(level)}`
     })
   return enchantments
+}
+
+function loadEnchantmentNames(): Map<string, string> {
+  const names = new Map<string, string>()
+  for (const path of walkFiles(dataDir, file => extname(file) === '.json')) {
+    const relativePath = normalizePath(relative(dataDir, path))
+    const match = relativePath.match(/^([^/]+)\/enchantment\/(.+)\.json$/)
+    if (!match) continue
+
+    const definition = readJson<JsonObject>(path)
+    const name = flattenText(definition.description)
+    if (name) {
+      names.set(`${match[1]}:${match[2]}`, name)
+    }
+  }
+  return names
 }
 
 function romanLevel(level: number): string {
@@ -1385,7 +1472,7 @@ function buildIngredientGlossary(
   const sourceIndex = collectIngredientSources(ids)
 
   return Object.fromEntries([...ids].sort().map((id) => {
-    const automaticHint = describeIngredientSources(id, recipes, sourceIndex.get(id))
+    const automaticHint = describeIngredientSources(sourceIndex.get(id))
     return [id, {
       id,
       name: nameForResource(id),
@@ -1449,7 +1536,9 @@ function collectIngredientSources(ids: Set<string>): Map<string, IngredientSourc
 
       const entity = sourcePath.match(/\/loot_table\/entities\/(.+)\.json$/)
       const block = sourcePath.match(/\/loot_table\/blocks\/(.+)\.json$/)
-      if (entity) sources.entities.add(entitySourceName(entity[1]))
+      if (entity && isKnownLootEntity(entity[1])) {
+        sources.entities.add(entitySourceName(entity[1]))
+      }
       else if (block) sources.blocks.add(nameForResource(`minecraft:${block[1]}`))
       else if (sourcePath.includes('/loot_table/chests/')) sources.chests = true
       else if (sourcePath.includes('/loot_table/gameplay/fishing')) sources.fishing = true
@@ -1461,33 +1550,40 @@ function collectIngredientSources(ids: Set<string>): Map<string, IngredientSourc
 }
 
 function describeIngredientSources(
-  id: string,
-  recipes: RecipeView[],
   sources?: IngredientSources
 ): string | undefined {
   const clauses: string[] = []
-  const recipeCount = recipes.filter(recipe => recipe.result?.carrier === id).length
   const entities = [...(sources?.entities ?? [])].slice(0, 3)
   const blocks = [...(sources?.blocks ?? [])].slice(0, 3)
 
   if (entities.length) clauses.push(`Выпадает из: ${entities.join(', ')}`)
   if (blocks.length) clauses.push(`Добывается из блоков: ${blocks.join(', ')}`)
   if (sources?.fishing) clauses.push('Можно выловить')
-  if (sources?.trading) clauses.push('Можно получить торговлей')
-  if (sources?.archaeology) clauses.push('Встречается в археологии')
-  if (sources?.chests) clauses.push('Встречается в сундуках')
-  if (recipeCount) {
-    const recipeWord = russianWordForm(recipeCount, ['рецепт', 'рецепта', 'рецептов'])
-    clauses.push(`Есть ${recipeCount} ${recipeWord} получения`)
-  }
-
   return clauses.length ? `${clauses.join('. ')}.` : undefined
 }
 
 function entitySourceName(id: string): string {
-  const spawnEgg = ru[`item.minecraft.${id.replaceAll('/', '.')}_spawn_egg`]
+  const normalized = normalizeResource(id)
+  const curated = sourceGuideRegistry.mobs[normalized]?.name
+  if (curated) {
+    return curated.toLocaleLowerCase('ru-RU')
+  }
+
+  const spawnEgg = vanillaRu.entries[
+    `item.minecraft.${resourcePath(normalized).replaceAll('/', '.')}_spawn_egg`
+  ]
   return spawnEgg?.replace(/^Яйцо призыва /, '').toLocaleLowerCase('ru-RU')
-    ?? formatIdentifier(id)
+    ?? formatIdentifier(normalized).toLocaleLowerCase('ru-RU')
+}
+
+function isKnownLootEntity(id: string): boolean {
+  const normalized = normalizeResource(id)
+  return Boolean(
+    sourceGuideRegistry.mobs[normalized]
+    || vanillaRu.entries[
+      `item.minecraft.${resourcePath(normalized).replaceAll('/', '.')}_spawn_egg`
+    ]
+  )
 }
 
 function parseStack(value: unknown): StackView | undefined {
@@ -2026,7 +2122,7 @@ function firstTranslationKey(keys: string[]): string | undefined {
 }
 
 function translateKey(key: string): string {
-  return ru[key] ?? en[key] ?? formatIdentifier(key)
+  return ru[key] ?? runtimeRu[key] ?? en[key] ?? formatIdentifier(key)
 }
 
 function translationKey(value: unknown): string | undefined {

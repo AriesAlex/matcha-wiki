@@ -6,9 +6,7 @@
     :class="{ linked: referencePath }"
     :to="referencePath || undefined"
     :tabindex="referencePath ? undefined : 0"
-    :role="referencePath ? undefined : 'button'"
     :aria-describedby="visible ? tooltipId : undefined"
-    :aria-expanded="referencePath ? undefined : visible"
     @pointerenter="showAtPointer"
     @pointermove="moveWithPointer"
     @pointerleave="hideOnPointerLeave"
@@ -65,6 +63,7 @@ import type {
   ItemView,
   StackView
 } from '../types/wiki'
+import type { AcquisitionTarget } from '../types/acquisition'
 
 defineOptions({
   inheritAttrs: false
@@ -72,17 +71,22 @@ defineOptions({
 
 const props = withDefaults(defineProps<{
   item?: ItemView
+  target?: AcquisitionTarget
   ingredient?: IngredientView
   stack?: StackView
 }>(), {
   item: undefined,
+  target: undefined,
   ingredient: undefined,
   stack: undefined
 })
 
 const route = useRoute()
 const catalog = useWikiCatalog()
-const itemPath = computed(() => props.item ? `/items/${props.item.slug}` : '')
+const itemPath = computed(() => {
+  if (props.item) return `/items/${props.item.slug}`
+  return props.target ? acquisitionTargetPath(props.target) : ''
+})
 const referencePath = computed(() => (
   itemPath.value && normalizeWikiPath(route.path) !== itemPath.value
     ? itemPath.value
@@ -93,6 +97,7 @@ const referenceComponent = computed(() => (
 ))
 const tooltipTitle = computed(() => (
   props.item?.title
+  ?? props.target?.title
   ?? props.ingredient?.label
   ?? props.stack?.name
   ?? 'Неизвестный предмет'
@@ -100,6 +105,7 @@ const tooltipTitle = computed(() => (
 const tooltipLore = computed(() => props.item?.lore.slice(0, 3) ?? [])
 const glossaryIds = computed(() => (
   props.ingredient?.ids
+  ?? (props.target ? [props.target.stack.carrier] : undefined)
   ?? (props.stack ? [props.stack.carrier] : undefined)
   ?? (props.item ? [props.item.carrier] : [])
 ))

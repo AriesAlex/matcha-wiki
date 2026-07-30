@@ -94,10 +94,11 @@ function buildNode(
     return { ...base, state: 'obtain' }
   }
 
+  const selectedRecipeId = context.selections.recipeByTarget[target.key]
   const recipe = chooseRecipe(
     recipeOptions,
     target,
-    context.selections.recipeByTarget[target.key],
+    selectedRecipeId,
     context.index.preferredRecipeByTarget.get(target.key)
   )
   if (!recipe || depth >= context.maxDepth) {
@@ -112,8 +113,9 @@ function buildNode(
   const resultCount = recipe.resultCount
   const batches = Math.ceil(missingCount / resultCount)
   const nextAncestry = [...ancestry, target.key]
+  const branchContext = forkBuildContext(context)
   const station = buildStationNode(
-    context,
+    branchContext,
     recipe,
     nextAncestry,
     depth + 1
@@ -140,7 +142,7 @@ function buildNode(
       options,
       selectedOptionKey: selectedTarget.key,
       node: buildNode(
-        context,
+        branchContext,
         selectedTarget,
         count,
         nextAncestry,
@@ -149,7 +151,7 @@ function buildNode(
     }
   })
 
-  return {
+  const plan: CraftingPlanNode = {
     ...base,
     state: 'craft',
     recipe,
@@ -158,6 +160,17 @@ function buildNode(
     station,
     requirements
   }
+  const explicitlyCrafting = selectedMode === 'craft' || Boolean(selectedRecipeId)
+  if (
+    !explicitlyCrafting
+    && hasKnownSource(target)
+    && containsCycle(plan)
+  ) {
+    return { ...base, state: 'obtain' }
+  }
+
+  commitBuildContext(context, branchContext)
+  return plan
 }
 
 function buildStationNode(
@@ -209,7 +222,6 @@ function recipeScore(
   const kind = recipe.type.replace(/^.*:/, '')
   const selfReference = recipe.requirements.some(requirement => (
     requirement.ingredient.ids.includes(target.resourceId)
-    || requirement.ingredient.ids.includes(target.item?.carrier ?? '')
   ))
   const recycling = /from_(?:blasting|smelting)_.+_materials|recycl|reclaim|scrap|разбор/i
     .test(recipe.id)
@@ -217,7 +229,10 @@ function recipeScore(
     .test(recipe.id)
   const rawWoodRecovery = kind === 'stonecutting'
     && /_(?:log|stem)$/.test(target.resourceId)
-  const blockUnpacking = recipe.resultCount > 1
+  const storageUnitFromBlock = /^(?:minecraft:)?(?:amethyst_shard|bamboo|bone_meal|coal|copper_ingot|diamond|dried_kelp|emerald|gold_ingot|honeycomb|iron_ingot|lapis_lazuli|netherite_ingot|nether_quartz|quartz|raw_copper|raw_gold|raw_iron|redstone|resin_clump|slime_ball|wheat)$/
+    .test(target.resourceId)
+  const blockUnpacking = storageUnitFromBlock
+    && recipe.resultCount > 1
     && recipe.requirements.length === 1
     && (recipe.requirements.at(0)?.ingredient.ids
       .some(id => id.endsWith('_block')) ?? false)
@@ -235,4 +250,30 @@ function normalizeRequiredCount(value: number): number {
 
 function normalizeCount(value: number): number {
   return Math.max(0, Math.floor(Number.isFinite(value) ? value : 0))
+}
+
+function hasKnownSource(target: CraftingTargetView): boolean {
+  return Boolean(target.obtainHint) || Boolean(target.sources?.length)
+}
+
+function containsCycle(node: CraftingPlanNode): boolean {
+  return node.state === 'cycle'
+    || Boolean(node.station && containsCycle(node.station))
+    || node.requirements.some(requirement => containsCycle(requirement.node))
+}
+
+function forkBuildContext(context: BuildContext): BuildContext {
+  return {
+    ...context,
+    inventory: new Map(context.inventory),
+    plannedStations: new Set(context.plannedStations)
+  }
+}
+
+function commitBuildContext(
+  target: BuildContext,
+  source: BuildContext
+): void {
+  target.inventory = source.inventory
+  target.plannedStations = source.plannedStations
 }

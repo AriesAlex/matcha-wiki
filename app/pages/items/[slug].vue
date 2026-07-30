@@ -47,7 +47,7 @@
       </p>
     </section>
 
-    <ItemCraftingPath :item="item" />
+    <ItemCraftingPath :target="craftingTarget" />
 
     <section class="article-section">
       <header class="section-heading">
@@ -86,6 +86,10 @@
 
     <ItemTechnicalDetails :item="item" />
   </article>
+  <AcquisitionTargetPage
+    v-else-if="acquisitionTarget"
+    :target="acquisitionTarget"
+  />
 </template>
 
 <script setup lang="ts">
@@ -95,8 +99,21 @@ const route = useRoute()
 const catalog = useWikiCatalog()
 const itemSlug = computed(() => normalizeRouteParam(route.params.slug))
 const item = computed(() => catalog.items.find(entry => entry.slug === itemSlug.value))
+const acquisitionTarget = computed(() => acquisitionTargetForSlug(
+  catalog.acquisition,
+  itemSlug.value
+))
+const craftingTarget = computed(() => {
+  if (!item.value) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Предмет не найден'
+    })
+  }
+  return targetForItem(item.value, catalog)
+})
 
-if (import.meta.server && !item.value) {
+if (import.meta.server && !item.value && !acquisitionTarget.value) {
   throw createError({
     statusCode: 404,
     statusMessage: 'Предмет не найден'
@@ -104,7 +121,7 @@ if (import.meta.server && !item.value) {
 }
 
 onMounted(() => {
-  if (!item.value) {
+  if (!item.value && !acquisitionTarget.value) {
     showError({
       statusCode: 404,
       statusMessage: 'Предмет не найден'
@@ -140,11 +157,14 @@ const purposeSummary = computed(() => (
 ))
 
 useSeoMeta({
-  title: () => stripMinecraftFormatting(item.value?.title ?? 'Предмет'),
+  title: () => stripMinecraftFormatting(
+    item.value?.title ?? acquisitionTarget.value?.title ?? 'Предмет'
+  ),
   description: () => {
     const current = item.value
-    if (!current) return ''
-    return `${stripMinecraftFormatting(current.title)} в Matcha Flavoured: зачем нужен, как получить, где использовать и какие свойства даёт.`
+    const title = current?.title ?? acquisitionTarget.value?.title
+    if (!title) return ''
+    return `${stripMinecraftFormatting(title)} в Matcha Flavoured: зачем нужен, как получить и где использовать.`
   }
 })
 </script>

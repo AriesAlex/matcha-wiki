@@ -9,9 +9,11 @@ import type {
 import type { WikiCatalog } from '../app/types/wiki'
 import {
   createCraftingIndex,
+  targetForAcquisitionTarget,
   targetForItem,
   targetForResource
 } from '../app/utils/craftingIndex'
+import { buildCraftingGraph } from '../app/utils/craftingGraphModel'
 import { buildCraftingPlan } from '../app/utils/craftingPlan'
 import {
   matchesPackFilter,
@@ -133,7 +135,7 @@ describe('vanilla planner supplement', () => {
 
     const plan = buildCraftingPlan(
       createCraftingIndex(catalog, supplement),
-      targetForItem(item),
+      targetForItem(item, catalog),
       1,
       {
         modeByTarget: {},
@@ -200,6 +202,244 @@ describe('vanilla planner supplement', () => {
     expect(craftingTable.recipe?.id).toBe('minecraft:crafting_table')
   })
 
+  it('keeps block-state-only pack recipes in the crafting path', () => {
+    const campfireItem = catalog.items.find(item => (
+      item.id === 'recipe-output:crafting/campfire'
+    ))
+    expect(campfireItem).toBeDefined()
+    if (!campfireItem) return
+
+    const campfire = buildCraftingPlan(
+      createCraftingIndex(catalog, supplement),
+      targetForResource(catalog, 'minecraft:campfire'),
+      1,
+      {
+        modeByTarget: {},
+        recipeByTarget: {},
+        optionByRequirement: {}
+      },
+      {}
+    )
+
+    expect(campfire.recipe).toMatchObject({
+      id: 'crafting:campfire',
+      origin: 'pack',
+      detailsPath: '/recipes/crafting/campfire'
+    })
+    expect(campfire.target.key).toBe(targetForItem(campfireItem, catalog).key)
+    expect(campfire.requirements.map(requirement => (
+      requirement.node.target.resourceId
+    ))).toEqual(expect.arrayContaining([
+      expect.stringContaining('minecraft:dark_oak_log'),
+      'minecraft:stick'
+    ]))
+  })
+
+  it('does not mistake a custom item carrier for a recipe cycle', () => {
+    const index = createCraftingIndex(catalog, supplement)
+    const expectedRecipes = {
+      'minecraft:blessing_apollo': 'blessings:piercing_impaling',
+      'minecraft:bronze_boots': 'smithing_table:bronze_boots'
+    }
+
+    for (const [itemId, recipeId] of Object.entries(expectedRecipes)) {
+      const item = catalog.items.find(entry => entry.id === itemId)
+      expect(item, itemId).toBeDefined()
+      if (!item) continue
+
+      const plan = buildCraftingPlan(
+        index,
+        targetForItem(item, catalog),
+        1,
+        {
+          modeByTarget: {},
+          recipeByTarget: {},
+          optionByRequirement: {}
+        },
+        {}
+      )
+
+      expect(plan.state, itemId).toBe('craft')
+      expect(plan.recipe?.id, itemId).toBe(recipeId)
+    }
+  })
+
+  it('prefers real sulfur sources to a circular conversion recipe', () => {
+    const sulfur = catalog.acquisition.targets.find(target => (
+      target.title === 'Кусок серы'
+    ))
+    expect(sulfur).toBeDefined()
+    if (!sulfur) return
+
+    const index = createCraftingIndex(catalog, supplement)
+    const target = targetForAcquisitionTarget(sulfur, catalog)
+    const automatic = buildCraftingPlan(
+      index,
+      target,
+      1,
+      {
+        modeByTarget: {},
+        recipeByTarget: {},
+        optionByRequirement: {}
+      },
+      {}
+    )
+
+    expect(target.sources?.length).toBeGreaterThan(0)
+    expect(automatic.state).toBe('obtain')
+    expect(containsCycle(automatic)).toBe(false)
+
+    const forcedRecipe = buildCraftingPlan(
+      index,
+      target,
+      1,
+      {
+        modeByTarget: {
+          [target.key]: 'craft'
+        },
+        recipeByTarget: {},
+        optionByRequirement: {}
+      },
+      {}
+    )
+    expect(forcedRecipe.state).toBe('craft')
+    expect(containsCycle(forcedRecipe)).toBe(true)
+  })
+
+  it('joins pack-defined vanilla items with their recipe results', () => {
+    const item = catalog.items.find(entry => (
+      entry.id === 'minecraft:waxed_copper_chain'
+    ))
+    expect(item).toBeDefined()
+    if (!item) return
+
+    const resourceTarget = targetForResource(
+      catalog,
+      'minecraft:waxed_copper_chain'
+    )
+    const itemTarget = targetForItem(item, catalog)
+    expect(resourceTarget.key).toBe(itemTarget.key)
+
+    const plan = buildCraftingPlan(
+      createCraftingIndex(catalog, supplement),
+      itemTarget,
+      1,
+      {
+        modeByTarget: {},
+        recipeByTarget: {},
+        optionByRequirement: {}
+      },
+      {}
+    )
+
+    expect(plan.state).toBe('craft')
+    expect(plan.recipe?.id).toBe(
+      'stonecutting:waxed_copper_chain_from_stonecutting_waxed_copper_block'
+    )
+  })
+
+  it('keeps customized vanilla gear and useful block transformations craftable', () => {
+    const index = createCraftingIndex(catalog, supplement)
+    const expectedRecipes = {
+      'minecraft:iron_sword': 'crafting:iron_sword',
+      'minecraft:moss_carpet': 'crafting:moss_carpet_generous'
+    }
+
+    for (const [resourceId, recipeId] of Object.entries(expectedRecipes)) {
+      const plan = buildCraftingPlan(
+        index,
+        targetForResource(catalog, resourceId),
+        1,
+        {
+          modeByTarget: {},
+          recipeByTarget: {},
+          optionByRequirement: {}
+        },
+        {}
+      )
+
+      expect(plan.state, resourceId).toBe('craft')
+      expect(plan.recipe?.id, resourceId).toBe(recipeId)
+    }
+  })
+
+  it('explains every terminal step reachable from a player-facing item', () => {
+    const index = createCraftingIndex(catalog, supplement)
+    const unexplained = catalog.items.flatMap((item) => {
+      if (!item.recipeIds.length && !item.obtainedFrom.length) return []
+
+      const plan = buildCraftingPlan(
+        index,
+        targetForItem(item, catalog),
+        1,
+        {
+          modeByTarget: {},
+          recipeByTarget: {},
+          optionByRequirement: {}
+        },
+        {},
+        { maxDepth: 30 }
+      )
+
+      return unexplainedTerminals(plan).map(resourceId => (
+        `${item.title}: ${resourceId}`
+      ))
+    })
+
+    expect(unexplained).toEqual([])
+  }, 15_000)
+
+  it('groups Clement trade offers by player-facing trader page', () => {
+    const item = catalog.items.find(entry => (
+      entry.id === 'minecraft:blessing_clement'
+    ))
+    expect(item).toBeDefined()
+    if (!item) return
+
+    const plan = buildCraftingPlan(
+      createCraftingIndex(catalog, supplement),
+      targetForItem(item, catalog),
+      1,
+      {
+        modeByTarget: {},
+        recipeByTarget: {},
+        optionByRequirement: {}
+      },
+      {},
+      { maxDepth: 30 }
+    )
+    const emerald = findNode(plan, 'minecraft:emerald')
+    expect(emerald).toBeDefined()
+    if (!emerald) return
+
+    const fishermanOffers = (emerald.target.sources ?? []).filter(source => (
+      source.kind === 'trader'
+      && source.path.startsWith('/traders/fisherman#')
+    ))
+    expect(fishermanOffers.length).toBeGreaterThan(1)
+
+    const graph = buildCraftingGraph(plan)
+    const emeraldSources = graph.nodes.filter(node => (
+      node.kind === 'context'
+      && node.contextKind === 'source'
+      && node.targetKey === emerald.target.key
+    ))
+    const sourcePages = new Set((emerald.target.sources ?? []).map(source => (
+      `${source.kind}:${source.path.split('#')[0]}`
+    )))
+    const fisherman = emeraldSources.filter(node => (
+      node.source.path === '/traders/fisherman'
+    ))
+
+    expect(emeraldSources).toHaveLength(sourcePages.size)
+    expect(fisherman).toHaveLength(1)
+    expect(fisherman[0]?.source).toMatchObject({
+      title: 'Рыбак',
+      path: '/traders/fisherman',
+      detail: expect.stringContaining(`: ${fishermanOffers.length}.`)
+    })
+  })
+
   it('collapses indistinguishable alternative resources into one planner step', () => {
     const plan = buildCraftingPlan(
       createCraftingIndex(catalog, supplement),
@@ -238,6 +478,30 @@ function findNode(
     if (found) return found
   }
   return undefined
+}
+
+function unexplainedTerminals(node: CraftingPlanNode): string[] {
+  const current = (
+    (node.state === 'obtain' || node.state === 'unknown')
+    && !node.target.obtainHint
+    && !node.target.sources?.length
+  )
+    ? [node.target.resourceId]
+    : []
+  const station = node.station
+    ? unexplainedTerminals(node.station)
+    : []
+  const requirements = node.requirements.flatMap(requirement => (
+    unexplainedTerminals(requirement.node)
+  ))
+
+  return [...current, ...station, ...requirements]
+}
+
+function containsCycle(node: CraftingPlanNode): boolean {
+  return node.state === 'cycle'
+    || Boolean(node.station && containsCycle(node.station))
+    || node.requirements.some(requirement => containsCycle(requirement.node))
 }
 
 function readJson<T>(path: string): T {

@@ -1,25 +1,22 @@
 import { useStorage } from '@vueuse/core'
-import type { InjectionKey, Ref } from 'vue'
+import type { Ref } from 'vue'
 import type {
   CraftingMode,
   CraftingProgressState
 } from '../types/crafting'
 
-export interface CraftingProgress {
+interface CraftingProgress {
   state: Ref<CraftingProgressState>
-  addOwned: (targetKey: string, count: number) => void
-  clearOwned: (targetKey: string) => void
+  setOwnedBatch: (ownedByTarget: Record<string, number>) => void
+  clearOwnedBatch: (targetKeys: string[]) => void
   setMode: (targetKey: string, mode?: CraftingMode) => void
   selectRecipe: (targetKey: string, recipeId: string) => void
   selectOption: (requirementKey: string, targetKey: string) => void
-  reset: () => void
 }
 
 const storageKey = 'matcha-wiki:crafting-progress:v1'
-const craftingProgressKey: InjectionKey<CraftingProgress>
-  = Symbol('matcha-crafting-progress')
 
-export function provideCraftingProgress(): CraftingProgress {
+export function useCraftingProgress(): CraftingProgress {
   const state = useStorage<CraftingProgressState>(
     storageKey,
     emptyProgress(),
@@ -32,22 +29,32 @@ export function provideCraftingProgress(): CraftingProgress {
 
   const progress: CraftingProgress = {
     state,
-    addOwned(targetKey, count) {
-      const safeCount = Math.max(0, Math.floor(count))
-      if (!safeCount) return
+    setOwnedBatch(ownedByTarget) {
+      const nextOwnedByTarget = new Map(
+        Object.entries(state.value.ownedByTarget)
+      )
+      for (const [targetKey, count] of Object.entries(ownedByTarget)) {
+        const safeCount = normalizeOwnedCount(count)
+        if (safeCount) {
+          nextOwnedByTarget.set(targetKey, safeCount)
+        } else {
+          nextOwnedByTarget.delete(targetKey)
+        }
+      }
 
       state.value = {
         ...state.value,
-        ownedByTarget: {
-          ...state.value.ownedByTarget,
-          [targetKey]: (state.value.ownedByTarget[targetKey] ?? 0) + safeCount
-        }
+        ownedByTarget: Object.fromEntries(nextOwnedByTarget)
       }
     },
-    clearOwned(targetKey) {
+    clearOwnedBatch(targetKeys) {
+      const keys = new Set(targetKeys)
       state.value = {
         ...state.value,
-        ownedByTarget: withoutKey(state.value.ownedByTarget, targetKey)
+        ownedByTarget: Object.fromEntries(
+          Object.entries(state.value.ownedByTarget)
+            .filter(([targetKey]) => !keys.has(targetKey))
+        )
       }
     },
     setMode(targetKey, mode) {
@@ -75,21 +82,9 @@ export function provideCraftingProgress(): CraftingProgress {
           [requirementKey]: targetKey
         }
       }
-    },
-    reset() {
-      state.value = emptyProgress()
     }
   }
 
-  provide(craftingProgressKey, progress)
-  return progress
-}
-
-export function useCraftingProgress(): CraftingProgress {
-  const progress = inject(craftingProgressKey)
-  if (!progress) {
-    throw new Error('Crafting progress must be provided by ItemCraftingPath')
-  }
   return progress
 }
 
@@ -108,5 +103,12 @@ function withoutKey<T>(
 ): Record<string, T> {
   return Object.fromEntries(
     Object.entries(record).filter(([entryKey]) => entryKey !== key)
+  )
+}
+
+function normalizeOwnedCount(count: number): number {
+  return Math.max(
+    0,
+    Math.floor(Number.isFinite(count) ? count : 0)
   )
 }

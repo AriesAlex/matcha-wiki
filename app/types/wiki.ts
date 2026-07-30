@@ -1,3 +1,6 @@
+import type { AcquisitionCatalog } from './acquisition'
+import type { TraderView } from './entities'
+
 export interface ItemEffect {
   id: string
   name: string
@@ -177,13 +180,15 @@ export interface WikiCatalog {
     advancements: number
   }
   ingredientGlossary: Record<string, IngredientGlossaryEntry>
+  acquisition: AcquisitionCatalog
+  traders: TraderView[]
   items: ItemView[]
   recipes: RecipeView[]
   advancements: AdvancementView[]
 }
 
 export interface WikiSearchEntry {
-  kind: 'item' | 'recipe' | 'advancement'
+  kind: 'item' | 'recipe' | 'advancement' | 'location' | 'mob' | 'trader'
   title: string
   description: string
   category: string

@@ -13,9 +13,11 @@ const focusableSelector = [
 export function useModalFocusTrap(
   container: MaybeRefOrGetter<HTMLElement | null | undefined>,
   open: MaybeRefOrGetter<boolean>,
-  initialFocus: MaybeRefOrGetter<HTMLElement | null | undefined>
+  initialFocus: MaybeRefOrGetter<HTMLElement | null | undefined>,
+  options: { inertOutside?: boolean } = {}
 ): void {
   let restoreFocusTo: HTMLElement | null = null
+  let restoreOutside = () => {}
 
   watch(
     () => toValue(open),
@@ -25,10 +27,18 @@ export function useModalFocusTrap(
           ? document.activeElement
           : null
         await nextTick()
-        toValue(initialFocus)?.focus()
+        if (!toValue(open)) return
+        restoreOutside()
+        restoreOutside = options.inertOutside
+          ? makeOutsideInert(toValue(container))
+          : () => {}
+        const focusTarget = toValue(initialFocus) ?? toValue(container)
+        focusTarget?.focus()
         return
       }
 
+      restoreOutside()
+      restoreOutside = () => {}
       await nextTick()
       restoreFocus()
     },
@@ -73,7 +83,10 @@ export function useModalFocusTrap(
     }
   )
 
-  onBeforeUnmount(restoreFocus)
+  onBeforeUnmount(() => {
+    restoreOutside()
+    restoreFocus()
+  })
 
   function restoreFocus(): void {
     if (!restoreFocusTo?.isConnected) {
@@ -83,5 +96,31 @@ export function useModalFocusTrap(
 
     restoreFocusTo.focus()
     restoreFocusTo = null
+  }
+}
+
+function makeOutsideInert(
+  container: HTMLElement | null | undefined
+): () => void {
+  if (!container?.isConnected) return () => {}
+
+  const previous = new Map<HTMLElement, boolean>()
+  let branch = container
+
+  while (branch.parentElement) {
+    const parent = branch.parentElement
+    for (const sibling of parent.children) {
+      if (sibling === branch || !(sibling instanceof HTMLElement)) continue
+      previous.set(sibling, sibling.inert)
+      sibling.inert = true
+    }
+    if (parent === document.body) break
+    branch = parent
+  }
+
+  return () => {
+    for (const [element, inert] of previous) {
+      element.inert = inert
+    }
   }
 }

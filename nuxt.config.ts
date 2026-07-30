@@ -5,6 +5,12 @@ import { COLOR_THEME_BOOTSTRAP_SCRIPT } from './app/utils/colorTheme'
 interface GeneratedRouteData {
   items?: Array<{ slug: string }>
   recipes?: Array<{ namespace: string, path: string }>
+  traders?: Array<{ slug: string }>
+  acquisition?: {
+    targets?: Array<{ slug: string, itemSlug?: string }>
+    locations?: Array<{ slug: string }>
+    mobs?: Array<{ slug: string }>
+  }
 }
 
 function generatedRoutes(): string[] {
@@ -16,7 +22,15 @@ function generatedRoutes(): string[] {
   const catalog = JSON.parse(readFileSync(catalogPath, 'utf8')) as GeneratedRouteData
   return [
     ...(catalog.items ?? []).map(item => `/items/${item.slug}`),
-    ...(catalog.recipes ?? []).map(recipe => `/recipes/${recipe.namespace}/${recipe.path}`)
+    ...(catalog.acquisition?.targets ?? [])
+      .filter(target => !target.itemSlug)
+      .map(target => `/items/${target.slug}`),
+    ...(catalog.recipes ?? []).map(recipe => `/recipes/${recipe.namespace}/${recipe.path}`),
+    ...(catalog.traders ?? []).map(trader => `/traders/${trader.slug}`),
+    ...(catalog.acquisition?.locations ?? [])
+      .map(location => `/locations/${location.slug}`),
+    ...(catalog.acquisition?.mobs ?? [])
+      .map(mob => `/mobs/${mob.slug}`)
   ]
 }
 

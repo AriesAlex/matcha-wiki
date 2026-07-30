@@ -1,8 +1,14 @@
 <template>
   <div class="app-frame">
-    <a class="skip-link" href="#main-content">К содержанию</a>
+    <a
+      class="skip-link"
+      href="#main-content"
+      :inert="navigationModalOpen"
+    >
+      К содержанию
+    </a>
 
-    <header class="site-header">
+    <header class="site-header" :inert="navigationModalOpen">
       <div class="header-inner">
         <button
           class="icon-button mobile-only"
@@ -79,12 +85,16 @@
         @close="navigationOpen = false"
       />
 
-      <main id="main-content" class="main-content">
+      <main
+        id="main-content"
+        class="main-content"
+        :inert="navigationModalOpen"
+      >
         <slot />
       </main>
     </div>
 
-    <footer class="site-footer">
+    <footer class="site-footer" :inert="navigationModalOpen">
       <div
         class="panorama-strip"
         :style="{ backgroundImage: `url(${useAssetPath('/generated/ui/panorama.png')})` }"
@@ -110,6 +120,7 @@
 </template>
 
 <script setup lang="ts">
+import { useMediaQuery } from '@vueuse/core'
 import {
   PhBookOpenText,
   PhBugBeetle,
@@ -125,6 +136,10 @@ const route = useRoute()
 const catalog = useWikiCatalog()
 const { open: openSearch } = useSearchDialog()
 const navigationOpen = ref(false)
+const compactLayout = useMediaQuery('(max-width: 1050px)')
+const navigationModalOpen = computed(() => (
+  navigationOpen.value && compactLayout.value
+))
 
 watch(() => route.fullPath, () => {
   navigationOpen.value = false

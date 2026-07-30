@@ -39,10 +39,11 @@ export function explainIngredient(
     .filter((hint): hint is string => Boolean(hint)))
 
   if (ingredient.ids.length > 1) {
+    const showsSharedHint = ingredient.ids.length <= 3 && hints.length === 1
     const details = [
       `Подойдёт любой из ${ingredient.ids.length} вариантов.`,
       ...(renamed.length === 1 ? renamed : []),
-      ...(hints.length === 1
+      ...(showsSharedHint
         ? hints
         : ['Выбирайте тот, который уже есть или проще получить.'])
     ]

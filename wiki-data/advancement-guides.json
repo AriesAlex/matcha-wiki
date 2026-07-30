@@ -7,7 +7,7 @@
       "exactCondition": "В инвентарь должен попасть любой предмет с item_model minecraft:opal. Само убийство и нахождение в монументе достижение не проверяет.",
       "link": {
         "label": "Морской Бог, монумент и добыча Опала",
-        "to": "/world#морской-бог"
+        "to": "/mobs/elder-guardian"
       },
       "searchTerms": [
         "Sea God",
@@ -24,7 +24,7 @@
       "exactCondition": "В инвентарь должен попасть любой предмет с item_model minecraft:ruby. Посещение бастиона и открытие сундука не проверяются.",
       "link": {
         "label": "Пандемониум и точные сундуки с Рубином",
-        "to": "/world#пандемониум"
+        "to": "/locations/bastion-remnant"
       },
       "searchTerms": [
         "Pandaemonium",

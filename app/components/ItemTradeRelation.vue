@@ -3,7 +3,7 @@
     <header>
       <NuxtLink
         class="trader"
-        to="/mechanics/villagers"
+        :to="relation.to || '/mechanics/villagers'"
       >
         <span
           class="trade-icon"
@@ -60,7 +60,7 @@
     <ul
       v-if="relation.details?.length"
       class="details"
-      aria-label="Чары результата"
+      aria-label="Особенности сделки"
     >
       <li
         v-for="detail in relation.details"

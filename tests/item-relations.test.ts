@@ -116,4 +116,17 @@ describe('player-facing item relations', () => {
 
     expect(duplicateRelations).toEqual([])
   })
+
+  it('keeps compound trade prices and links to the exact offer', () => {
+    const opal = catalog.items.find(item => item.model === 'minecraft:opal')
+    const earrings = opal?.usedIn
+      .filter(hasTradeExchange)
+      .find(relation => relation.to === '/traders/toolsmith#opal-earrings')
+
+    expect(earrings?.cost.map(cost => [cost.title, cost.stack.count])).toEqual([
+      ['Обол', 4],
+      ['Опал', 1]
+    ])
+    expect(earrings?.result.title).toContain('Опаловые серьги')
+  })
 })

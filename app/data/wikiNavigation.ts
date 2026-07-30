@@ -31,6 +31,7 @@ export const wikiNavigation: WikiNavigationSection[] = [
     links: [
       { to: '/items', label: 'Предметы' },
       { to: '/recipes', label: 'Рецепты' },
+      { to: '/traders', label: 'Торговцы' },
       {
         to: '/mechanics',
         label: 'Механики',
@@ -46,6 +47,8 @@ export const wikiNavigation: WikiNavigationSection[] = [
         to: '/world',
         label: 'Мир и добыча',
         children: [
+          { to: '/locations', label: 'Места и находки' },
+          { to: '/mobs', label: 'Мобы и добыча' },
           { to: '/world/fishing', label: 'Рыбалка' }
         ]
       }

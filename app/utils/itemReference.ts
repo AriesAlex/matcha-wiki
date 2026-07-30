@@ -53,7 +53,7 @@ export function resolveIngredientItem(
   return uniqueItem(namedAndIllustrated) ?? uniqueItem(namedCandidates)
 }
 
-function normalizeItemName(value: string): string {
+export function normalizeItemName(value: string): string {
   return stripMinecraftFormatting(value)
     .toLocaleLowerCase('ru-RU')
     .replaceAll('ё', 'е')

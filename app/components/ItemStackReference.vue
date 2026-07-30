@@ -2,6 +2,7 @@
   <ItemReference
     class="stack-reference"
     :item="resolvedItem"
+    :target="target"
     :ingredient="ingredient"
     :stack="stack"
   >
@@ -25,9 +26,11 @@ import type {
   ItemView,
   StackView
 } from '../types/wiki'
+import type { AcquisitionTarget } from '../types/acquisition'
 
 const props = withDefaults(defineProps<{
   item?: ItemView
+  target?: AcquisitionTarget
   ingredient?: IngredientView
   stack?: StackView
   count?: number
@@ -36,6 +39,7 @@ const props = withDefaults(defineProps<{
   secondary?: string
 }>(), {
   item: undefined,
+  target: undefined,
   ingredient: undefined,
   stack: undefined,
   count: undefined,
@@ -47,11 +51,15 @@ const props = withDefaults(defineProps<{
 const catalog = useWikiCatalog()
 const resolvedItem = computed(() => (
   props.item
+  ?? (props.target?.itemSlug
+    ? catalog.items.find(item => item.slug === props.target?.itemSlug)
+    : undefined)
   ?? (props.stack ? resolveStackItem(catalog.items, props.stack) : undefined)
   ?? (props.ingredient ? resolveIngredientItem(catalog.items, props.ingredient) : undefined)
 ))
 const displayName = computed(() => (
   props.label
+  || props.target?.title
   || resolvedItem.value?.title
   || props.stack?.name
   || props.ingredient?.label

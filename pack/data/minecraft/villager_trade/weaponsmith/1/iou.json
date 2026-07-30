@@ -5,11 +5,11 @@
 			"minecraft:writable_book_content": {
 				"pages": [
 					{
-						"raw": "I don't have any good ideas for the weaponsmith. If you do let me know. I dont want them to sell tools or weapons I want the players to MAKE them."
+						"raw": "Это временная заглушка: полезные сделки для оружейника ещё не придуманы. Готовое оружие и инструменты он намеренно не продаёт — их предлагается создавать самостоятельно."
 					}
 				]
 			},
-			"minecraft:item_name": "IOU"
+			"minecraft:item_name": "Записка оружейника"
 		}
 	},
 	"given_item_modifiers": [],

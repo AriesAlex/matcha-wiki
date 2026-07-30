@@ -1,9 +1,16 @@
 import type {
+  AcquisitionTarget
+} from '../../app/types/acquisition'
+import type {
   ItemView,
   RecipeView,
   WikiCatalog,
   WikiSearchEntry
 } from '../../app/types/wiki'
+import {
+  acquisitionTargetPath,
+  resolveAcquisitionTargetForStack
+} from '../../app/utils/acquisition'
 import {
   resolveIngredientItem,
   resolveStackItem
@@ -14,6 +21,7 @@ import { russianWordForm } from './russianGrammar'
 interface RecipeSearchContext {
   recipe: RecipeView
   resultItem?: ItemView
+  resultTarget?: AcquisitionTarget
   ingredientTitles: string[]
   terms: string[]
 }
@@ -33,16 +41,23 @@ export function createSearchIndex(catalog: WikiCatalog): WikiSearchEntry[] {
     createRecipeSearchContext(catalog, recipe, itemByRecipeId)
   ))
   const recipeContextsByItem = new Map<string, RecipeSearchContext[]>()
+  const recipeContextsByTarget = new Map<string, RecipeSearchContext[]>()
 
   for (const context of recipeContexts) {
-    if (!context.resultItem) continue
-
-    const itemRecipes = recipeContextsByItem.get(context.resultItem.id) ?? []
-    itemRecipes.push(context)
-    recipeContextsByItem.set(context.resultItem.id, itemRecipes)
+    if (context.resultItem) {
+      const itemRecipes = recipeContextsByItem.get(context.resultItem.id) ?? []
+      itemRecipes.push(context)
+      recipeContextsByItem.set(context.resultItem.id, itemRecipes)
+    } else if (context.resultTarget) {
+      const targetRecipes = recipeContextsByTarget.get(context.resultTarget.id) ?? []
+      targetRecipes.push(context)
+      recipeContextsByTarget.set(context.resultTarget.id, targetRecipes)
+    }
   }
   const standaloneRecipeGroups = Map.groupBy(
-    recipeContexts.filter(context => !context.resultItem),
+    recipeContexts.filter(context => (
+      !context.resultItem && !context.resultTarget
+    )),
     recipeResultKey
   )
   const standaloneRecipeEntries = disambiguateRecipeTitles(
@@ -93,6 +108,7 @@ export function createSearchIndex(catalog: WikiCatalog): WikiSearchEntry[] {
         ])
       }
     }),
+    ...acquisitionTargetSearchEntries(catalog, recipeContextsByTarget),
     ...standaloneRecipeEntries,
     ...catalog.advancements.map(advancement => ({
       kind: 'advancement' as const,
@@ -115,8 +131,172 @@ export function createSearchIndex(catalog: WikiCatalog): WikiSearchEntry[] {
         ...(advancement.guide?.searchTerms ?? []),
         ...(advancement.guide?.entries.map(entry => entry.label) ?? [])
       ])
-    }))
+    })),
+    ...traderSearchEntries(catalog),
+    ...acquisitionSearchEntries(catalog)
   ]
+}
+
+function acquisitionTargetSearchEntries(
+  catalog: WikiCatalog,
+  recipeContextsByTarget: Map<string, RecipeSearchContext[]>
+): WikiSearchEntry[] {
+  const sourceById = new Map([
+    ...catalog.acquisition.locations.map(source => [source.id, source] as const),
+    ...catalog.acquisition.mobs.map(source => [source.id, source] as const)
+  ])
+
+  return catalog.acquisition.targets
+    .filter(target => !target.itemSlug)
+    .map((target) => {
+      const methods = catalog.acquisition.methods.filter(method => (
+        method.targetId === target.id
+      ))
+      const sources = methods.flatMap((method) => {
+        const source = sourceById.get(method.sourceId)
+        return source ? [source] : []
+      })
+      const recipeContexts = recipeContextsByTarget.get(target.id) ?? []
+      const glossary = catalog.ingredientGlossary[target.stack.carrier]
+      const sourceNames = [...new Set(sources.map(source => source.name))]
+
+      return {
+        kind: 'item' as const,
+        title: target.title,
+        description: shortDescription(
+          glossary?.obtainHint,
+          sourceNames.length
+            ? `Можно получить здесь: ${sourceNames.slice(0, 3).join(', ')}.`
+            : 'Точные способы получения и применение этого ресурса.'
+        ),
+        category: target.vanillaName
+          && normalizeTitle(target.vanillaName)
+            !== normalizeTitle(target.stack.name)
+          ? 'Переосмысленный ресурс'
+          : 'Ресурс Matcha',
+        path: acquisitionTargetPath(target),
+        icon: target.stack.icon,
+        terms: uniqueTerms([
+          target.title,
+          target.stack.name,
+          target.stack.carrier,
+          target.stack.model,
+          target.vanillaName,
+          glossary?.name,
+          glossary?.vanillaName,
+          glossary?.obtainHint,
+          ...sources.flatMap(source => [
+            source.name,
+            source.summary,
+            source.where,
+            source.action,
+            ...source.aliases
+          ]),
+          ...methods.flatMap(method => [
+            method.context,
+            method.action
+          ]),
+          ...recipeContexts.flatMap(context => context.terms)
+        ])
+      }
+    })
+}
+
+function traderSearchEntries(catalog: WikiCatalog): WikiSearchEntry[] {
+  const occupiedTitles = new Set([
+    ...catalog.items.map(item => normalizeTitle(item.title)),
+    ...catalog.advancements.map(advancement => normalizeTitle(advancement.title))
+  ])
+
+  return catalog.traders.map(trader => ({
+    kind: 'trader',
+    title: occupiedTitles.has(normalizeTitle(trader.title))
+      ? `${trader.title}: торговец`
+      : trader.title,
+    description: shortDescription(
+      trader.summary,
+      'Профессия, рабочее место и доступные сделки.'
+    ),
+    category: 'Торговец',
+    path: `/traders/${trader.slug}`,
+    icon: trader.jobSite?.stack.icon ?? '/generated/ui/pack.png',
+    terms: uniqueTerms([
+      trader.title,
+      trader.vanillaTitle,
+      trader.summary,
+      trader.priority,
+      trader.jobSite?.title,
+      ...trader.sets.flatMap(set => [
+        set.title,
+        ...set.offers.flatMap(offer => [
+          offer.result.title,
+          ...offer.costs.map(cost => cost.title),
+          ...offer.conditions,
+          ...offer.details
+        ])
+      ])
+    ])
+  }))
+}
+
+function acquisitionSearchEntries(catalog: WikiCatalog): WikiSearchEntry[] {
+  const methodById = new Map(
+    catalog.acquisition.methods.map(method => [method.id, method])
+  )
+  const targetById = new Map(
+    catalog.acquisition.targets.map(target => [target.id, target])
+  )
+
+  return [
+    ...catalog.acquisition.locations.map(location => ({
+      source: location,
+      kind: 'location' as const,
+      category: location.kind === 'archaeology'
+        ? 'Археология'
+        : 'Место и находки',
+      path: `/locations/${location.slug}`
+    })),
+    ...catalog.acquisition.mobs.map(mob => ({
+      source: mob,
+      kind: 'mob' as const,
+      category: 'Моб и добыча',
+      path: `/mobs/${mob.slug}`
+    }))
+  ].map(({ source, kind, category, path }) => {
+    const methods = source.methodIds.flatMap((methodId) => {
+      const method = methodById.get(methodId)
+      return method ? [method] : []
+    })
+    const targets = methods.flatMap((method) => {
+      const target = targetById.get(method.targetId)
+      return target ? [target] : []
+    })
+
+    return {
+      kind,
+      title: source.name,
+      description: shortDescription(source.summary, source.where),
+      category,
+      path,
+      icon: targets.find(target => target.stack.icon)?.stack.icon,
+      terms: uniqueTerms([
+        source.name,
+        source.summary,
+        source.where,
+        source.action,
+        ...source.aliases,
+        ...methods.flatMap(method => [
+          method.context,
+          method.action
+        ]),
+        ...targets.flatMap(target => [
+          target.stack.name,
+          target.stack.carrier,
+          target.stack.model
+        ])
+      ])
+    }
+  })
 }
 
 function createRecipeSearchContext(
@@ -128,6 +308,9 @@ function createRecipeSearchContext(
     ?? (recipe.result
       ? resolveStackItem(catalog.items, recipe.result)
       : undefined)
+  const resultTarget = !resultItem && recipe.result
+    ? resolveAcquisitionTargetForStack(catalog.acquisition, recipe.result)
+    : undefined
   const ingredientTitles = recipe.ingredients.map(ingredient => (
     resolveIngredientItem(catalog.items, ingredient)?.title ?? ingredient.label
   ))
@@ -135,6 +318,7 @@ function createRecipeSearchContext(
   return {
     recipe,
     resultItem,
+    resultTarget,
     ingredientTitles,
     terms: [
       'способ получения',
@@ -142,6 +326,7 @@ function createRecipeSearchContext(
       recipe.station,
       recipe.type,
       resultItem?.title,
+      resultTarget?.title,
       recipe.result?.name,
       recipe.result?.carrier,
       ...recipe.ingredients.flatMap((ingredient, index) => [
@@ -219,10 +404,21 @@ function disambiguateRecipeTitles(
     records,
     record => normalizeTitle(record.entry.title)
   )
+  const occupiedTitles = new Set([
+    ...catalog.items.map(item => normalizeTitle(item.title)),
+    ...catalog.acquisition.targets
+      .filter(target => !target.itemSlug)
+      .map(target => normalizeTitle(target.title))
+  ])
 
   return records.map((record) => {
     const matches = recordsByTitle.get(normalizeTitle(record.entry.title)) ?? []
-    if (matches.length < 2) return record.entry
+    if (
+      matches.length < 2
+      && !occupiedTitles.has(normalizeTitle(record.entry.title))
+    ) {
+      return record.entry
+    }
 
     return {
       ...record.entry,

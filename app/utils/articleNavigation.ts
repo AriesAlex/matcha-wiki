@@ -1,6 +1,7 @@
 import type { WikiTocLink } from '~/types/wiki'
 
 export const ARTICLE_HEADING_OFFSET = 88
+const HEADING_POSITION_TOLERANCE = 1
 
 export interface HeadingPosition {
   id: string
@@ -26,7 +27,7 @@ export function pickActiveHeading(
   let activeId: string | null = null
 
   for (const heading of headings) {
-    if (heading.top > activationY) {
+    if (heading.top > activationY + HEADING_POSITION_TOLERANCE) {
       break
     }
     activeId = heading.id

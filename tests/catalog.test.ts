@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 import { wikiNavigation } from '../app/data/wikiNavigation'
+import { allTradeOffers } from '../app/types/entities'
 import type { WikiCatalog } from '../app/types/wiki'
 import {
   explainIngredient
@@ -25,6 +26,10 @@ describe('generated wiki catalog', () => {
     expect(catalog.stats.advancements).toBe(catalog.advancements.length)
     expect(new Set(catalog.items.map(item => item.slug)).size).toBe(catalog.items.length)
     expect(new Set(catalog.recipes.map(recipe => recipe.id)).size).toBe(catalog.recipes.length)
+    const targetPages = catalog.acquisition.targets.filter(target => !target.itemSlug)
+    expect(new Set(targetPages.map(target => target.slug)).size)
+      .toBe(targetPages.length)
+    expect(targetPages.every(target => target.title && target.slug)).toBe(true)
   })
 
   it('contains the complete analyzed pack rather than a sample fixture', () => {
@@ -132,6 +137,117 @@ describe('generated wiki catalog', () => {
     expect(new Set(catalog.items.map(item => item.title)).size).toBe(catalog.items.length)
   })
 
+  it('classifies only complete food and fish identifiers', () => {
+    const itemsByModel = new Map(catalog.items.map(item => [item.model, item]))
+
+    for (const food of [
+      'minecraft:egg',
+      'minecraft:fried_egg',
+      'minecraft:apple_empanada',
+      'minecraft:golden_carrot_cupcake'
+    ]) {
+      expect(itemsByModel.get(food)?.category, food).toBe('Еда и напитки')
+    }
+
+    const leggings = catalog.items.filter(item =>
+      (item.model ?? item.id).endsWith('_leggings')
+    )
+    expect(leggings.length).toBeGreaterThan(5)
+    expect(
+      leggings.map(item => [item.id, item.category])
+    ).toEqual(
+      leggings.map(item => [item.id, 'Снаряжение'])
+    )
+
+    for (const technicalSpawnEggOutput of [
+      'Бензол',
+      'Высокоуглеродистое железо'
+    ]) {
+      const item = catalog.items.find(candidate =>
+        candidate.title === technicalSpawnEggOutput
+      )
+      expect(item?.carrier, technicalSpawnEggOutput).toMatch(/_spawn_egg$/)
+      expect(item?.category, technicalSpawnEggOutput).not.toBe('Еда и напитки')
+      expect(item?.category, technicalSpawnEggOutput).not.toBe('Рыбалка')
+    }
+  })
+
+  it('keeps trade names semantic and moves lore statistics into details', () => {
+    const offers = new Map(
+      allTradeOffers(catalog.traders).map(offer => [offer.id, offer])
+    )
+
+    expect(offers.get('minecraft:leatherworker/4/hatchet')).toMatchObject({
+      result: { title: 'Топорик' },
+      details: expect.arrayContaining([
+        '⛏ 10',
+        'Кровавая ярость I'
+      ])
+    })
+    expect(offers.get('minecraft:butcher/4/butcher_knife')).toMatchObject({
+      result: { title: 'Мясницкий тесак' },
+      details: expect.arrayContaining([
+        '🧍↔🧍 -1',
+        'Резня I',
+        'Добыча II'
+      ])
+    })
+    expect(offers.get('minecraft:butcher/1/sweet_berry_toast')).toMatchObject({
+      result: { title: 'Тост со сладкими ягодами' },
+      details: expect.arrayContaining(['❤❤❤❤'])
+    })
+    expect(offers.get('minecraft:butcher/1/sweet_berry_toast_recipe')?.result.title)
+      .toBe('Кулинарный рецепт: Тост со сладкими ягодами')
+    expect(offers.get('minecraft:librarian/2/avesta_1')?.result.title)
+      .toBe('Офуда: Молитва Митре')
+
+    for (const offer of offers.values()) {
+      expect(offer.result.title, offer.id).not.toMatch(/[⛏🗡🕒⛊❤]/u)
+    }
+  })
+
+  it('localizes custom enchantments through their declared translation keys', () => {
+    const offers = new Map(
+      allTradeOffers(catalog.traders).map(offer => [offer.id, offer])
+    )
+    const expected: Record<string, string> = {
+      'minecraft:leatherworker/4/hatchet': 'Кровавая ярость I',
+      'minecraft:butcher/4/butcher_knife': 'Резня I',
+      'minecraft:toolsmith/1/opal_earrings': '🐟 Сила источника I',
+      'minecraft:toolsmith/2/ruby_circlet': '🔥🛡 Огнестойкость I',
+      'minecraft:toolsmith/3/amber_earrings': '❤ Регенерация I',
+      'minecraft:toolsmith/4/topaz_earrings': '⛏ Спешка I'
+    }
+
+    for (const [tradeId, enchantment] of Object.entries(expected)) {
+      expect(offers.get(tradeId)?.details, tradeId).toContain(enchantment)
+    }
+    expect(offers.get('minecraft:butcher/4/butcher_knife')?.details)
+      .toContain('Добыча II')
+  })
+
+  it('formats refugee variants and runtime map names for players', () => {
+    const offers = new Map(
+      allTradeOffers(catalog.traders).map(offer => [offer.id, offer])
+    )
+    expect(
+      offers.get('minecraft:wandering_trader/adult_asylum_seeker_5')?.result.title
+    ).toBe('Беженец: взрослый из джунглей')
+    expect(
+      offers.get('minecraft:wandering_trader/child_asylum_seeker')?.result.title
+    ).toBe('Беженец: ребёнок')
+    expect(
+      [...offers.values()]
+        .filter(offer => offer.result.stack.model === 'minecraft:application')
+        .map(offer => offer.result.title)
+    ).not.toContain(expect.stringMatching(/культура/u))
+
+    const buriedTreasureMap = catalog.acquisition.targets.find(target =>
+      target.stack.nameKey === 'filled_map.buried_treasure'
+    )
+    expect(buriedTreasureMap?.stack.name).toBe('Карта зарытого клада')
+  })
+
   it('turns opaque item sources into player-facing obtaining and usage paths', () => {
     const avesta = catalog.items.find(item => item.model === 'minecraft:avesta')
     expect(avesta).toBeDefined()
@@ -141,9 +257,9 @@ describe('generated wiki catalog', () => {
 
     expect(avesta.guide?.summary).toContain('валюта глашатая второго уровня')
     expect(avesta.obtainedFrom.map(relation => relation.title)).toEqual([
-      'Деревенский храм',
       'Пустынная пирамида'
     ])
+    expect(avesta.obtainedFrom[0]?.to).toBe('/locations/desert-pyramid')
     expect(
       avesta.usedIn
         .filter(relation => relation.kind === 'trade')
@@ -152,8 +268,12 @@ describe('generated wiki catalog', () => {
       'Офуда: Молитва Ахура-Мазде',
       'Офуда: Молитва Митре'
     ])
-    expect(avesta.usedIn.every(relation => relation.to === '/mechanics/villagers'))
-      .toBe(true)
+    expect(new Set(avesta.usedIn.map(relation => relation.to))).toEqual(
+      new Set([
+        '/traders/librarian#avesta-1',
+        '/traders/librarian#avesta-2'
+      ])
+    )
     expect(
       avesta.recipeUses.find(use => use.recipeId === 'blessings:hell_bound_book')
     ).toMatchObject({
@@ -293,15 +413,30 @@ describe('generated wiki catalog', () => {
     })
     expect(catalog.ingredientGlossary['minecraft:azure_bluet']?.obtainHint)
       .toContain('равнинах')
+
+    const automaticHints = Object.values(catalog.ingredientGlossary)
+      .map(entry => entry.obtainHint)
+      .filter((hint): hint is string => Boolean(hint))
+      .join('\n')
+    expect(automaticHints).not.toMatch(
+      /Выпадает из: (?:основа для|мука|тесто|высокоуглеродистое железо)/
+    )
+    expect(catalog.ingredientGlossary['minecraft:blaze_powder']?.obtainHint)
+      .toContain('ифрит')
+    expect(catalog.ingredientGlossary['minecraft:bone']?.obtainHint)
+      .toContain('скелет-иссушитель')
+    expect(catalog.ingredientGlossary['minecraft:nautilus_shell']?.obtainHint)
+      .toContain('зомби-наутилус')
+    expect(automaticHints).not.toMatch(/всполох|визер-скелет|наутилус-зомби/u)
   })
 
   it('documents cryptic and secret advancements with stable deep links', () => {
     const advancements = new Map(catalog.advancements.map(entry => [entry.id, entry]))
 
     expect(advancements.get('main:tutorial/obtain_opal')?.guide?.link?.to)
-      .toBe('/world#морской-бог')
+      .toBe('/mobs/elder-guardian')
     expect(advancements.get('main:tutorial/obtain_ruby')?.guide?.link?.to)
-      .toBe('/world#пандемониум')
+      .toBe('/locations/bastion-remnant')
     expect(advancements.get('main:tutorial/obtain_amber')?.guide?.link?.to)
       .toBe('/world#следы-паломника')
     expect(advancements.get('main:tutorial/obtain_topaz')?.guide?.link?.to)
