@@ -49,10 +49,10 @@
             >
           </span>
           <span>
-            <strong>{{ stripMinecraftFormatting(item.title) }}</strong>
+            <strong><MinecraftText :text="item.title" /></strong>
             <small>{{ item.category }}</small>
           </span>
-          <code>{{ item.model }}</code>
+          <code>{{ item.model ?? item.carrier }}</code>
         </NuxtLink>
       </li>
     </ul>
@@ -92,7 +92,7 @@ const filteredItems = computed(() => {
     if (!needle) {
       return true
     }
-    const haystack = `${item.title} ${item.name} ${item.id} ${item.carrier} ${item.aliases.join(' ')}`
+    const haystack = `${item.title} ${item.name} ${item.id} ${item.model ?? ''} ${item.carrier} ${item.aliases.join(' ')}`
       .toLocaleLowerCase('ru-RU')
       .replaceAll('ё', 'е')
     return haystack.includes(needle)

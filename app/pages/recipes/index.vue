@@ -49,8 +49,17 @@
             >
           </span>
           <span>
-            <strong>{{ stripMinecraftFormatting(recipe.result?.name ?? recipe.id) }}</strong>
-            <small>{{ recipe.ingredients.map(ingredient => ingredient.label).join(', ') }}</small>
+            <strong>
+              <MinecraftText :text="recipeResultTitle(recipe)" />
+            </strong>
+            <small>
+              <template
+                v-for="(ingredient, index) in recipe.ingredients"
+                :key="`${ingredient.label}:${index}`"
+              >
+                <template v-if="index">, </template><MinecraftText :text="ingredient.label" />
+              </template>
+            </small>
           </span>
           <em>{{ recipe.station }}</em>
         </NuxtLink>
@@ -70,6 +79,7 @@
 
 <script setup lang="ts">
 import { PhMagnifyingGlass } from '@phosphor-icons/vue'
+import type { RecipeView } from '../../types/wiki'
 
 const catalog = useWikiCatalog()
 const query = ref('')
@@ -93,6 +103,7 @@ const filteredRecipes = computed(() => {
     }
     const haystack = [
       recipe.id,
+      recipeResultTitle(recipe),
       recipe.result?.name,
       recipe.result?.carrier,
       ...recipe.ingredients.flatMap(ingredient => [ingredient.label, ingredient.tag, ...ingredient.ids])
@@ -104,6 +115,11 @@ const filteredRecipes = computed(() => {
 watch([query, station], () => {
   visible.value = 120
 })
+
+function recipeResultTitle(recipe: RecipeView): string {
+  if (!recipe.result) return recipe.id
+  return resolveStackItem(catalog.items, recipe.result)?.title ?? recipe.result.name
+}
 
 useSeoMeta({
   title: 'Рецепты',

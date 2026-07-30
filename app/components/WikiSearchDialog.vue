@@ -63,8 +63,8 @@
             </span>
             <span>
               <small>{{ kindLabels[entry.kind] }}</small>
-              <strong>{{ entry.title }}</strong>
-              <span>{{ entry.description }}</span>
+              <strong><MinecraftText :text="entry.title" /></strong>
+              <span><MinecraftText :text="entry.description" /></span>
             </span>
             <PhArrowRight
               :size="18"
@@ -167,7 +167,7 @@ function handleShortcut(event: KeyboardEvent): void {
 }
 
 function normalizeSearch(value: string): string {
-  return value.toLocaleLowerCase('ru-RU').replaceAll('ё', 'е').trim()
+  return stripMinecraftFormatting(value).toLocaleLowerCase('ru-RU').replaceAll('ё', 'е').trim()
 }
 </script>
 

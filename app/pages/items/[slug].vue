@@ -17,19 +17,19 @@
       </span>
       <div>
         <p class="eyebrow">{{ item.category }}</p>
-        <h1>{{ stripMinecraftFormatting(item.title) }}</h1>
-        <code>{{ item.model }}</code>
+        <h1><MinecraftText :text="item.title" /></h1>
+        <code>{{ item.model ?? item.carrier }}</code>
       </div>
     </header>
 
     <div class="item-overview">
       <section class="minecraft-tooltip">
-        <strong>{{ stripMinecraftFormatting(item.name) }}</strong>
+        <strong><MinecraftText :text="item.name" /></strong>
         <p
           v-for="line in item.lore"
           :key="line"
         >
-          {{ stripMinecraftFormatting(line) }}
+          <MinecraftText :text="line" />
         </p>
         <small v-if="!item.lore.length">Без отдельной строки описания в игре</small>
       </section>
@@ -41,7 +41,10 @@
         </div>
         <div>
           <dt>Модель ресурспака</dt>
-          <dd><code>{{ item.model }}</code></dd>
+          <dd>
+            <code v-if="item.model">{{ item.model }}</code>
+            <span v-else>Нет — вариант задаётся components</span>
+          </dd>
         </div>
         <div>
           <dt>Пользовательский вариант</dt>

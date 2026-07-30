@@ -23,6 +23,10 @@ import type {
   StackView,
   WikiCatalog
 } from '../app/types/wiki'
+import {
+  resolveIngredientItem,
+  resolveStackItem
+} from '../app/utils/itemReference'
 
 type JsonObject = Record<string, unknown>
 type JsonValue = JsonObject | JsonValue[] | string | number | boolean | null
@@ -519,6 +523,7 @@ function buildItems(
     const recipeIds = recipes
       .filter(recipe => recipe.result?.model === model || (
         !recipe.result?.model
+        && Object.keys(recipe.result?.components ?? {}).length === 0
         && recipe.result?.carrier === carrier
         && resourcePath(model) === resourcePath(carrier)
       ))
@@ -577,10 +582,80 @@ function buildItems(
     })
   }
 
+  items.push(...buildComponentItems(recipes))
   disambiguateItemTitles(items)
   return items.sort((left, right) => {
     const customOrder = Number(right.isCustom) - Number(left.isCustom)
     return customOrder || left.title.localeCompare(right.title, 'ru')
+  })
+}
+
+function buildComponentItems(recipes: RecipeView[]): ItemView[] {
+  const groups = new Map<string, {
+    stack: StackView
+    recipes: RecipeView[]
+  }>()
+
+  for (const recipe of recipes) {
+    const stack = recipe.result
+    if (!stack || stack.model || Object.keys(stack.components ?? {}).length === 0) {
+      continue
+    }
+
+    const signature = JSON.stringify({
+      carrier: stack.carrier,
+      name: stack.name,
+      nameKey: stack.nameKey,
+      components: stack.components
+    })
+    const group = groups.get(signature) ?? { stack, recipes: [] }
+    group.recipes.push(recipe)
+    groups.set(signature, group)
+  }
+
+  return [...groups.values()].map(({ stack, recipes: matchingRecipes }) => {
+    const orderedRecipes = [...matchingRecipes].sort((left, right) => left.id.localeCompare(right.id))
+    const primaryRecipe = orderedRecipes[0]
+    const id = `recipe-output:${primaryRecipe.namespace}/${primaryRecipe.path}`
+    const components = stack.components ?? {}
+    const description = stack.nameKey
+      ? firstTranslation([
+          `${stack.nameKey}.desc`,
+          `${stack.nameKey}.description`
+        ])
+      : undefined
+
+    return {
+      id,
+      slug: slugify(id),
+      carrier: stack.carrier,
+      name: stack.name,
+      title: stack.name,
+      nameKey: stack.nameKey,
+      description,
+      icon: stack.icon ?? iconFor(stack.carrier, undefined, components),
+      category: itemCategory(resourcePath(stack.carrier), stack.carrier, components),
+      isCustom: true,
+      lore: extractLore(components),
+      effects: extractEffects(components),
+      attributes: extractAttributes(components),
+      componentKeys: Object.keys(components).sort(),
+      components,
+      recipeIds: orderedRecipes.map(recipe => recipe.id),
+      sources: orderedRecipes.map(recipe => ({
+        kind: 'recipe',
+        label: `Рецепт: ${recipe.station}`,
+        path: recipe.sourcePath
+      })),
+      aliases: [...new Set([
+        id,
+        stack.carrier,
+        resourcePath(stack.carrier),
+        stack.nameKey,
+        en[stack.nameKey ?? ''],
+        ...orderedRecipes.map(recipe => recipe.id)
+      ].filter(Boolean))]
+    }
   })
 }
 
@@ -599,7 +674,7 @@ function disambiguateItemTitles(items: ItemView[]): void {
     for (const item of group) {
       const qualifier = item.lore[0]
         ?? item.description
-        ?? formatIdentifier(item.model)
+        ?? formatIdentifier(item.model ?? item.id)
       item.title = `${item.name}: ${qualifier}`
     }
   }
@@ -625,7 +700,11 @@ function loadAssetItems(): AssetItem[] {
 function loadAdvancements(items: ItemView[], recipes: RecipeView[]): AdvancementView[] {
   const advancementDir = resolve(dataDir, 'main/advancement')
   const advancements: AdvancementView[] = []
-  const itemsByModel = new Map(items.map(item => [item.model, item]))
+  const itemsByModel = new Map(
+    items
+      .filter((item): item is ItemView & { model: string } => item.model !== undefined)
+      .map(item => [item.model, item])
+  )
   const recipesById = new Map(recipes.map(recipe => [recipe.id, recipe]))
 
   for (const path of walkFiles(advancementDir, file => extname(file) === '.json')) {
@@ -1369,25 +1448,36 @@ function createSearchIndex(catalog: WikiCatalog): Array<Record<string, unknown>>
         ...item.aliases
       ].filter(Boolean).join(' ')
     })),
-    ...catalog.recipes.map(recipe => ({
-      kind: 'recipe',
-      title: recipe.result?.name ?? recipe.id,
-      description: `${recipe.station}: ${recipe.ingredients.map(ingredient => ingredient.label).join(', ')}`,
-      path: `/recipes/${recipe.namespace}/${recipe.path}`,
-      icon: recipe.result?.icon,
-      terms: [
-        recipe.id,
-        recipe.station,
-        recipe.type,
-        recipe.result?.name,
-        recipe.result?.carrier,
-        ...recipe.ingredients.flatMap(ingredient => [
-          ingredient.label,
-          ingredient.tag,
-          ...ingredient.ids
-        ])
-      ].filter(Boolean).join(' ')
-    })),
+    ...catalog.recipes.map((recipe) => {
+      const resultItem = recipe.result
+        ? resolveStackItem(catalog.items, recipe.result)
+        : undefined
+      const ingredientTitles = recipe.ingredients.map(ingredient => (
+        resolveIngredientItem(catalog.items, ingredient)?.title ?? ingredient.label
+      ))
+
+      return {
+        kind: 'recipe',
+        title: resultItem?.title ?? recipe.result?.name ?? recipe.id,
+        description: `${recipe.station}: ${ingredientTitles.join(', ')}`,
+        path: `/recipes/${recipe.namespace}/${recipe.path}`,
+        icon: recipe.result?.icon,
+        terms: [
+          recipe.id,
+          recipe.station,
+          recipe.type,
+          resultItem?.title,
+          recipe.result?.name,
+          recipe.result?.carrier,
+          ...recipe.ingredients.flatMap((ingredient, index) => [
+            ingredientTitles[index],
+            ingredient.label,
+            ingredient.tag,
+            ...ingredient.ids
+          ])
+        ].filter(Boolean).join(' ')
+      }
+    }),
     ...catalog.advancements.map(advancement => ({
       kind: 'advancement',
       title: advancement.title,

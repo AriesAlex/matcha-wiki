@@ -111,8 +111,8 @@
         >
           <ItemSlot :stack="milestone.icon" />
           <div>
-            <strong>{{ stripMinecraftFormatting(milestone.title) }}</strong>
-            <p>{{ stripMinecraftFormatting(milestone.description) }}</p>
+            <strong><MinecraftText :text="milestone.title" /></strong>
+            <p><MinecraftText :text="milestone.description" /></p>
           </div>
         </li>
       </ol>

@@ -1,6 +1,8 @@
 import { defineCollection, defineContentConfig, z } from '@nuxt/content'
 
 const wikiSchema = z.object({
+  title: z.string(),
+  description: z.string(),
   category: z.enum([
     'Начало игры',
     'Прогрессия',

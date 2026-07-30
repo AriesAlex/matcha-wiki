@@ -56,7 +56,7 @@ export interface ItemSource {
 export interface ItemView {
   id: string
   slug: string
-  model: string
+  model?: string
   carrier: string
   name: string
   title: string

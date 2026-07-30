@@ -1,10 +1,12 @@
 <template>
-  <span
+  <component
+    :is="resolvedItem ? ItemReference : 'span'"
     class="slot"
     :class="{ large, empty: isEmpty }"
-    role="img"
+    :item="resolvedItem"
+    :role="resolvedItem ? undefined : 'img'"
     :aria-label="displayName"
-    :title="displayName"
+    :title="resolvedItem ? undefined : displayName"
   >
     <img
       v-if="!isEmpty && iconUrl"
@@ -25,10 +27,11 @@
       class="count"
       aria-hidden="true"
     >{{ stack?.count }}</b>
-  </span>
+  </component>
 </template>
 
 <script setup lang="ts">
+import ItemReference from './ItemReference.vue'
 import type { IngredientView, StackView } from '../types/wiki'
 
 const props = withDefaults(
@@ -46,15 +49,22 @@ const props = withDefaults(
   }
 )
 
+const catalog = useWikiCatalog()
 const isEmpty = computed(() => props.empty || (!props.stack && !props.ingredient))
+const resolvedItem = computed(() => {
+  if (props.stack) return resolveStackItem(catalog.items, props.stack)
+  if (props.ingredient) return resolveIngredientItem(catalog.items, props.ingredient)
+  return undefined
+})
 const iconUrl = computed(() => {
   const icon = props.stack?.icon ?? props.ingredient?.icons[0]
   return icon ? useAssetPath(icon) : ''
 })
 const displayName = computed(() => {
   if (isEmpty.value) return 'Пустой слот'
-  if (props.stack) return props.stack.name || 'Неизвестный предмет'
-  if (props.ingredient?.label) return props.ingredient.label
+  if (resolvedItem.value) return stripMinecraftFormatting(resolvedItem.value.title)
+  if (props.stack) return stripMinecraftFormatting(props.stack.name) || 'Неизвестный предмет'
+  if (props.ingredient?.label) return stripMinecraftFormatting(props.ingredient.label)
   if (props.ingredient?.tag) return `Тег: ${props.ingredient.tag}`
   return 'Неизвестный предмет'
 })

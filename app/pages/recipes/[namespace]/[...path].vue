@@ -17,7 +17,7 @@
       </span>
       <div>
         <p class="eyebrow">{{ recipe.station }}</p>
-        <h1>{{ stripMinecraftFormatting(recipe.result?.name ?? recipe.id) }}</h1>
+        <h1><MinecraftText :text="resultItem?.title ?? recipe.result?.name ?? recipe.id" /></h1>
         <code>{{ recipe.id }}</code>
       </div>
     </header>
@@ -31,20 +31,31 @@
       </header>
       <ul class="ingredient-list">
         <li
-          v-for="(ingredient, index) in recipe.ingredients"
-          :key="`${ingredient.label}:${index}`"
+          v-for="(entry, index) in ingredientEntries"
+          :key="`${entry.ingredient.label}:${index}`"
         >
-          <ItemSlot :ingredient="ingredient" />
+          <ItemSlot :ingredient="entry.ingredient" />
           <span>
-            <strong>{{ ingredient.label }}</strong>
-            <code v-if="ingredient.tag">#{{ ingredient.tag }}</code>
-            <code v-else>{{ ingredient.ids.join(' | ') }}</code>
+            <ItemReference
+              v-if="entry.item"
+              :item="entry.item"
+              class="ingredient-link"
+            >
+              <strong><MinecraftText :text="entry.item.title" /></strong>
+            </ItemReference>
+            <strong v-else>
+              <MinecraftText :text="entry.ingredient.label" />
+            </strong>
+            <code v-if="entry.ingredient.tag">#{{ entry.ingredient.tag }}</code>
+            <code v-else>{{ entry.ingredient.ids.join(' | ') }}</code>
           </span>
         </li>
       </ul>
       <p v-if="resultItem">
         Результат:
-        <NuxtLink :to="`/items/${resultItem.slug}`">{{ stripMinecraftFormatting(resultItem.name) }}</NuxtLink>.
+        <ItemReference :item="resultItem">
+          <MinecraftText :text="resultItem.title" />
+        </ItemReference>.
       </p>
     </section>
 
@@ -84,15 +95,19 @@ if (!recipe.value) {
 const resultItem = computed(() => {
   const result = recipe.value?.result
   if (!result) return undefined
-  return catalog.items.find(item => (
-    item.model === result.model
-    || item.id === result.model
-    || (!result.model && item.carrier === result.carrier)
-  ))
+  return resolveStackItem(catalog.items, result)
 })
+const ingredientEntries = computed(() => (
+  recipe.value?.ingredients.map(ingredient => ({
+    ingredient,
+    item: resolveIngredientItem(catalog.items, ingredient)
+  })) ?? []
+))
 
 useSeoMeta({
-  title: () => `Рецепт: ${stripMinecraftFormatting(recipe.value?.result?.name ?? recipeId)}`,
+  title: () => `Рецепт: ${stripMinecraftFormatting(
+    resultItem.value?.title ?? recipe.value?.result?.name ?? recipeId
+  )}`,
   description: () => {
     const current = recipe.value
     return current
@@ -165,6 +180,10 @@ useSeoMeta({
       code {
         color: var(--muted);
         font-size: 12px;
+      }
+
+      .ingredient-link {
+        width: fit-content;
       }
     }
   }

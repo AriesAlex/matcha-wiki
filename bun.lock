@@ -11,6 +11,7 @@
         "@nuxtjs/sitemap": "8.3.1",
         "@phosphor-icons/vue": "2.2.1",
         "better-sqlite3": "12.5.0",
+        "minecraft-motd-util": "1.1.12",
         "nuxt": "4.5.1",
       },
       "devDependencies": {
@@ -22,6 +23,7 @@
         "typescript": "^5.9.0",
         "vitest": "4.1.10",
         "vue-tsc": "^3.3.8",
+        "yaml": "2.9.0",
       },
     },
   },
@@ -1447,6 +1449,8 @@
     "mimic-fn": ["mimic-fn@4.0.0", "", {}, "sha512-vqiC06CuhBTUdZH+RYl8sFrL096vA45Ok5ISO6sE/Mr1jRbGH4Csnhi8f3wKVl7x8mO4Au7Ir9D3Oyv1VYMFJw=="],
 
     "mimic-response": ["mimic-response@3.1.0", "", {}, "sha512-z0yWI+4FDrrweS8Zmt4Ej5HdJmky15+L2e6Wgn3+iK5fWzb6T3fhNFq2+MeTRb064c6Wr4N/wv0DzQTjNzHNGQ=="],
+
+    "minecraft-motd-util": ["minecraft-motd-util@1.1.12", "", {}, "sha512-5TuTRjrRupSTruea0nRC37r0FdhkS1O4wIJKAYfwJRCQd/X4Zyl/dVIs96h9UVW6N8jhIuz9pNkrDsqyN7VBdA=="],
 
     "minimark": ["minimark@0.2.0", "", {}, "sha512-AmtWU9pO0C2/3AM2pikaVhJ//8E5rOpJ7+ioFQfjIq+wCsBeuZoxPd97hBFZ9qrI7DMHZudwGH3r8A7BMnsIew=="],
 

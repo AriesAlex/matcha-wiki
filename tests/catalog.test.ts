@@ -1,8 +1,13 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { parse } from 'yaml'
 import { wikiNavigation } from '../app/data/wikiNavigation'
 import type { WikiCatalog } from '../app/types/wiki'
+import {
+  resolveIngredientItem,
+  resolveStackItem
+} from '../app/utils/itemReference'
 
 const rootDir = resolve(import.meta.dirname, '..')
 const catalog = JSON.parse(
@@ -20,9 +25,42 @@ describe('generated wiki catalog', () => {
 
   it('contains the complete analyzed pack rather than a sample fixture', () => {
     expect(catalog.stats.files).toBeGreaterThan(4_800)
+    expect(catalog.stats.items).toBeGreaterThan(400)
     expect(catalog.stats.customItems).toBeGreaterThan(280)
     expect(catalog.stats.recipes).toBe(1_059)
     expect(catalog.stats.advancements).toBe(67)
+  })
+
+  it('resolves component-only recipe items without guessing by vanilla carrier', () => {
+    const recipes = new Map(catalog.recipes.map(recipe => [recipe.id, recipe]))
+    const hellBoundBook = recipes.get('blessings:hell_bound_book')
+    const godKingBlessing = recipes.get('blessings:channeling_smite')
+    const hellBoundResult = hellBoundBook?.result
+    const godKingResult = godKingBlessing?.result
+    expect(hellBoundResult).toBeDefined()
+    expect(godKingResult).toBeDefined()
+    if (!hellBoundResult || !godKingResult) {
+      throw new Error('Expected recipe results are missing')
+    }
+
+    const hellBoundItem = resolveStackItem(catalog.items, hellBoundResult)
+    expect(hellBoundItem).toMatchObject({
+      title: '§cКнига адских уз',
+      carrier: 'minecraft:enchanted_book'
+    })
+    expect(hellBoundItem?.model).toBeUndefined()
+    expect(resolveStackItem(catalog.items, godKingResult)?.title)
+      .toBe('Благословение: Молитва Богу-Царю')
+
+    const ingredientItems = new Map(
+      (hellBoundBook?.ingredients ?? []).map(ingredient => [
+        ingredient.label,
+        resolveIngredientItem(catalog.items, ingredient)?.title
+      ])
+    )
+    expect(ingredientItems.get('Бензол')).toBe('Бензол')
+    expect(ingredientItems.get('Стабилизированный эстус')).toBe('Стабилизированный эстус')
+    expect(ingredientItems.get('Книга')).toBeUndefined()
   })
 
   it('resolves every item and recipe icon to a published asset', () => {
@@ -173,6 +211,22 @@ describe('generated wiki catalog', () => {
         selfClosingComponents,
         `${articlePath}: self-closing custom elements truncate the rendered article`
       ).toEqual([])
+    }
+  })
+
+  it('keeps article titles and descriptions as strings', () => {
+    const contentDir = resolve(rootDir, 'content', 'wiki')
+    const articlePaths = readdirSync(contentDir, { recursive: true })
+      .filter(path => path.endsWith('.md'))
+
+    for (const articlePath of articlePaths) {
+      const source = readFileSync(resolve(contentDir, articlePath), 'utf8')
+      const frontmatter = source.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+      expect(frontmatter, `${articlePath}: frontmatter is missing`).not.toBeNull()
+
+      const metadata = parse(frontmatter?.[1] ?? '') as Record<string, unknown>
+      expect(typeof metadata.title, `${articlePath}: title must be a string`).toBe('string')
+      expect(typeof metadata.description, `${articlePath}: description must be a string`).toBe('string')
     }
   })
 

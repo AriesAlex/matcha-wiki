@@ -60,6 +60,15 @@
       </div>
     </header>
 
+    <button
+      v-if="navigationOpen"
+      class="navigation-backdrop"
+      type="button"
+      aria-label="Закрыть меню"
+      tabindex="-1"
+      @click="navigationOpen = false"
+    />
+
     <div class="site-grid">
       <WikiSidebar
         :open="navigationOpen"
@@ -115,6 +124,16 @@ const navigationOpen = ref(false)
 
 watch(() => route.fullPath, () => {
   navigationOpen.value = false
+})
+
+watch(navigationOpen, (open) => {
+  if (import.meta.client) {
+    document.body.classList.toggle('navigation-open', open)
+  }
+})
+
+onBeforeUnmount(() => {
+  document.body.classList.remove('navigation-open')
 })
 </script>
 
@@ -246,6 +265,10 @@ watch(() => route.fullPath, () => {
     display: none;
   }
 
+  .navigation-backdrop {
+    display: none;
+  }
+
   .site-grid {
     width: min(1480px, 100%);
     display: grid;
@@ -306,6 +329,16 @@ watch(() => route.fullPath, () => {
   }
 
   @media (max-width: 1050px) {
+    .navigation-backdrop {
+      position: fixed;
+      inset: 64px 0 0;
+      z-index: 30;
+      display: block;
+      padding: 0;
+      background: rgba(7, 13, 9, 0.58);
+      border: 0;
+    }
+
     .header-nav {
       display: none;
     }

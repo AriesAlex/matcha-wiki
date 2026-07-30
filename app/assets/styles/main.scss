@@ -80,6 +80,12 @@ body.dialog-open {
   overflow: hidden;
 }
 
+@media (max-width: 1050px) {
+  body.navigation-open {
+    overflow: hidden;
+  }
+}
+
 button,
 input,
 select {

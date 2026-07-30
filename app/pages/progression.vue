@@ -45,14 +45,14 @@
         >
           <ItemSlot :stack="advancement.icon" />
           <div class="advancement-copy">
-            <strong>{{ stripMinecraftFormatting(advancement.title) }}</strong>
+            <strong><MinecraftText :text="advancement.title" /></strong>
 
             <details
               v-if="advancement.guide?.spoiler"
               class="advancement-spoiler"
             >
               <summary>
-                {{ stripMinecraftFormatting(advancement.description) }}
+                <MinecraftText :text="advancement.description" />
                 <span>раскрыть условие</span>
               </summary>
               <div class="advancement-guide">
@@ -78,10 +78,10 @@
                   v-if="advancement.guide?.link"
                   :to="advancement.guide.link.to"
                 >
-                  {{ stripMinecraftFormatting(advancement.description) }}
+                  <MinecraftText :text="advancement.description" />
                 </NuxtLink>
                 <template v-else>
-                  {{ stripMinecraftFormatting(advancement.description) }}
+                  <MinecraftText :text="advancement.description" />
                 </template>
               </p>
               <div

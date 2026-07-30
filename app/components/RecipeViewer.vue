@@ -89,7 +89,18 @@
           empty
           large
         />
-        <small>{{ recipe.result?.name ?? 'Результат неизвестен' }}</small>
+        <small>
+          <ItemReference
+            v-if="resultItem"
+            :item="resultItem"
+          >
+            <MinecraftText :text="resultName" />
+          </ItemReference>
+          <MinecraftText
+            v-else
+            :text="resultName"
+          />
+        </small>
       </div>
     </div>
 
@@ -101,7 +112,43 @@
       <span v-if="recipe.experience !== undefined">Опыт: {{ recipe.experience }}</span>
     </p>
 
-    <p class="summary">{{ summary }}</p>
+    <p class="summary">
+      <template v-if="recipe.result">
+        <ItemReference
+          v-if="resultItem"
+          :item="resultItem"
+          class="summary-link"
+        >
+          <MinecraftText :text="resultName" />
+        </ItemReference>
+        <MinecraftText
+          v-else
+          :text="resultName"
+        />
+        <template v-if="recipe.result.count > 1"> ×{{ recipe.result.count }}</template>
+      </template>
+      <template v-else>Результат неизвестен</template>
+      <template v-if="ingredientReferences.length">
+        . Ингредиенты:
+        <template
+          v-for="(entry, index) in ingredientReferences"
+          :key="entry.key"
+        >
+          <template v-if="index">, </template>
+          <ItemReference
+            v-if="entry.item"
+            :item="entry.item"
+            class="summary-link"
+          >
+            <MinecraftText :text="entry.item.title" />
+          </ItemReference>
+          <MinecraftText
+            v-else
+            :text="entry.ingredient.label"
+          />
+        </template>
+      </template>
+    </p>
     <NuxtLink
       class="details"
       :to="detailsLink"
@@ -119,6 +166,7 @@ const props = defineProps<{
   recipe: RecipeView
 }>()
 
+const catalog = useWikiCatalog()
 const kind = computed(() => props.recipe.type.replace(/^.*:/, ''))
 const typeTitles: Record<string, string> = {
   crafting_shaped: 'Верстак: рецепт с формой',
@@ -156,13 +204,28 @@ const isCooking = computed(() => (
 const cookingSeconds = computed(() => (
   props.recipe.cookingTime === undefined ? null : props.recipe.cookingTime / 20
 ))
-const summary = computed(() => {
-  const names = [...new Set(props.recipe.ingredients.map(ingredient => ingredient.label))]
-  const result = props.recipe.result
-  const output = result
-    ? `${result.name}${result.count > 1 ? ` x${result.count}` : ''}`
-    : 'Результат неизвестен'
-  return names.length ? `${output}. Ингредиенты: ${names.join(', ')}` : output
+const resultItem = computed(() => (
+  props.recipe.result ? resolveStackItem(catalog.items, props.recipe.result) : undefined
+))
+const resultName = computed(() => (
+  resultItem.value?.title ?? props.recipe.result?.name ?? 'Результат неизвестен'
+))
+const ingredientReferences = computed(() => {
+  const uniqueIngredients = new Map(
+    props.recipe.ingredients.map(ingredient => [
+      JSON.stringify({
+        label: ingredient.label,
+        tag: ingredient.tag,
+        ids: ingredient.ids
+      }),
+      ingredient
+    ])
+  )
+  return [...uniqueIngredients].map(([key, ingredient]) => ({
+    key,
+    ingredient,
+    item: resolveIngredientItem(catalog.items, ingredient)
+  }))
 })
 const detailsLink = computed(() => `/recipes/${props.recipe.namespace}/${props.recipe.path}`)
 </script>
@@ -237,6 +300,12 @@ const detailsLink = computed(() => `/recipes/${props.recipe.namespace}/${props.r
       overflow-wrap: anywhere;
     }
 
+    .result small .item-reference {
+      color: var(--recipe-link);
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+
     .arrow {
       flex: none;
       color: var(--recipe-muted);
@@ -255,6 +324,13 @@ const detailsLink = computed(() => `/recipes/${props.recipe.namespace}/${props.r
     margin: 9px 0 0;
     font-size: 13px;
     overflow-wrap: anywhere;
+
+    .summary-link {
+      color: var(--recipe-link);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
   }
 
   .details {

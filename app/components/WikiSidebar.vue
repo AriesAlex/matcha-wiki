@@ -21,34 +21,71 @@
             :key="link.to"
             class="nav-entry"
           >
-            <NuxtLink
-              class="nav-link"
-              :class="{ branch: isBranchActive(link) }"
-              :to="link.to"
+            <div class="nav-row">
+              <NuxtLink
+                class="nav-link"
+                :class="{ branch: isBranchActive(link) }"
+                :to="link.to"
+              >
+                {{ link.label }}
+              </NuxtLink>
+              <button
+                v-if="hasExpandableContent(link)"
+                class="disclosure"
+                type="button"
+                :class="{ expanded: isExpanded(link.to) }"
+                :aria-expanded="isExpanded(link.to)"
+                :aria-controls="panelId(link.to)"
+                :aria-label="disclosureLabel(link)"
+                @click="toggleExpanded(link.to)"
+              >
+                <PhCaretRight :size="17" weight="bold" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div
+              v-if="hasExpandableContent(link)"
+              v-show="isExpanded(link.to)"
+              :id="panelId(link.to)"
+              class="branch-panel"
             >
-              {{ link.label }}
-            </NuxtLink>
+              <WikiArticleToc
+                v-if="isCurrent(link.to)"
+                :links="articleHeadings"
+              />
 
-            <WikiArticleToc
-              v-if="isCurrent(link.to)"
-              :links="articleHeadings"
-            />
-
-            <ul v-if="link.children?.length" class="nav-children">
-              <li v-for="child in link.children" :key="child.to">
-                <NuxtLink
-                  class="nav-link"
-                  :class="{ branch: isBranchActive(child) }"
-                  :to="child.to"
-                >
-                  {{ child.label }}
-                </NuxtLink>
-                <WikiArticleToc
-                  v-if="isCurrent(child.to)"
-                  :links="articleHeadings"
-                />
-              </li>
-            </ul>
+              <ul v-if="link.children?.length" class="nav-children">
+                <li v-for="child in link.children" :key="child.to">
+                  <div class="nav-row child-row">
+                    <NuxtLink
+                      class="nav-link"
+                      :class="{ branch: isBranchActive(child) }"
+                      :to="child.to"
+                    >
+                      {{ child.label }}
+                    </NuxtLink>
+                    <button
+                      v-if="hasExpandableContent(child)"
+                      class="disclosure"
+                      type="button"
+                      :class="{ expanded: isExpanded(child.to) }"
+                      :aria-expanded="isExpanded(child.to)"
+                      :aria-controls="panelId(child.to)"
+                      :aria-label="disclosureLabel(child)"
+                      @click="toggleExpanded(child.to)"
+                    >
+                      <PhCaretRight :size="15" weight="bold" aria-hidden="true" />
+                    </button>
+                  </div>
+                  <WikiArticleToc
+                    v-if="isCurrent(child.to)"
+                    v-show="isExpanded(child.to)"
+                    :id="panelId(child.to)"
+                    :links="articleHeadings"
+                  />
+                </li>
+              </ul>
+            </div>
           </li>
         </ul>
       </section>
@@ -72,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { PhTranslate } from '@phosphor-icons/vue'
+import { PhCaretRight, PhTranslate } from '@phosphor-icons/vue'
 import type { WikiNavigationLink } from '~/data/wikiNavigation'
 import { wikiNavigation } from '~/data/wikiNavigation'
 import type { WikiTocLink } from '~/types/wiki'
@@ -98,6 +135,24 @@ const { data: currentArticle } = await useAsyncData(
 const articleHeadings = computed<WikiTocLink[]>(
   () => (currentArticle.value?.body?.toc?.links as WikiTocLink[] | undefined) ?? []
 )
+const expandedPaths = ref<string[]>([])
+
+watch(
+  [currentPath, () => articleHeadings.value.length],
+  () => {
+    const activePaths = wikiNavigation.flatMap(section => section.links.flatMap((link) => {
+      const paths: string[] = []
+      if (isBranchActive(link)) paths.push(link.to)
+      if (isCurrent(link.to) && articleHeadings.value.length) paths.push(link.to)
+      link.children?.forEach((child) => {
+        if (isCurrent(child.to) && articleHeadings.value.length) paths.push(child.to)
+      })
+      return paths
+    }))
+    expandedPaths.value = [...new Set([...expandedPaths.value, ...activePaths])]
+  },
+  { immediate: true }
+)
 
 function isCurrent(path: string): boolean {
   return currentPath.value === path
@@ -105,6 +160,28 @@ function isCurrent(path: string): boolean {
 
 function isBranchActive(link: WikiNavigationLink): boolean {
   return isCurrent(link.to) || link.children?.some(child => isCurrent(child.to)) === true
+}
+
+function hasExpandableContent(link: WikiNavigationLink): boolean {
+  return Boolean(link.children?.length || (isCurrent(link.to) && articleHeadings.value.length))
+}
+
+function isExpanded(path: string): boolean {
+  return expandedPaths.value.includes(path)
+}
+
+function toggleExpanded(path: string): void {
+  expandedPaths.value = isExpanded(path)
+    ? expandedPaths.value.filter(entry => entry !== path)
+    : [...expandedPaths.value, path]
+}
+
+function panelId(path: string): string {
+  return `wiki-nav-${path.replace(/^\//, '').replace(/[^a-z0-9]+/gi, '-')}`
+}
+
+function disclosureLabel(link: WikiNavigationLink): string {
+  return `${isExpanded(link.to) ? 'Свернуть' : 'Развернуть'} «${link.label}»`
 }
 </script>
 
@@ -148,9 +225,16 @@ function isBranchActive(link: WikiNavigationLink): boolean {
   flex-direction: column;
 }
 
+.nav-row {
+  display: flex;
+  align-items: center;
+}
+
 .nav-link {
   min-height: 36px;
   display: flex;
+  min-width: 0;
+  flex: 1;
   align-items: center;
   padding: 4px 10px;
   color: var(--ink);
@@ -169,6 +253,33 @@ function isBranchActive(link: WikiNavigationLink): boolean {
   }
 }
 
+.disclosure {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--accent);
+    background: var(--surface-quiet);
+  }
+
+  svg {
+    transition: transform 140ms ease;
+  }
+
+  &.expanded svg {
+    transform: rotate(90deg);
+  }
+}
+
 .nav-children {
   margin: 2px 0 5px;
   padding: 0 0 0 13px;
@@ -183,6 +294,11 @@ function isBranchActive(link: WikiNavigationLink): boolean {
     &.branch {
       color: var(--accent);
     }
+  }
+
+  .disclosure {
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -229,24 +345,35 @@ function isBranchActive(link: WikiNavigationLink): boolean {
 @media (max-width: 1050px) {
   .site-sidebar {
     position: fixed;
-    inset: 64px auto 0 0;
+    inset: 64px auto auto 0;
     z-index: 35;
     width: min(360px, 92vw);
-    max-height: none;
+    height: calc(100dvh - 64px);
+    max-height: calc(100dvh - 64px);
     overflow-y: auto;
+    overscroll-behavior-y: contain;
     padding: 28px 24px 48px;
     background: var(--surface);
     box-shadow: 24px 0 60px var(--shadow);
+    touch-action: pan-y;
     transform: translateX(-110%);
     transition: transform 180ms ease;
     visibility: hidden;
     pointer-events: none;
+    -webkit-overflow-scrolling: touch;
 
     &.open {
       transform: translateX(0);
       visibility: visible;
       pointer-events: auto;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-sidebar,
+  .disclosure svg {
+    transition: none;
   }
 }
 </style>
