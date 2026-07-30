@@ -85,12 +85,21 @@ const pathParts = Array.isArray(route.params.path) ? route.params.path : [route.
 const recipeId = `${route.params.namespace}:${pathParts.join('/')}`
 const recipe = computed(() => catalog.recipes.find(entry => entry.id === recipeId))
 
-if (!recipe.value) {
+if (import.meta.server && !recipe.value) {
   throw createError({
     statusCode: 404,
     statusMessage: 'Рецепт не найден'
   })
 }
+
+onMounted(() => {
+  if (!recipe.value) {
+    showError({
+      statusCode: 404,
+      statusMessage: 'Рецепт не найден'
+    })
+  }
+})
 
 const resultItem = computed(() => {
   const result = recipe.value?.result

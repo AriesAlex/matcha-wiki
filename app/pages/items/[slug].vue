@@ -129,12 +129,21 @@ const route = useRoute()
 const catalog = useWikiCatalog()
 const item = computed(() => catalog.items.find(entry => entry.slug === route.params.slug))
 
-if (!item.value) {
+if (import.meta.server && !item.value) {
   throw createError({
     statusCode: 404,
     statusMessage: 'Предмет не найден'
   })
 }
+
+onMounted(() => {
+  if (!item.value) {
+    showError({
+      statusCode: 404,
+      statusMessage: 'Предмет не найден'
+    })
+  }
+})
 
 const recipes = computed(() => item.value
   ? item.value.recipeIds

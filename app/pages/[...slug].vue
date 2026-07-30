@@ -53,16 +53,27 @@ const {
   () => queryCollection('wiki').path(pagePath.value).first()
 )
 
-if (pageError.value) {
+if (import.meta.server && pageError.value) {
   throw pageError.value
 }
 
-if (isMissingWikiPage(pageStatus.value, page.value)) {
+if (import.meta.server && isMissingWikiPage(pageStatus.value, page.value)) {
   throw createError({
     statusCode: 404,
     statusMessage: 'Статья не найдена'
   })
 }
+
+onMounted(() => {
+  if (pageError.value) {
+    showError(pageError.value)
+  } else if (isMissingWikiPage(pageStatus.value, page.value)) {
+    showError({
+      statusCode: 404,
+      statusMessage: 'Статья не найдена'
+    })
+  }
+})
 
 const { data: pageIndex } = await useAsyncData(
   'wiki:page-index',
