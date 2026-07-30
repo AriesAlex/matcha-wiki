@@ -61,6 +61,26 @@ export interface ItemSource {
   path: string
 }
 
+export interface ItemGuide {
+  summary: string
+  note?: string
+}
+
+export interface ItemRelationView {
+  kind: 'recipe' | 'trade' | 'loot'
+  title: string
+  description: string
+  icon?: string
+  to?: string
+  technical?: boolean
+  sourcePath: string
+}
+
+export interface ItemRecipeUse {
+  recipeId: string
+  technical?: boolean
+}
+
 export interface ItemView {
   id: string
   slug: string
@@ -79,6 +99,10 @@ export interface ItemView {
   componentKeys: string[]
   components: Record<string, unknown>
   recipeIds: string[]
+  guide?: ItemGuide
+  obtainedFrom: ItemRelationView[]
+  usedIn: ItemRelationView[]
+  recipeUses: ItemRecipeUse[]
   sources: ItemSource[]
   aliases: string[]
 }

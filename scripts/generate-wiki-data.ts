@@ -18,6 +18,8 @@ import type {
   IngredientView,
   ItemAttribute,
   ItemEffect,
+  ItemGuide,
+  ItemRelationView,
   ItemSource,
   ItemView,
   RecipeView,
@@ -28,6 +30,7 @@ import {
   resolveIngredientItem,
   resolveStackItem
 } from '../app/utils/itemReference'
+import { resolveItemRecipeUses } from '../app/utils/itemRelations'
 
 type JsonObject = Record<string, unknown>
 type JsonValue = JsonObject | JsonValue[] | string | number | boolean | null
@@ -82,6 +85,26 @@ interface IngredientGuideRegistry {
   entries: Record<string, string>
 }
 
+interface ItemGuideRegistry {
+  schemaVersion: 1
+  entries: Record<string, ItemGuide>
+  lootLocations: Record<string, string>
+}
+
+interface TradeRecord {
+  sourcePath: string
+  profession: string
+  level: number
+  wants: StackView
+  gives: StackView
+}
+
+interface LootTableRecord {
+  id: string
+  sourcePath: string
+  references: string[]
+}
+
 const rootDir = resolve(import.meta.dir, '..')
 const packDir = resolve(rootDir, 'pack')
 const generatedDir = resolve(rootDir, 'generated')
@@ -109,6 +132,9 @@ const advancementGuideRegistry = readJson<AdvancementGuideRegistry>(
 )
 const ingredientGuideRegistry = readJson<IngredientGuideRegistry>(
   resolve(rootDir, 'wiki-data/ingredient-guides.ru.json')
+)
+const itemGuideRegistry = readJson<ItemGuideRegistry>(
+  resolve(rootDir, 'wiki-data/item-guides.ru.json')
 )
 const bannerColours: Record<string, string> = {
   black: '#1d1d21',
@@ -177,6 +203,7 @@ function main(): void {
   const ingredientGlossary = buildIngredientGlossary(recipes)
   const variants = captureVariants()
   const items = buildItems(recipes, variants)
+  attachItemRelations(items, recipes)
   const advancements = loadAdvancements(items, recipes)
   const files = walkFiles(packDir)
 
@@ -225,6 +252,7 @@ function assertSourceTree(): void {
     resolve(rootDir, 'wiki-data/vanilla-ru.json'),
     resolve(rootDir, 'wiki-data/advancement-guides.json'),
     resolve(rootDir, 'wiki-data/ingredient-guides.ru.json'),
+    resolve(rootDir, 'wiki-data/item-guides.ru.json'),
     vanillaAssetsPath
   ]) {
     if (!existsSync(requiredPath)) {
@@ -584,6 +612,10 @@ function buildItems(
       componentKeys: Object.keys(components).sort(),
       components,
       recipeIds,
+      guide: itemGuideRegistry.entries[model],
+      obtainedFrom: [],
+      usedIn: [],
+      recipeUses: [],
       sources,
       aliases: [...new Set([
         model,
@@ -654,6 +686,9 @@ function buildComponentItems(recipes: RecipeView[]): ItemView[] {
       componentKeys: Object.keys(components).sort(),
       components,
       recipeIds: orderedRecipes.map(recipe => recipe.id),
+      obtainedFrom: [],
+      usedIn: [],
+      recipeUses: [],
       sources: orderedRecipes.map(recipe => ({
         kind: 'recipe',
         label: `Рецепт: ${recipe.station}`,
@@ -690,6 +725,324 @@ function disambiguateItemTitles(items: ItemView[]): void {
       item.title = `${item.name}: ${qualifier}`
     }
   }
+}
+
+function attachItemRelations(items: ItemView[], recipes: RecipeView[]): void {
+  const knownItemIds = new Set(items.flatMap(item => [item.id, item.model].filter(Boolean)))
+  const staleGuides = Object.keys(itemGuideRegistry.entries)
+    .filter(id => !knownItemIds.has(id))
+  if (staleGuides.length) {
+    throw new Error(`Гайды ссылаются на отсутствующие предметы: ${staleGuides.join(', ')}`)
+  }
+
+  for (const item of items) {
+    for (const recipe of recipes) {
+      const matchingIngredients = recipe.ingredients.filter(ingredient => (
+        ingredient.ids.includes(item.id)
+        || (item.model !== undefined && ingredient.ids.includes(item.model))
+        || ingredient.ids.includes(item.carrier)
+      ))
+      if (!matchingIngredients.length) {
+        continue
+      }
+
+      const exactMatch = matchingIngredients.some(ingredient => (
+        ingredient.ids.includes(item.id)
+        || (item.model !== undefined && ingredient.ids.includes(item.model))
+      ))
+      item.recipeUses.push({
+        recipeId: recipe.id,
+        technical: !exactMatch || undefined
+      })
+    }
+  }
+
+  const trades = loadTradeRecords()
+  const ambiguousTradeModels = findAmbiguousTradeModels(trades)
+  for (const trade of trades) {
+    const wantedItem = resolveStackItem(items, trade.wants)
+    const givenItem = resolveStackItem(items, trade.gives)
+    const context = tradeContext(trade)
+    const exchange = `${formatTradeStack(trade.wants)} → ${formatTradeStack(trade.gives)}`
+    const resultDetails = describeStackEnchantments(trade.gives)
+
+    if (wantedItem) {
+      wantedItem.usedIn.push({
+        kind: 'trade',
+        title: stackDisplayTitle(trade.gives),
+        description: `${context} · ${exchange}.${resultDetails ? ` ${resultDetails}` : ''}`,
+        icon: trade.gives.icon,
+        to: exactStackItemPath(items, trade.gives, ambiguousTradeModels)
+          ?? '/mechanics/villagers',
+        sourcePath: trade.sourcePath
+      })
+    }
+    if (givenItem) {
+      givenItem.obtainedFrom.push({
+        kind: 'trade',
+        title: `Обмен: ${context}`,
+        description: `${exchange}.`,
+        icon: trade.wants.icon,
+        to: exactStackItemPath(items, trade.wants, ambiguousTradeModels),
+        sourcePath: trade.sourcePath
+      })
+    }
+  }
+
+  attachLootRelations(items)
+
+  for (const item of items) {
+    item.obtainedFrom = dedupeItemRelations(item.obtainedFrom)
+    item.usedIn = dedupeItemRelations(item.usedIn)
+    item.recipeUses = [...new Map(item.recipeUses.map(use => [
+      use.recipeId,
+      use
+    ])).values()].sort((left, right) => left.recipeId.localeCompare(right.recipeId))
+  }
+}
+
+function loadTradeRecords(): TradeRecord[] {
+  const records: TradeRecord[] = []
+
+  for (const path of walkFiles(dataDir, file => (
+    extname(file) === '.json'
+    && normalizePath(file).includes('/villager_trade/')
+  ))) {
+    const sourcePath = normalizePath(relative(rootDir, path))
+    const match = sourcePath.match(/\/villager_trade\/([^/]+)\/(\d+)\//)
+    const data = readJson<JsonObject>(path)
+    const wants = parseStack(data.wants)
+    const gives = parseStack(data.gives)
+    if (!match || !wants || !gives) {
+      continue
+    }
+
+    records.push({
+      sourcePath,
+      profession: match[1],
+      level: Number(match[2]),
+      wants,
+      gives
+    })
+  }
+
+  return records
+}
+
+function findAmbiguousTradeModels(trades: TradeRecord[]): Set<string> {
+  const signatures = new Map<string, Set<string>>()
+  for (const stack of trades.flatMap(trade => [trade.wants, trade.gives])) {
+    if (!stack.model) {
+      continue
+    }
+    const modelSignatures = signatures.get(stack.model) ?? new Set<string>()
+    modelSignatures.add(JSON.stringify(stack.components ?? {}))
+    signatures.set(stack.model, modelSignatures)
+  }
+  return new Set(
+    [...signatures]
+      .filter(([, modelSignatures]) => modelSignatures.size > 1)
+      .map(([model]) => model)
+  )
+}
+
+function exactStackItemPath(
+  items: ItemView[],
+  stack: StackView,
+  ambiguousModels: Set<string>
+): string | undefined {
+  if (stack.model && ambiguousModels.has(stack.model)) {
+    return undefined
+  }
+  const item = resolveStackItem(items, stack)
+  return item ? `/items/${item.slug}` : undefined
+}
+
+function tradeContext(trade: TradeRecord): string {
+  const translationKey = trade.profession === 'wandering_trader'
+    ? 'entity.minecraft.wandering_trader'
+    : `entity.minecraft.villager.${trade.profession}`
+  const profession = ru[translationKey] ?? formatIdentifier(trade.profession)
+  return `${profession}, уровень ${trade.level}`
+}
+
+function formatTradeStack(stack: StackView): string {
+  return `${stack.count} × ${stackDisplayTitle(stack)}`
+}
+
+function stackDisplayTitle(stack: StackView): string {
+  const lore = extractLore(stack.components ?? {})
+  return lore[0] ? `${stack.name}: ${lore[0]}` : stack.name
+}
+
+function describeStackEnchantments(stack: StackView): string | undefined {
+  const components = stack.components ?? {}
+  const rawEnchantments = components['minecraft:stored_enchantments']
+    ?? components['minecraft:enchantments']
+  if (!isObject(rawEnchantments)) {
+    return undefined
+  }
+  const levels = isObject(rawEnchantments.levels)
+    ? rawEnchantments.levels
+    : rawEnchantments
+  const enchantments = Object.entries(levels)
+    .filter((entry): entry is [string, number] => typeof entry[1] === 'number')
+    .map(([id, level]) => {
+      const normalized = normalizeResource(id)
+      const name = ru[`enchantment.${normalized.replace(':', '.')}`]
+        ?? formatIdentifier(resourcePath(normalized))
+      return `${name} ${romanLevel(level)}`
+    })
+  return enchantments.length ? `Чары: ${enchantments.join(', ')}.` : undefined
+}
+
+function romanLevel(level: number): string {
+  const levels = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
+  return levels[level - 1] ?? String(level)
+}
+
+function attachLootRelations(items: ItemView[]): void {
+  const lootTables = loadLootTableRecords()
+  const recordsById = new Map(lootTables.map(record => [record.id, record]))
+  const parentsByReference = new Map<string, string[]>()
+
+  for (const record of lootTables) {
+    for (const reference of record.references) {
+      const parents = parentsByReference.get(reference) ?? []
+      parents.push(record.id)
+      parentsByReference.set(reference, parents)
+    }
+  }
+
+  for (const item of items) {
+    const directTableIds = item.sources
+      .filter(source => source.kind === 'loot')
+      .map(source => lootTableIdFromSourcePath(source.path))
+      .filter((id): id is string => id !== undefined)
+    const reachable = new Set(directTableIds)
+    const queue = [...directTableIds]
+
+    while (queue.length) {
+      const current = queue.shift()
+      if (!current) continue
+      for (const parent of parentsByReference.get(current) ?? []) {
+        if (reachable.has(parent)) continue
+        reachable.add(parent)
+        queue.push(parent)
+      }
+    }
+
+    for (const tableId of reachable) {
+      const record = recordsById.get(tableId)
+      const relation = record ? lootRelation(record) : undefined
+      if (relation) {
+        item.obtainedFrom.push(relation)
+      }
+    }
+  }
+}
+
+function loadLootTableRecords(): LootTableRecord[] {
+  const records: LootTableRecord[] = []
+
+  for (const path of walkFiles(dataDir, file => (
+    extname(file) === '.json'
+    && normalizePath(file).includes('/loot_table/')
+  ))) {
+    const sourcePath = normalizePath(relative(rootDir, path))
+    const id = lootTableIdFromSourcePath(sourcePath)
+    if (!id) continue
+
+    const namespace = id.split(':')[0]
+    const references = new Set<string>()
+    walkJson(readJson<JsonValue>(path), undefined, (value) => {
+      if (
+        isObject(value)
+        && value.type === 'minecraft:loot_table'
+        && typeof value.value === 'string'
+      ) {
+        references.add(normalizeResource(value.value, namespace))
+      }
+    })
+    records.push({
+      id,
+      sourcePath,
+      references: [...references]
+    })
+  }
+
+  return records
+}
+
+function lootTableIdFromSourcePath(sourcePath: string): string | undefined {
+  const match = normalizePath(sourcePath)
+    .match(/^pack\/data\/([^/]+)\/loot_table\/(.+)\.json$/)
+  return match ? `${match[1]}:${match[2]}` : undefined
+}
+
+function lootRelation(record: LootTableRecord): ItemRelationView | undefined {
+  const path = resourcePath(record.id)
+  if (path.startsWith('chests/')) {
+    const locationPath = path.slice('chests/'.length)
+    const location = itemGuideRegistry.lootLocations[locationPath]
+      ?? formatIdentifier(locationPath)
+    return {
+      kind: 'loot',
+      title: location,
+      description: 'Может встретиться в сундуках этой структуры.',
+      sourcePath: record.sourcePath
+    }
+  }
+  if (path.startsWith('entities/')) {
+    const entity = path.slice('entities/'.length)
+    return {
+      kind: 'loot',
+      title: `Добыча: ${entitySourceName(entity)}`,
+      description: 'Предмет входит в таблицу добычи этого существа.',
+      sourcePath: record.sourcePath
+    }
+  }
+  if (path.startsWith('blocks/')) {
+    const block = path.slice('blocks/'.length)
+    return {
+      kind: 'loot',
+      title: `Добыча блока: ${nameForResource(`minecraft:${block}`)}`,
+      description: 'Предмет может выпасть при разрушении этого блока.',
+      sourcePath: record.sourcePath
+    }
+  }
+  if (path.startsWith('gameplay/fishing')) {
+    return {
+      kind: 'loot',
+      title: 'Рыбалка',
+      description: 'Предмет можно выловить.',
+      sourcePath: record.sourcePath
+    }
+  }
+  if (path.startsWith('archaeology/')) {
+    return {
+      kind: 'loot',
+      title: 'Археология',
+      description: 'Предмет можно найти при раскопках подозрительного блока.',
+      sourcePath: record.sourcePath
+    }
+  }
+  return undefined
+}
+
+function dedupeItemRelations(relations: ItemRelationView[]): ItemRelationView[] {
+  const order: Record<ItemRelationView['kind'], number> = {
+    loot: 0,
+    trade: 1,
+    recipe: 2
+  }
+  return [...new Map(relations.map(relation => [
+    `${relation.kind}:${relation.sourcePath}:${relation.title}`,
+    relation
+  ])).values()].sort((left, right) => (
+    order[left.kind] - order[right.kind]
+    || left.title.localeCompare(right.title, 'ru')
+  ))
 }
 
 function loadAssetItems(): AssetItem[] {
@@ -1568,20 +1921,29 @@ function flattenText(value: unknown): string {
 
 function createSearchIndex(catalog: WikiCatalog): Array<Record<string, unknown>> {
   return [
-    ...catalog.items.map(item => ({
-      kind: 'item',
-      title: item.title,
-      description: item.description ?? item.category,
-      path: `/items/${item.slug}`,
-      icon: item.icon,
-      terms: [
-        item.title,
-        item.name,
-        item.description,
-        item.category,
-        ...item.aliases
-      ].filter(Boolean).join(' ')
-    })),
+    ...catalog.items.map((item) => {
+      const recipeRelations = resolveItemRecipeUses(catalog, item)
+        .filter(relation => !relation.technical)
+      return {
+        kind: 'item',
+        title: item.title,
+        description: item.guide?.summary ?? item.description ?? item.category,
+        path: `/items/${item.slug}`,
+        icon: item.icon,
+        terms: [
+          item.title,
+          item.name,
+          item.description,
+          item.guide?.summary,
+          item.guide?.note,
+          item.category,
+          ...item.aliases,
+          ...item.obtainedFrom.flatMap(relation => [relation.title, relation.description]),
+          ...item.usedIn.flatMap(relation => [relation.title, relation.description]),
+          ...recipeRelations.flatMap(relation => [relation.title, relation.description])
+        ].filter(Boolean).join(' ')
+      }
+    }),
     ...catalog.recipes.map((recipe) => {
       const resultItem = recipe.result
         ? resolveStackItem(catalog.items, recipe.result)

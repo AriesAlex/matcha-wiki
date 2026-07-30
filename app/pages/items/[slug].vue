@@ -57,18 +57,69 @@
       </dl>
     </div>
 
-    <section v-if="recipes.length" class="article-section">
+    <section class="article-section purpose">
+      <header class="section-heading">
+        <p class="eyebrow">Назначение</p>
+        <h2>Зачем нужен предмет</h2>
+      </header>
+      <p class="purpose-summary">{{ purposeSummary }}</p>
+      <p v-if="item.guide?.note" class="purpose-note">
+        {{ item.guide.note }}
+      </p>
+    </section>
+
+    <section
+      v-if="item.obtainedFrom.length || recipes.length"
+      class="article-section"
+    >
       <header class="section-heading">
         <p class="eyebrow">Получение</p>
-        <h2>Рецепты</h2>
+        <h2>Как получить</h2>
       </header>
-      <div class="recipe-stack">
-        <RecipeViewer
-          v-for="recipe in recipes"
-          :key="recipe.id"
-          :recipe="recipe"
-        />
+      <ItemRelationList
+        v-if="item.obtainedFrom.length"
+        :relations="item.obtainedFrom"
+      />
+      <div v-if="recipes.length" class="creation">
+        <h3>Создание</h3>
+        <div class="recipe-stack">
+          <RecipeViewer
+            v-for="recipe in recipes"
+            :key="recipe.id"
+            :recipe="recipe"
+          />
+        </div>
       </div>
+    </section>
+
+    <section
+      v-if="directUses.length || technicalUses.length"
+      class="article-section"
+    >
+      <header class="section-heading">
+        <p class="eyebrow">Применение</p>
+        <h2>Где используется</h2>
+      </header>
+      <ItemRelationList
+        v-if="directUses.length"
+        :relations="directUses"
+      />
+      <details
+        v-if="technicalUses.length"
+        class="technical-uses"
+        :open="technicalUses.length <= 4"
+      >
+        <summary>
+          Рецепты, принимающие техническую основу
+          <span>{{ technicalUses.length }}</span>
+        </summary>
+        <p>
+          Эти рецепты проверяют ванильный тип предмета, а не его уникальное
+          название или модель. Использование уничтожит особый вариант как
+          обычный ингредиент.
+        </p>
+        <ItemRelationList :relations="technicalUses" />
+      </details>
     </section>
 
     <section
@@ -151,6 +202,44 @@ const recipes = computed(() => item.value
       .map(id => catalog.recipes.find(recipe => recipe.id === id))
       .filter(recipe => recipe !== undefined)
   : [])
+const recipeUses = computed(() => (
+  item.value ? resolveItemRecipeUses(catalog, item.value) : []
+))
+const directUses = computed(() => [
+  ...(item.value?.usedIn ?? []),
+  ...recipeUses.value.filter(relation => !relation.technical)
+])
+const technicalUses = computed(() => recipeUses.value.filter(relation => relation.technical))
+const purposeSummary = computed(() => {
+  const current = item.value
+  if (!current) return ''
+  if (current.guide?.summary) return current.guide.summary
+
+  const tradeCount = current.usedIn.filter(relation => relation.kind === 'trade').length
+  const recipeCount = current.recipeUses.filter(use => !use.technical).length
+  if (tradeCount && recipeCount) {
+    return `Предмет используется в ${formatRelationCount(tradeCount, 'сделке', 'сделках')} с жителями и ${formatRelationCount(recipeCount, 'рецепте', 'рецептах')}.`
+  }
+  if (tradeCount) {
+    return `Предмет используется в ${formatRelationCount(tradeCount, 'сделке', 'сделках')} с жителями.`
+  }
+  if (recipeCount) {
+    return `Предмет используется в ${formatRelationCount(recipeCount, 'рецепте', 'рецептах')}.`
+  }
+  const technicalRecipeCount = current.recipeUses.filter(use => use.technical).length
+  if (technicalRecipeCount) {
+    return `Уникального применения не найдено, но техническая основа предмета подходит для ${formatRelationCount(technicalRecipeCount, 'рецепта', 'рецептов')}. Такие рецепты могут уничтожить особый вариант как обычный ингредиент.`
+  }
+  if (current.effects.length || current.attributes.length) {
+    return 'Предмет даёт игровые эффекты или меняет характеристики. Точные параметры перечислены ниже.'
+  }
+  return 'В рецептах и торговле прямое применение предмета не обнаружено. Известные источники и игровые параметры перечислены ниже.'
+})
+
+function formatRelationCount(count: number, singular: string, plural: string): string {
+  const usesSingular = count % 10 === 1 && count % 100 !== 11
+  return `${count} ${usesSingular ? singular : plural}`
+}
 
 useSeoMeta({
   title: () => stripMinecraftFormatting(item.value?.title ?? 'Предмет'),
@@ -260,6 +349,64 @@ useSeoMeta({
     display: flex;
     flex-direction: column;
     gap: 24px;
+  }
+
+  .purpose {
+    max-width: 880px;
+  }
+
+  .purpose-summary {
+    max-width: 760px;
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.65;
+  }
+
+  .purpose-note {
+    max-width: 760px;
+    margin: 20px 0 0;
+    padding: 14px 16px;
+    color: var(--muted);
+    background: var(--surface-quiet);
+    border-left: 3px solid var(--accent);
+    line-height: 1.55;
+  }
+
+  .creation {
+    margin-top: 34px;
+
+    h3 {
+      margin-bottom: 18px;
+    }
+  }
+
+  .technical-uses {
+    max-width: 880px;
+    margin-top: 22px;
+
+    summary {
+      width: fit-content;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      font-weight: 700;
+      cursor: pointer;
+
+      span {
+        color: var(--muted);
+        font-family: 'Cascadia Mono', monospace;
+        font-size: 12px;
+      }
+    }
+
+    > p {
+      max-width: 720px;
+      margin: 4px 0 14px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
   }
 
   .effect-list {

@@ -8,6 +8,7 @@ import {
   resolveIngredientItem,
   resolveStackItem
 } from '../app/utils/itemReference'
+import { resolveItemRecipeUses } from '../app/utils/itemRelations'
 
 const rootDir = resolve(import.meta.dirname, '..')
 const catalog = JSON.parse(
@@ -126,6 +127,56 @@ describe('generated wiki catalog', () => {
     expect(itemsByModel.get('minecraft:gnocchi_recipe')?.title)
       .toBe('Кулинарный рецепт: Ньокки')
     expect(new Set(catalog.items.map(item => item.title)).size).toBe(catalog.items.length)
+  })
+
+  it('turns opaque item sources into player-facing obtaining and usage paths', () => {
+    const avesta = catalog.items.find(item => item.model === 'minecraft:avesta')
+    expect(avesta).toBeDefined()
+    if (!avesta) {
+      throw new Error('Expected Avesta item is missing')
+    }
+
+    expect(avesta.guide?.summary).toContain('валюта глашатая второго уровня')
+    expect(avesta.obtainedFrom.map(relation => relation.title)).toEqual([
+      'Деревенский храм',
+      'Пустынная пирамида'
+    ])
+    expect(
+      avesta.usedIn
+        .filter(relation => relation.kind === 'trade')
+        .map(relation => relation.title)
+    ).toEqual([
+      'Офуда: Молитва Ахура-Мазде',
+      'Офуда: Молитва Митре'
+    ])
+    expect(avesta.usedIn.every(relation => relation.to === '/mechanics/villagers'))
+      .toBe(true)
+    expect(
+      avesta.recipeUses.find(use => use.recipeId === 'blessings:hell_bound_book')
+    ).toMatchObject({
+      technical: true
+    })
+    expect(resolveItemRecipeUses(catalog, avesta)).toContainEqual(
+      expect.objectContaining({
+        technical: true,
+        title: '§cКнига адских уз',
+        to: '/recipes/blessings/hell_bound_book'
+      })
+    )
+
+    for (const item of catalog.items) {
+      const relations = [
+        ...item.obtainedFrom,
+        ...item.usedIn,
+        ...resolveItemRecipeUses(catalog, item)
+      ]
+      for (const relation of relations) {
+        expect(
+          existsSync(resolve(rootDir, relation.sourcePath)),
+          `${item.id} → ${relation.sourcePath}`
+        ).toBe(true)
+      }
+    }
   })
 
   it('does not expose unreachable asset-only ghosts and keeps special previews', () => {

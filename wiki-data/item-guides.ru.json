@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "lootLocations": {
+    "abandoned_mineshaft": "Заброшенная шахта",
+    "ancient_city": "Древний город",
+    "bastion_bridge": "Бастион: мост",
+    "bastion_hoglin_stable": "Бастион: хоглинья конюшня",
+    "bastion_other": "Бастион",
+    "bastion_treasure": "Бастион: сокровищница",
+    "buried_treasure": "Зарытый клад",
+    "desert_pyramid": "Пустынная пирамида",
+    "end_city_treasure": "Город Энда",
+    "igloo_chest": "Иглу",
+    "jungle_temple": "Храм в джунглях",
+    "nether_bridge": "Адская крепость",
+    "pillager_outpost": "Аванпост разбойников",
+    "ruined_portal": "Разрушенный портал",
+    "shipwreck_map": "Затонувший корабль: карта",
+    "shipwreck_supply": "Затонувший корабль: припасы",
+    "shipwreck_treasure": "Затонувший корабль: сокровища",
+    "simple_dungeon": "Комната монстров",
+    "stronghold_corridor": "Крепость: коридоры",
+    "stronghold_crossing": "Крепость: перекрёстки",
+    "stronghold_library": "Крепость: библиотека",
+    "underwater_ruin_big": "Большие подводные руины",
+    "underwater_ruin_small": "Малые подводные руины",
+    "village/village_temple": "Деревенский храм",
+    "woodland_mansion": "Лесной особняк"
+  },
+  "entries": {
+    "minecraft:avesta": {
+      "summary": "Авеста — редкая священная книга и валюта глашатая второго уровня. Сама по себе она не даёт эффектов: её основное назначение — обмен на одну из двух офуд с разными благословениями.",
+      "note": "Технически Авеста остаётся обычной книгой. Верстак примет её в рецепте Книги адских уз, поэтому не кладите редкий экземпляр туда случайно."
+    }
+  }
+}
