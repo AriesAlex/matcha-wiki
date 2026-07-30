@@ -12,6 +12,9 @@ import {
 import { dirname, extname, relative, resolve, sep } from 'node:path'
 import { unzipSync } from 'fflate'
 import type {
+  CraftingPlannerSupplement
+} from '../app/types/crafting'
+import type {
   AdvancementGuide,
   AdvancementView,
   IngredientGlossaryEntry,
@@ -26,6 +29,8 @@ import type {
   StackView,
   WikiCatalog
 } from '../app/types/wiki'
+import { stationResourceForRecipe } from '../app/utils/craftingStation'
+import { formatIngredientAlternatives } from '../app/utils/ingredientPresentation'
 import {
   resolveStackItem
 } from '../app/utils/itemReference'
@@ -223,7 +228,7 @@ function main(): void {
     normalizeIngredient: value => normalizeIngredient(value, tags),
     stationName
   })
-  const ingredientGlossary = buildIngredientGlossary(recipes)
+  const ingredientGlossary = buildIngredientGlossary(recipes, craftingPlanner)
   const variants = captureVariants()
   const extractedItems = buildItems(recipes, variants)
   attachItemRelations(extractedItems, recipes)
@@ -1346,7 +1351,7 @@ function normalizeIngredient(value: unknown, tags: Map<string, string[]>): Ingre
   const uniqueIds = [...new Set(ids)]
   const label = tag
     ? ingredientGuideRegistry.tagNames[tag] ?? `Любой подходящий предмет`
-    : uniqueIds.map(nameForResource).join(' или ') || 'Особый ингредиент'
+    : formatIngredientAlternatives(uniqueIds.map(nameForResource))
 
   return {
     ids: uniqueIds,
@@ -1360,12 +1365,23 @@ function normalizeIngredient(value: unknown, tags: Map<string, string[]>): Ingre
 }
 
 function buildIngredientGlossary(
-  recipes: RecipeView[]
+  recipes: RecipeView[],
+  craftingPlanner: CraftingPlannerSupplement
 ): Record<string, IngredientGlossaryEntry> {
   const ids = new Set(recipes.flatMap(recipe => [
     ...recipe.ingredients.flatMap(ingredient => ingredient.ids),
-    ...(recipe.result ? [recipe.result.carrier] : [])
-  ]))
+    ...(recipe.result ? [recipe.result.carrier] : []),
+    stationResourceForRecipe(recipe)
+  ]).filter((id): id is string => Boolean(id)))
+  for (const [resultId, resultRecipes] of Object.entries(craftingPlanner.recipesByResult)) {
+    ids.add(resultId)
+    for (const recipe of resultRecipes) {
+      for (const requirement of recipe.requirements) {
+        requirement.ingredient.ids.forEach(id => ids.add(id))
+      }
+      if (recipe.stationResourceId) ids.add(recipe.stationResourceId)
+    }
+  }
   const sourceIndex = collectIngredientSources(ids)
 
   return Object.fromEntries([...ids].sort().map((id) => {
@@ -1374,6 +1390,7 @@ function buildIngredientGlossary(
       id,
       name: nameForResource(id),
       vanillaName: vanillaNameForResource(id),
+      icon: iconFor(id),
       obtainHint: ingredientGuideRegistry.entries[id] ?? automaticHint,
       curated: ingredientGuideRegistry.entries[id] ? true : undefined
     }]

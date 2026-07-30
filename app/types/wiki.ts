@@ -47,6 +47,7 @@ export interface IngredientGlossaryEntry {
   id: string
   name: string
   vanillaName?: string
+  icon?: string
   obtainHint?: string
   curated?: boolean
 }

@@ -9,7 +9,8 @@ import type {
 import type { WikiCatalog } from '../app/types/wiki'
 import {
   createCraftingIndex,
-  targetForItem
+  targetForItem,
+  targetForResource
 } from '../app/utils/craftingIndex'
 import { buildCraftingPlan } from '../app/utils/craftingPlan'
 import {
@@ -158,6 +159,68 @@ describe('vanilla planner supplement', () => {
       origin: 'pack',
       detailsPath: '/recipes/crafting/blast_furnace'
     })
+  })
+
+  it('localizes and illustrates vanilla stations in crafting paths', () => {
+    const index = createCraftingIndex(catalog, supplement)
+    const expectedStations = {
+      'minecraft:blast_furnace': 'Плавильная печь',
+      'minecraft:crafting_table': 'Верстак',
+      'minecraft:furnace': 'Духовая печь',
+      'minecraft:stonecutter': 'Камнерез'
+    }
+    const stationIds = new Set(Object.values(supplement.recipesByResult)
+      .flat()
+      .map(recipe => recipe.stationResourceId)
+      .filter((id): id is string => Boolean(id)))
+
+    expect([...stationIds].sort()).toEqual(Object.keys(expectedStations).sort())
+    for (const [id, title] of Object.entries(expectedStations)) {
+      const station = targetForResource(catalog, id)
+      expect(station.title, id).toBe(title)
+      expect(station.icon, id).toMatch(/^\/generated\/textures\/block\/.+\.png$/)
+    }
+
+    const craftingTable = buildCraftingPlan(
+      index,
+      targetForResource(catalog, 'minecraft:crafting_table'),
+      1,
+      {
+        modeByTarget: {},
+        recipeByTarget: {},
+        optionByRequirement: {}
+      },
+      {}
+    )
+
+    expect(craftingTable.target).toMatchObject({
+      title: 'Верстак',
+      icon: '/generated/textures/block/crafting_table_front.png'
+    })
+    expect(craftingTable.recipe?.id).toBe('minecraft:crafting_table')
+  })
+
+  it('collapses indistinguishable alternative resources into one planner step', () => {
+    const plan = buildCraftingPlan(
+      createCraftingIndex(catalog, supplement),
+      targetForResource(catalog, 'minecraft:disc_fragment_5'),
+      3,
+      {
+        modeByTarget: {},
+        recipeByTarget: {
+          'resource:minecraft:disc_fragment_5': 'crafting:disc_fragment_from_disc'
+        },
+        optionByRequirement: {}
+      },
+      {}
+    )
+    const disc = plan.requirements[0]
+
+    expect(disc?.options).toHaveLength(1)
+    expect(disc?.node.target.title).toBe('Пластинка — любой вариант')
+    expect(disc?.node.target.obtainHint).toBe(
+      'Подойдёт любой из 20 вариантов. Выбирайте тот, который уже есть или проще получить.'
+    )
   })
 })
 

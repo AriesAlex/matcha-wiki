@@ -12,7 +12,8 @@ import type {
 } from '../types/wiki'
 import {
   formatIdentifier,
-  recipePath
+  recipePath,
+  stripMinecraftFormatting
 } from './format'
 import {
   resolveIngredientItem,
@@ -142,7 +143,15 @@ export function targetsForIngredient(
     return targetForResource(catalog, id, ingredient.label, icon)
   })
 
-  return [...new Map(targets.map(target => [target.key, target])).values()]
+  const uniqueTargets = [...new Map(targets.map(target => [target.key, target])).values()]
+  const distinctTitles = new Set(uniqueTargets.map(target => (
+    stripMinecraftFormatting(target.title)
+  )))
+  if (uniqueTargets.length > 1 && distinctTitles.size === 1) {
+    return [groupAlternativeTargets(ingredient, uniqueTargets)]
+  }
+
+  return uniqueTargets
 }
 
 export function targetForResource(
@@ -162,11 +171,32 @@ export function targetForResource(
     kind: 'resource',
     resourceId,
     title,
-    icon,
+    icon: icon ?? glossary?.icon,
     vanillaName: vanillaName && vanillaName !== title
       ? vanillaName
       : undefined,
     obtainHint: glossary?.obtainHint
+  }
+}
+
+function groupAlternativeTargets(
+  ingredient: IngredientView,
+  targets: CraftingTargetView[]
+): CraftingTargetView {
+  const hints = [...new Set(targets
+    .map(target => target.obtainHint)
+    .filter((hint): hint is string => Boolean(hint)))]
+  const count = targets.length
+
+  return {
+    key: `resource:alternatives:${ingredient.ids.slice().sort().join('|')}`,
+    kind: 'resource',
+    resourceId: ingredient.ids.join('|'),
+    title: ingredient.label,
+    icon: ingredient.icons[0],
+    obtainHint: hints.length === 1
+      ? hints[0]
+      : `Подойдёт любой из ${count} вариантов. Выбирайте тот, который уже есть или проще получить.`
   }
 }
 

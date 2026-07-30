@@ -5,6 +5,9 @@ import { parse } from 'yaml'
 import { wikiNavigation } from '../app/data/wikiNavigation'
 import type { WikiCatalog } from '../app/types/wiki'
 import {
+  explainIngredient
+} from '../app/utils/ingredientPresentation'
+import {
   resolveIngredientItem,
   resolveStackItem
 } from '../app/utils/itemReference'
@@ -234,6 +237,36 @@ describe('generated wiki catalog', () => {
       taggedIngredients.filter(ingredient => ingredient.label === 'Любой подходящий предмет'),
       'Every interchangeable ingredient group needs a concrete player-facing name'
     ).toEqual([])
+  })
+
+  it('keeps large alternative groups concise for players', () => {
+    const ingredientLabels = catalog.recipes.flatMap(recipe => (
+      recipe.ingredients.map(ingredient => ingredient.label)
+    ))
+    const repeatedChoices = ingredientLabels.filter((label) => {
+      const choices = label.split(' или ').map(choice => choice.trim())
+      return new Set(choices).size !== choices.length
+    })
+
+    expect(repeatedChoices).toEqual([])
+    expect(
+      ingredientLabels.filter(label => label.length > 160),
+      'Ingredient labels must stay scannable'
+    ).toEqual([])
+
+    const recipe = catalog.recipes.find(entry => (
+      entry.id === 'crafting:disc_fragment_from_disc'
+    ))
+    const ingredient = recipe?.ingredients[0]
+
+    expect(ingredient).toBeDefined()
+    if (!ingredient) return
+
+    expect(ingredient.ids).toHaveLength(20)
+    expect(ingredient.label).toBe('Пластинка — любой вариант')
+    expect(explainIngredient(ingredient, catalog.ingredientGlossary)).toBe(
+      'Подойдёт любой из 20 вариантов. Выбирайте тот, который уже есть или проще получить.'
+    )
   })
 
   it('explains renamed vanilla ingredients and how to obtain opaque resources', () => {

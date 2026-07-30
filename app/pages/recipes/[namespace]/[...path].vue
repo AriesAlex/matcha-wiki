@@ -118,27 +118,12 @@ const ingredientEntries = computed(() => (
     count: requirement.count,
     role: requirement.role,
     item: resolveIngredientItem(catalog.items, requirement.ingredient),
-    explanation: ingredientExplanation(requirement.ingredient)
+    explanation: explainIngredient(
+      requirement.ingredient,
+      catalog.ingredientGlossary
+    )
   }))
 ))
-
-function ingredientExplanation(
-  ingredient: NonNullable<typeof recipe.value>['ingredients'][number]
-): string {
-  const entries = ingredient.ids
-    .map(id => catalog.ingredientGlossary[id])
-    .filter(entry => entry !== undefined)
-  const renamed = entries
-    .filter(entry => entry.vanillaName && entry.vanillaName !== entry.name)
-    .map(entry => (
-      `${stripMinecraftFormatting(entry.name)} в обычном Minecraft выглядит как ${entry.vanillaName}`
-    ))
-  const hints = [...new Set(entries
-    .map(entry => entry.obtainHint)
-    .filter((hint): hint is string => Boolean(hint)))]
-
-  return [...renamed, ...hints].join('. ')
-}
 
 function secondaryRoleLabel(role: RecipeRequirementRole): string {
   return {
