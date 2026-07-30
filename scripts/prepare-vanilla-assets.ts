@@ -21,11 +21,20 @@ interface VanillaVersion {
 }
 
 interface CacheManifest {
+  schemaVersion: 2
   minecraftVersion: string
   clientSha1: string
   archiveSha256: string
   files: number
+  fileCounts: Record<IncludedFileKind, number>
 }
+
+type IncludedFileKind =
+  | 'itemDefinitions'
+  | 'models'
+  | 'textures'
+  | 'itemTags'
+  | 'recipes'
 
 const rootDir = resolve(import.meta.dir, '..')
 const version = readJson<VanillaVersion>(resolve(rootDir, 'wiki-data/project.json'))
@@ -33,11 +42,15 @@ const cacheDir = resolve(rootDir, '.cache/minecraft')
 const archivePath = resolve(cacheDir, `wiki-assets-${version.minecraftVersion}.zip`)
 const manifestPath = resolve(cacheDir, `wiki-assets-${version.minecraftVersion}.json`)
 const refresh = process.argv.includes('--refresh')
-const includedPaths = [
-  /^assets\/minecraft\/items\/.+\.json$/,
-  /^assets\/minecraft\/models\/(?:block|item)\/.+\.json$/,
-  /^assets\/minecraft\/textures\/(?:block|item)\/.+\.png$/,
-  /^data\/minecraft\/tags\/item\/.+\.json$/
+const includedPaths: Array<{
+  kind: IncludedFileKind
+  pattern: RegExp
+}> = [
+  { kind: 'itemDefinitions', pattern: /^assets\/minecraft\/items\/.+\.json$/ },
+  { kind: 'models', pattern: /^assets\/minecraft\/models\/(?:block|item)\/.+\.json$/ },
+  { kind: 'textures', pattern: /^assets\/minecraft\/textures\/(?:block|item)\/.+\.png$/ },
+  { kind: 'itemTags', pattern: /^data\/minecraft\/tags\/item\/.+\.json$/ },
+  { kind: 'recipes', pattern: /^data\/minecraft\/recipe\/.+\.json$/ }
 ]
 
 await main()
@@ -56,17 +69,20 @@ async function main(): Promise<void> {
 
   const source = unzipSync(client)
   const files: Zippable = {}
+  const fileCounts = emptyFileCounts()
   for (const path of Object.keys(source).sort((left, right) => left.localeCompare(right, 'en'))) {
-    if (includedPaths.some(pattern => pattern.test(path))) {
-      files[path] = [
-        source[path],
-        { mtime: new Date(1980, 0, 1) }
-      ]
-    }
+    const included = includedPaths.find(entry => entry.pattern.test(path))
+    if (!included) continue
+
+    files[path] = [
+      source[path],
+      { mtime: new Date(1980, 0, 1) }
+    ]
+    fileCounts[included.kind] += 1
   }
 
   const fileCount = Object.keys(files).length
-  if (fileCount < 7_000) {
+  if (fileCount < 9_000 || fileCounts.recipes < 1_000) {
     throw new Error(
       `В client.jar Minecraft ${version.minecraftVersion} найдено только ${fileCount} wiki-ассетов`
     )
@@ -74,17 +90,19 @@ async function main(): Promise<void> {
 
   const archive = zipSync(files, { level: 9 })
   const cache: CacheManifest = {
+    schemaVersion: 2,
     minecraftVersion: version.minecraftVersion,
     clientSha1: version.client.sha1,
     archiveSha256: hash('sha256', archive),
-    files: fileCount
+    files: fileCount,
+    fileCounts
   }
 
   mkdirSync(cacheDir, { recursive: true })
   writeFileSync(archivePath, archive)
   writeFileSync(manifestPath, `${JSON.stringify(cache, null, 2)}\n`)
   console.log(
-    `Vanilla ${version.minecraftVersion}: подготовлено ${fileCount} моделей, текстур и тегов`
+    `Vanilla ${version.minecraftVersion}: подготовлено ${fileCount} моделей, текстур, тегов и рецептов`
   )
 }
 
@@ -96,9 +114,13 @@ function validCache(): boolean {
   try {
     const cache = readJson<CacheManifest>(manifestPath)
     const archive = readFileSync(archivePath)
-    return cache.minecraftVersion === version.minecraftVersion
+    return cache.schemaVersion === 2
+      && cache.minecraftVersion === version.minecraftVersion
       && cache.clientSha1 === version.client.sha1
-      && cache.files >= 7_000
+      && cache.files >= 9_000
+      && cache.fileCounts.recipes >= 1_000
+      && cache.files === Object.values(cache.fileCounts)
+        .reduce((total, count) => total + count, 0)
       && cache.archiveSha256 === hash('sha256', archive)
   } catch {
     return false
@@ -151,6 +173,16 @@ function assertClient(client: Uint8Array): void {
 
 function hash(algorithm: 'sha1' | 'sha256', value: Uint8Array): string {
   return createHash(algorithm).update(value).digest('hex')
+}
+
+function emptyFileCounts(): Record<IncludedFileKind, number> {
+  return {
+    itemDefinitions: 0,
+    models: 0,
+    textures: 0,
+    itemTags: 0,
+    recipes: 0
+  }
 }
 
 function readJson<T>(path: string): T {

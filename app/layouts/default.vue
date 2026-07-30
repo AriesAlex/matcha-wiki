@@ -12,8 +12,8 @@
           aria-controls="site-sidebar"
           @click="navigationOpen = !navigationOpen"
         >
-          <PhX v-if="navigationOpen" :size="22" />
-          <PhList v-else :size="22" />
+          <PhX v-if="navigationOpen" :size="22" aria-hidden="true" />
+          <PhList v-else :size="22" aria-hidden="true" />
         </button>
 
         <NuxtLink class="brand" to="/">
@@ -31,15 +31,15 @@
 
         <nav class="header-nav" aria-label="Основная навигация">
           <NuxtLink to="/start">
-            <PhBookOpenText :size="18" />
+            <PhBookOpenText :size="18" aria-hidden="true" />
             Начать
           </NuxtLink>
           <NuxtLink to="/progression">
-            <PhCompass :size="18" />
+            <PhCompass :size="18" aria-hidden="true" />
             Путь игры
           </NuxtLink>
           <NuxtLink to="/items">
-            <PhSquaresFour :size="18" />
+            <PhSquaresFour :size="18" aria-hidden="true" />
             Предметы
           </NuxtLink>
         </nav>
@@ -51,7 +51,7 @@
             aria-label="Открыть поиск"
             @click="openSearch"
           >
-            <PhMagnifyingGlass :size="19" weight="bold" />
+            <PhMagnifyingGlass :size="19" weight="bold" aria-hidden="true" />
             <span>Поиск</span>
             <kbd>Ctrl K</kbd>
           </button>
@@ -91,11 +91,11 @@
           проверяются по исходникам пака.
         </p>
         <a href="https://github.com/AriesAlex/matcha-wiki">
-          <PhGithubLogo :size="20" />
+          <PhGithubLogo :size="20" aria-hidden="true" />
           Исходники и исправления
         </a>
         <NuxtLink to="/known-issues">
-          <PhBugBeetle :size="20" />
+          <PhBugBeetle :size="20" aria-hidden="true" />
           Известные проблемы
         </NuxtLink>
       </div>
@@ -337,6 +337,7 @@ onBeforeUnmount(() => {
       padding: 0;
       background: rgba(7, 13, 9, 0.58);
       border: 0;
+      overscroll-behavior: contain;
     }
 
     .header-nav {

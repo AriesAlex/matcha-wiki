@@ -8,6 +8,7 @@
       <NuxtLink
         class="article-anchor"
         :class="{ current: isCurrent(heading.id) }"
+        :aria-current="isCurrent(heading.id) ? 'location' : undefined"
         :to="{ path, hash: `#${heading.id}` }"
       >
         {{ heading.text }}
@@ -17,6 +18,7 @@
           <NuxtLink
             class="article-anchor"
             :class="{ current: isCurrent(child.id) }"
+            :aria-current="isCurrent(child.id) ? 'location' : undefined"
             :to="{ path, hash: `#${child.id}` }"
           >
             {{ child.text }}
@@ -33,13 +35,14 @@ import type { WikiTocLink } from '~/types/wiki'
 const props = defineProps<{
   links: WikiTocLink[]
   path: string
+  activeId: string | null
 }>()
 
 const route = useRoute()
 
 function isCurrent(id: string): boolean {
   return normalizeWikiPath(route.path) === normalizeWikiPath(props.path)
-    && route.hash === `#${id}`
+    && props.activeId === id
 }
 </script>
 
@@ -68,13 +71,31 @@ function isCurrent(id: string): boolean {
   align-items: center;
   padding: 4px 8px;
   color: var(--muted);
+  background: transparent;
+  box-shadow: inset 2px 0 0 transparent;
   font-size: 11px;
   line-height: 1.3;
   text-decoration: none;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease;
 
-  &:hover,
+  &:hover {
+    color: var(--accent);
+  }
+
   &.current {
     color: var(--accent);
+    background: var(--surface-quiet);
+    box-shadow: inset 2px 0 0 var(--accent);
+    font-weight: 700;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .article-anchor {
+    transition: none;
   }
 }
 </style>

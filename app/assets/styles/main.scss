@@ -98,6 +98,13 @@ select {
   cursor: pointer;
 }
 
+a,
+button,
+select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
 a {
   color: var(--accent);
   text-underline-offset: 0.2em;

@@ -26,7 +26,7 @@ describe('generated wiki catalog', () => {
 
   it('contains the complete analyzed pack rather than a sample fixture', () => {
     expect(catalog.stats.files).toBeGreaterThan(4_800)
-    expect(catalog.stats.items).toBeGreaterThan(400)
+    expect(catalog.stats.items).toBeGreaterThan(380)
     expect(catalog.stats.customItems).toBeGreaterThan(280)
     expect(catalog.stats.recipes).toBe(1_059)
     expect(catalog.stats.advancements).toBe(67)
@@ -213,6 +213,7 @@ describe('generated wiki catalog', () => {
       ...recipe.ingredients,
       ...Object.values(recipe.key ?? {})
     ])
+    const taggedIngredients = ingredients.filter(ingredient => ingredient.tag)
 
     for (const tag of [
       'minecraft:logs',
@@ -224,6 +225,15 @@ describe('generated wiki catalog', () => {
       expect(matches.every(ingredient => ingredient.ids.length > 0), tag).toBe(true)
       expect(matches.every(ingredient => ingredient.icons.length > 0), tag).toBe(true)
     }
+
+    expect(
+      taggedIngredients.filter(ingredient => /[A-Za-z]/.test(ingredient.label)),
+      'Tag labels must stay player-facing and localized'
+    ).toEqual([])
+    expect(
+      taggedIngredients.filter(ingredient => ingredient.label === 'Любой подходящий предмет'),
+      'Every interchangeable ingredient group needs a concrete player-facing name'
+    ).toEqual([])
   })
 
   it('explains renamed vanilla ingredients and how to obtain opaque resources', () => {

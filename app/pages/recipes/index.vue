@@ -4,8 +4,8 @@
       <p class="eyebrow">Справочник</p>
       <h1>Рецепты</h1>
       <p>
-        Каталог построен напрямую из JSON. Он сохраняет регистр символов pattern,
-        варианты тегов, количество, время, опыт и полный набор components результата.
+        Все найденные способы изготовления: что положить в ячейки, где готовить
+        и сколько предметов получится.
       </p>
     </header>
 
@@ -15,13 +15,19 @@
         <span class="visually-hidden">Поиск рецепта</span>
         <input
           v-model="query"
+          name="recipe-search"
           type="search"
-          placeholder="Результат, ингредиент или ID"
+          placeholder="Результат или ингредиент…"
+          autocomplete="off"
+          spellcheck="false"
         >
       </label>
       <label>
         <span class="visually-hidden">Рабочая станция</span>
-        <select v-model="station">
+        <select
+          v-model="station"
+          name="recipe-station"
+        >
           <option
             v-for="option in stations"
             :key="option"
@@ -30,7 +36,7 @@
           </option>
         </select>
       </label>
-      <p>Найдено: {{ filteredRecipes.length }}</p>
+      <p aria-live="polite">Показано: {{ filteredRecipes.length }}</p>
     </div>
 
     <ul class="recipe-index">
@@ -38,7 +44,7 @@
         v-for="recipe in filteredRecipes.slice(0, visible)"
         :key="recipe.id"
       >
-        <NuxtLink :to="recipePath(recipe.namespace, recipe.path)">
+        <NuxtLink :to="recipeLink(recipe)">
           <span class="index-icon">
             <img
               v-if="recipe.result?.icon"
@@ -46,6 +52,8 @@
               alt=""
               width="40"
               height="40"
+              loading="lazy"
+              decoding="async"
             >
           </span>
           <span>
@@ -78,12 +86,15 @@
 </template>
 
 <script setup lang="ts">
+import { watchDebounced } from '@vueuse/core'
 import { PhMagnifyingGlass } from '@phosphor-icons/vue'
 import type { RecipeView } from '../../types/wiki'
 
 const catalog = useWikiCatalog()
-const query = ref('')
-const station = ref('Все')
+const route = useRoute()
+const router = useRouter()
+const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const station = ref(typeof route.query.station === 'string' ? route.query.station : 'Все')
 const visible = ref(120)
 
 const stations = computed(() => [
@@ -116,14 +127,37 @@ watch([query, station], () => {
   visible.value = 120
 })
 
+watchDebounced(
+  [query, station],
+  ([nextQuery, nextStation]) => {
+    void router.replace({
+      query: {
+        ...route.query,
+        q: nextQuery.trim() || undefined,
+        station: nextStation === 'Все' ? undefined : nextStation
+      }
+    })
+  },
+  { debounce: 180 }
+)
+
 function recipeResultTitle(recipe: RecipeView): string {
   if (!recipe.result) return recipe.id
   return resolveStackItem(catalog.items, recipe.result)?.title ?? recipe.result.name
 }
 
+function recipeLink(recipe: RecipeView): string {
+  const item = recipe.result
+    ? resolveStackItem(catalog.items, recipe.result)
+    : undefined
+  return item
+    ? `/items/${item.slug}`
+    : recipePath(recipe.namespace, recipe.path)
+}
+
 useSeoMeta({
   title: 'Рецепты',
-  description: `Все ${catalog.stats.recipes} рецептов Matcha Flavoured: верстак, печи, костёр, камнерез и кузнечный стол.`
+  description: `Все ${catalog.stats.recipes} способов изготовления в Matcha Flavoured: ингредиенты, рабочие места и результат.`
 })
 </script>
 
@@ -182,8 +216,13 @@ useSeoMeta({
     padding: 0;
     list-style: none;
 
-    li + li {
-      border-top: 1px solid var(--edge);
+    li {
+      content-visibility: auto;
+      contain-intrinsic-size: 70px;
+
+      + li {
+        border-top: 1px solid var(--edge);
+      }
     }
 
     a {

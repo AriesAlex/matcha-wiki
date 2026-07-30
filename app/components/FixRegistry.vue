@@ -55,8 +55,8 @@
         <p class="eyebrow">Не замаскировано под исправление</p>
         <h2>Подтверждённые ограничения</h2>
         <p>
-          Причина известна, но безопасного исправления в текущем data-driven API
-          нет. Эти записи остаются открытыми и видимыми.
+          Причина известна, но безопасного исправления средствами нынешней
+          версии Minecraft нет. Эти записи остаются открытыми и видимыми.
         </p>
       </header>
       <div class="fix-list">
@@ -107,23 +107,23 @@ const groups = [
   {
     label: 'Загрузка и системная логика',
     name: 'Ядро пака',
-    description: 'Рецепты, loot tables, достижения, рыбалка, спавн и ссылки ресурсов.',
+    description: 'Рецепты, таблицы добычи, достижения, рыбалка, появление существ и связи ресурсов.',
     fixes: coreManifest.fixes as FixEntry[]
   },
   {
-    label: 'Компоненты и эффекты',
+    label: 'Состав предметов и эффекты',
     name: 'Еда',
-    description: 'Лечение, Поглощение, совместимость стеков, локализация и multiplayer-аура.',
+    description: 'Лечение, Поглощение, совместимость стопок, локализация и аура в сетевой игре.',
     fixes: foodManifest.fixes as FixEntry[]
   },
   {
     label: 'Атрибуты и владельцы эффектов',
     name: 'Экипировка',
-    description: 'Боевые параметры, offhand-утечки, локализация и адресация зачарований.',
+    description: 'Боевые параметры, ошибки второй руки, локализация и работа зачарований.',
     fixes: equipmentManifest.fixes as FixEntry[]
   },
   {
-    label: 'Таймеры, multiplayer и состояния',
+    label: 'Таймеры, сетевая игра и состояния',
     name: 'Игровые системы',
     description: 'Личные счётчики, обереги, смерть, сон, поверхность, движение и эффекты окружения.',
     fixes: systemsManifest.fixes as FixEntry[]
@@ -153,20 +153,20 @@ const evidenceLabels: Record<string, string> = {
   call_graph_and_selector_semantics: 'граф вызовов и селекторы',
   set_equality: 'полное совпадение наборов',
   asset_reference_graph: 'граф моделей и текстур',
-  component_and_language_semantics: 'components и языковые ключи',
+  component_and_language_semantics: 'состав предмета и языковые ключи',
   attribute_formula_and_cross_file_invariant: 'формула атрибутов и варианты предмета',
-  attribute_formula_and_tier_consistency: 'формула атрибутов и согласованность tier',
-  carrier_defaults_and_attribute_formula: 'ванильные атрибуты carrier и итоговая формула',
-  run_function_command_source_ownership: 'владелец command source в enchantment effect',
-  multiplayer_scoreboard_ownership: 'личные scoreboard и одновременная игра',
-  multiplayer_selector_ownership: 'селекторы и владелец состояния в multiplayer',
-  tier_tag_consistency: 'согласованность tier-тегов инструментов',
+  attribute_formula_and_tier_consistency: 'формула атрибутов и согласованность уровней',
+  carrier_defaults_and_attribute_formula: 'обычные свойства предмета-основы и итоговая формула',
+  run_function_command_source_ownership: 'владелец команды внутри эффекта зачарования',
+  multiplayer_scoreboard_ownership: 'личные счётчики и одновременная игра',
+  multiplayer_selector_ownership: 'селекторы и владелец состояния в сетевой игре',
+  tier_tag_consistency: 'согласованность уровней инструментов',
   state_transition_runtime: 'переход состояния и живые сущности',
-  enchantment_tick_cardinality: 'число enchantment callback за тик',
-  entity_local_cooldown: 'личный cooldown сущности',
+  enchantment_tick_cardinality: 'частота срабатывания зачарования',
+  entity_local_cooldown: 'личная перезарядка сущности',
   tick_gate_semantics: 'семантика тиковых интервалов',
   continuous_charge_state_machine: 'автомат непрерывной зарядки',
-  scheduled_context_ownership: 'владелец scheduled и тикового контекста',
+  scheduled_context_ownership: 'владелец отложенного действия',
   case_sensitive_asset_reference: 'ссылка ассета с учётом регистра',
   recipe_output_equivalence: 'эквивалентность выходов рецептов',
   vanilla_recipe_collision: 'коллизия с ванильным рецептом',

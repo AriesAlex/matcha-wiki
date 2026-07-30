@@ -1,24 +1,33 @@
 <template>
-  <article v-if="recipe" class="recipe-page">
-    <NuxtLink class="back-link" to="/recipes">
+  <article
+    v-if="recipe"
+    class="recipe-page"
+  >
+    <NuxtLink
+      class="back-link"
+      :to="backLink"
+    >
       <PhArrowLeft :size="18" />
-      Все рецепты
+      {{ backLabel }}
     </NuxtLink>
 
     <header class="recipe-heading">
-      <span class="item-heading-icon">
-        <img
-          v-if="recipe.result?.icon"
-          :src="useAssetPath(recipe.result.icon)"
-          alt=""
-          width="72"
-          height="72"
-        >
-      </span>
+      <ItemSlot
+        v-if="recipe.result"
+        :stack="recipe.result"
+        large
+      />
+      <ItemSlot
+        v-else
+        empty
+        large
+      />
       <div>
-        <p class="eyebrow">{{ recipe.station }}</p>
-        <h1><MinecraftText :text="resultItem?.title ?? recipe.result?.name ?? recipe.id" /></h1>
-        <code>{{ recipe.id }}</code>
+        <p class="eyebrow">Способ изготовления</p>
+        <h1>
+          <MinecraftText :text="resultTitle" />
+        </h1>
+        <p>{{ recipe.station }} · точная раскладка и нужное количество ресурсов.</p>
       </div>
     </header>
 
@@ -26,75 +35,41 @@
 
     <section class="article-section">
       <header class="section-heading">
-        <p class="eyebrow">Текстовая версия</p>
-        <h2>Ингредиенты</h2>
+        <p class="eyebrow">Список покупок</p>
+        <h2>Что подготовить</h2>
       </header>
       <ul class="ingredient-list">
         <li
           v-for="entry in ingredientEntries"
           :key="entry.key"
         >
-          <ItemSlot :ingredient="entry.ingredient" />
-          <span>
-            <ItemReference
-              v-if="entry.item"
-              :item="entry.item"
-              class="ingredient-link"
-            >
-              <strong>
-                <MinecraftText :text="entry.item.title" />
-                <template v-if="entry.count > 1"> ×{{ entry.count }}</template>
-              </strong>
-            </ItemReference>
-            <ItemReference
-              v-else
-              :ingredient="entry.ingredient"
-              class="ingredient-reference"
-            >
-              <strong>
-                <MinecraftText :text="entry.ingredient.label" />
-                <template v-if="entry.count > 1"> ×{{ entry.count }}</template>
-              </strong>
-            </ItemReference>
-            <span
-              v-if="entry.explanation"
-              class="ingredient-explanation"
-            >
-              {{ entry.explanation }}
-            </span>
-            <code v-if="entry.ingredient.tag">#{{ entry.ingredient.tag }}</code>
-            <code v-else>{{ entry.ingredient.ids.join(' | ') }}</code>
-          </span>
+          <ItemStackReference
+            :item="entry.item"
+            :ingredient="entry.item ? undefined : entry.ingredient"
+            :count="entry.count"
+            :label="entry.item?.title ?? entry.ingredient.label"
+            :secondary="entry.explanation || secondaryRoleLabel(entry.role)"
+          />
         </li>
       </ul>
-      <p v-if="resultItem">
-        Результат:
-        <ItemReference :item="resultItem">
-          <MinecraftText :text="resultItem.title" />
-        </ItemReference>.
-      </p>
     </section>
 
-    <section class="article-section">
-      <header class="section-heading">
-        <p class="eyebrow">Проверяемость</p>
-        <h2>Источник и данные результата</h2>
-      </header>
-      <p class="source-callout">
-        <PhGitBranch :size="20" />
+    <details class="verification">
+      <summary>
+        <PhGitBranch :size="18" />
+        Как проверен этот способ
+      </summary>
+      <p>
+        Схема прочитана прямо из файла игрового пака:
         <code>{{ recipe.sourcePath }}</code>
       </p>
-      <details class="technical-details">
-        <summary><PhCode :size="18" /> Components результата</summary>
-        <pre><code>{{ JSON.stringify(recipe.result?.components ?? {}, null, 2) }}</code></pre>
-      </details>
-    </section>
+    </details>
   </article>
 </template>
 
 <script setup lang="ts">
-import { PhArrowLeft, PhCode, PhGitBranch } from '@phosphor-icons/vue'
-import type { IngredientView } from '~/types/wiki'
+import { PhArrowLeft, PhGitBranch } from '@phosphor-icons/vue'
+import type { RecipeRequirementRole } from '~/types/wiki'
 
 const route = useRoute()
 const catalog = useWikiCatalog()
@@ -106,7 +81,7 @@ const recipe = computed(() => catalog.recipes.find(entry => entry.id === recipeI
 if (import.meta.server && !recipe.value) {
   throw createError({
     statusCode: 404,
-    statusMessage: 'Рецепт не найден'
+    statusMessage: 'Способ изготовления не найден'
   })
 }
 
@@ -114,64 +89,75 @@ onMounted(() => {
   if (!recipe.value) {
     showError({
       statusCode: 404,
-      statusMessage: 'Рецепт не найден'
+      statusMessage: 'Способ изготовления не найден'
     })
   }
 })
 
 const resultItem = computed(() => {
   const result = recipe.value?.result
-  if (!result) return undefined
-  return resolveStackItem(catalog.items, result)
+  return result ? resolveStackItem(catalog.items, result) : undefined
 })
-const ingredientEntries = computed(() => {
-  const entries = new Map<string, {
-    key: string
-    ingredient: IngredientView
-    count: number
-  }>()
-  for (const ingredient of recipe.value?.ingredients ?? []) {
-    const key = JSON.stringify({
-      label: ingredient.label,
-      tag: ingredient.tag,
-      ids: ingredient.ids
-    })
-    const entry = entries.get(key) ?? { key, ingredient, count: 0 }
-    entry.count += 1
-    entries.set(key, entry)
-  }
-  return [...entries.values()].map(entry => ({
-    ...entry,
-    item: resolveIngredientItem(catalog.items, entry.ingredient),
-    explanation: ingredientExplanation(entry.ingredient)
+const resultTitle = computed(() => (
+  resultItem.value?.title
+  ?? recipe.value?.result?.name
+  ?? 'Неизвестный результат'
+))
+const backLink = computed(() => (
+  resultItem.value ? `/items/${resultItem.value.slug}` : '/recipes'
+))
+const backLabel = computed(() => (
+  resultItem.value
+    ? `К предмету «${stripMinecraftFormatting(resultItem.value.title)}»`
+    : 'Ко всем способам изготовления'
+))
+const ingredientEntries = computed(() => (
+  (recipe.value?.requirements ?? []).map(requirement => ({
+    key: requirement.id,
+    ingredient: requirement.ingredient,
+    count: requirement.count,
+    role: requirement.role,
+    item: resolveIngredientItem(catalog.items, requirement.ingredient),
+    explanation: ingredientExplanation(requirement.ingredient)
   }))
-})
+))
 
-function ingredientExplanation(ingredient: IngredientView): string {
+function ingredientExplanation(
+  ingredient: NonNullable<typeof recipe.value>['ingredients'][number]
+): string {
   const entries = ingredient.ids
     .map(id => catalog.ingredientGlossary[id])
     .filter(entry => entry !== undefined)
   const renamed = entries
     .filter(entry => entry.vanillaName && entry.vanillaName !== entry.name)
-    .map(entry => `${entry.name} — это ${entry.vanillaName} (${entry.id})`)
-  const hints = [...new Set(entries
-    .filter(entry => entry.curated || (
-      entry.vanillaName !== undefined && entry.vanillaName !== entry.name
+    .map(entry => (
+      `${stripMinecraftFormatting(entry.name)} в обычном Minecraft выглядит как ${entry.vanillaName}`
     ))
+  const hints = [...new Set(entries
     .map(entry => entry.obtainHint)
-    .filter(Boolean))]
+    .filter((hint): hint is string => Boolean(hint)))]
+
   return [...renamed, ...hints].join('. ')
 }
 
+function secondaryRoleLabel(role: RecipeRequirementRole): string {
+  return {
+    ingredient: '',
+    template: 'Кузнечный шаблон',
+    base: 'Основа',
+    addition: 'Добавка'
+  }[role]
+}
+
 useSeoMeta({
-  title: () => `Рецепт: ${stripMinecraftFormatting(
-    resultItem.value?.title ?? recipe.value?.result?.name ?? recipeId.value
-  )}`,
+  title: () => `Как сделать: ${stripMinecraftFormatting(resultTitle.value)}`,
   description: () => {
     const current = recipe.value
-    return current
-      ? `${current.station}: ${current.ingredients.map(ingredient => ingredient.label).join(', ')}. Точный рецепт из ${current.sourcePath}.`
-      : ''
+    if (!current) return ''
+    const ingredients = current.requirements
+      .map(requirement => requirement.ingredient.label)
+      .join(', ')
+    return `${current.station}: как сделать ${stripMinecraftFormatting(resultTitle.value)} из ${ingredients}.`
   }
 })
 </script>
@@ -180,113 +166,76 @@ useSeoMeta({
 .recipe-page {
   .recipe-heading {
     display: grid;
-    grid-template-columns: 104px minmax(0, 1fr);
+    grid-template-columns: 64px minmax(0, 1fr);
     align-items: center;
-    gap: 26px;
-    margin-bottom: 46px;
-
-    .item-heading-icon {
-      width: 104px;
-      height: 104px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--surface-quiet);
-    }
-
-    img {
-      width: 72px;
-      height: 72px;
-      object-fit: contain;
-      image-rendering: pixelated;
-    }
+    gap: 22px;
+    max-width: 900px;
+    margin-bottom: 42px;
 
     h1 {
-      font-size: clamp(2.1rem, 5vw, 4rem);
+      font-size: clamp(2rem, 5vw, 4rem);
     }
 
-    code {
-      display: block;
-      margin-top: 9px;
+    p:last-child {
+      margin: 10px 0 0;
       color: var(--muted);
-      font-size: 13px;
     }
   }
 
   .ingredient-list {
     max-width: 760px;
-    margin: 0 0 20px;
+    margin: 0;
     padding: 0;
     list-style: none;
 
     li {
-      display: grid;
-      grid-template-columns: 52px minmax(0, 1fr);
-      gap: 14px;
-      align-items: center;
       padding: 10px 0;
 
       + li {
         border-top: 1px solid var(--edge);
       }
-
-      span {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-      }
-
-      code {
-        color: var(--muted);
-        font-size: 12px;
-      }
-
-      .ingredient-link {
-        width: fit-content;
-      }
-
-      .ingredient-reference {
-        width: fit-content;
-        cursor: help;
-      }
-
-      .ingredient-explanation {
-        max-width: 680px;
-        margin-top: 3px;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.45;
-      }
     }
   }
 
-  .source-callout {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 14px;
-    background: var(--surface-quiet);
+  .verification {
+    max-width: 760px;
+    margin-top: 64px;
+    color: var(--muted);
 
-    svg {
-      flex: none;
-      color: var(--accent);
+    summary {
+      width: fit-content;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    p {
+      margin: 8px 0 0;
+      padding: 14px;
+      background: var(--surface-quiet);
+      font-size: 13px;
+    }
+
+    code {
+      display: block;
+      margin-top: 5px;
     }
   }
+}
 
-  @media (max-width: 560px) {
+@media (max-width: 560px) {
+  .recipe-page {
     .recipe-heading {
-      grid-template-columns: 76px minmax(0, 1fr);
-      gap: 16px;
+      grid-template-columns: 64px minmax(0, 1fr);
+      gap: 14px;
+    }
 
-      .item-heading-icon {
-        width: 76px;
-        height: 76px;
-      }
-
-      img {
-        width: 56px;
-        height: 56px;
-      }
+    .back-link {
+      align-items: flex-start;
     }
   }
 }

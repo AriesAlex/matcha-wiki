@@ -1,15 +1,9 @@
 import catalogSource from '../../generated/catalog.json'
 import searchSource from '../../generated/search-index.json'
-import type { WikiCatalog } from '../types/wiki'
-
-export interface WikiSearchEntry {
-  kind: 'item' | 'recipe' | 'advancement'
-  title: string
-  description: string
-  path: string
-  icon?: string
-  terms: string
-}
+import type {
+  WikiCatalog,
+  WikiSearchEntry
+} from '../types/wiki'
 
 const catalog = catalogSource as WikiCatalog
 const searchIndex = searchSource as WikiSearchEntry[]

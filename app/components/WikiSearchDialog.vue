@@ -7,22 +7,32 @@
       @mousedown.self="close"
     >
       <section
+        ref="dialog"
         class="search-dialog"
         role="dialog"
         aria-modal="true"
         aria-label="Поиск по Matcha Wiki"
+        tabindex="-1"
       >
         <div class="search-field">
           <PhMagnifyingGlass
             :size="22"
             weight="bold"
+            aria-hidden="true"
           />
           <input
             ref="input"
             v-model="query"
+            name="wiki-search"
             type="search"
-            placeholder="Предмет, рецепт, ID или достижение"
+            placeholder="Предмет, достижение или способ получения…"
             autocomplete="off"
+            spellcheck="false"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-controls="wiki-search-results"
+            :aria-expanded="results.length > 0"
+            :aria-activedescendant="activeResultId"
           >
           <button
             class="icon-button"
@@ -30,7 +40,7 @@
             title="Закрыть поиск"
             @click="close"
           >
-            <PhX :size="20" />
+            <PhX :size="20" aria-hidden="true" />
           </button>
         </div>
 
@@ -38,40 +48,28 @@
           v-if="!query"
           class="search-hint"
         >
-          Популярные предметы. Введите название или технический ID.
+          Начните вводить игровое название или ингредиент.
         </p>
 
-        <nav
+        <div
           v-if="results.length"
+          id="wiki-search-results"
+          ref="resultsList"
           class="search-results"
           aria-label="Результаты поиска"
+          role="listbox"
         >
-          <NuxtLink
-            v-for="entry in results"
+          <WikiSearchResult
+            v-for="(entry, resultIndex) in results"
+            :id="resultId(resultIndex)"
             :key="`${entry.kind}:${entry.path}:${entry.title}`"
-            :to="entry.path"
-            class="search-result"
-          >
-            <span class="search-result-icon">
-              <img
-                v-if="entry.icon"
-                :src="useAssetPath(entry.icon)"
-                alt=""
-                width="32"
-                height="32"
-              >
-            </span>
-            <span>
-              <strong><MinecraftText :text="entry.title" /></strong>
-              <small>{{ kindLabels[entry.kind] }}</small>
-              <span><MinecraftText :text="entry.description" /></span>
-            </span>
-            <PhArrowRight
-              :size="18"
-              aria-hidden="true"
-            />
-          </NuxtLink>
-        </nav>
+            :entry="entry"
+            :active="activeIndex === resultIndex"
+            :data-result-index="resultIndex"
+            @mouseenter="setActiveIndex(resultIndex)"
+            @focus="setActiveIndex(resultIndex)"
+          />
+        </div>
 
         <div
           v-else
@@ -83,7 +81,7 @@
             width="72"
             height="72"
           >
-          <p>Совпадений нет. Попробуйте русское имя, resource ID или название ингредиента.</p>
+          <p>Ничего не нашли. Попробуйте другое русское название или ингредиент.</p>
         </div>
 
         <footer class="search-footer">
@@ -96,20 +94,16 @@
 </template>
 
 <script setup lang="ts">
-import { PhArrowRight, PhMagnifyingGlass, PhX } from '@phosphor-icons/vue'
-import type { WikiSearchEntry } from '../composables/useWikiCatalog'
+import { PhMagnifyingGlass, PhX } from '@phosphor-icons/vue'
+import type { WikiSearchEntry } from '../types/wiki'
 
 const { isOpen, close } = useSearchDialog()
 const route = useRoute()
 const query = ref('')
+const dialog = useTemplateRef<HTMLElement>('dialog')
 const input = useTemplateRef<HTMLInputElement>('input')
+const resultsList = useTemplateRef<HTMLElement>('resultsList')
 const index = useWikiSearchIndex()
-
-const kindLabels: Record<WikiSearchEntry['kind'], string> = {
-  item: 'Предмет',
-  recipe: 'Рецепт',
-  advancement: 'Достижение'
-}
 
 const results = computed(() => {
   const needle = normalizeSearch(query.value)
@@ -129,14 +123,29 @@ const results = computed(() => {
     .slice(0, 24)
     .map(result => result.entry)
 })
+const { activeIndex, setActiveIndex } = useSearchKeyboardNavigation(
+  isOpen,
+  results,
+  input,
+  openResult
+)
+const activeResultId = computed(() => (
+  activeIndex.value >= 0 ? resultId(activeIndex.value) : undefined
+))
 
-watch(isOpen, async (open) => {
+useModalFocusTrap(dialog, isOpen, input)
+
+watch(activeIndex, async (index) => {
+  if (index < 0) return
+  await nextTick()
+  resultsList.value
+    ?.querySelector<HTMLElement>(`[data-result-index="${index}"]`)
+    ?.scrollIntoView({ block: 'nearest' })
+})
+
+watch(isOpen, (open) => {
   if (import.meta.client) {
     document.body.classList.toggle('dialog-open', open)
-  }
-  if (open) {
-    await nextTick()
-    input.value?.focus()
   }
 })
 
@@ -169,6 +178,15 @@ function handleShortcut(event: KeyboardEvent): void {
 function normalizeSearch(value: string): string {
   return stripMinecraftFormatting(value).toLocaleLowerCase('ru-RU').replaceAll('ё', 'е').trim()
 }
+
+function openResult(entry: WikiSearchEntry): void {
+  close()
+  void navigateTo(entry.path)
+}
+
+function resultId(index: number): string {
+  return `wiki-search-result-${index}`
+}
 </script>
 
 <style scoped lang="scss">
@@ -180,6 +198,7 @@ function normalizeSearch(value: string): string {
   justify-content: center;
   padding: 9vh 20px 20px;
   background: rgba(7, 13, 9, 0.72);
+  overscroll-behavior: contain;
 
   .search-dialog {
     width: min(720px, 100%);
@@ -200,6 +219,10 @@ function normalizeSearch(value: string): string {
     gap: 12px;
     padding: 0 12px 0 20px;
     background: var(--surface-quiet);
+
+    &:focus-within {
+      box-shadow: inset 0 -3px 0 var(--accent);
+    }
 
     input {
       min-width: 0;
@@ -238,74 +261,6 @@ function normalizeSearch(value: string): string {
   .search-results {
     overflow: auto;
     padding: 10px 20px 18px;
-  }
-
-  .search-result {
-    min-height: 68px;
-    display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) 20px;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 4px;
-    color: inherit;
-    text-decoration: none;
-
-    + .search-result {
-      border-top: 1px solid var(--edge);
-    }
-
-    &:hover,
-    &:focus-visible {
-      color: inherit;
-      background: var(--surface-quiet);
-    }
-
-    > span:nth-child(2) {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    small {
-      margin-top: 1px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    strong {
-      color: var(--accent);
-      font-family: 'Tiny5', monospace;
-      font-size: 17px;
-      line-height: 1.1;
-    }
-
-    strong,
-    span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    span {
-      color: var(--muted);
-      font-size: 13px;
-    }
-  }
-
-  .search-result-icon {
-    width: 42px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface-deep);
-
-    img {
-      width: 32px;
-      height: 32px;
-      object-fit: contain;
-      image-rendering: pixelated;
-    }
   }
 
   .search-empty {

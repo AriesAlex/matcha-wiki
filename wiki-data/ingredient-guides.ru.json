@@ -3,5 +3,34 @@
   "entries": {
     "minecraft:azure_bluet": "Растёт в равнинах, подсолнечных равнинах, цветочных лесах и на лугах. Также входит в цветочный набор фермера и клонируется отдельным рецептом.",
     "minecraft:gunpowder": "В Matcha выпадает из серных кубов, ведьм и гастов; добывается из залежей сернистого кварца и сернистого адского камня, ловится в серных пещерах и встречается в сундуках."
+  },
+  "tagNames": {
+    "minecraft:acacia_logs": "Акациевое бревно или древесина любого вида",
+    "minecraft:bamboo_blocks": "Бамбуковый блок любого вида",
+    "minecraft:birch_logs": "Берёзовое бревно или древесина любого вида",
+    "minecraft:cherry_logs": "Вишнёвое бревно или древесина любого вида",
+    "minecraft:coals": "Уголь или древесный уголь",
+    "minecraft:copper_tool_materials": "Медный слиток",
+    "minecraft:crimson_stems": "Багровый стебель или гифы любого вида",
+    "minecraft:dark_oak_logs": "Бревно или древесина тёмного дуба любого вида",
+    "minecraft:diamond_tool_materials": "Алмаз",
+    "minecraft:eggs": "Яйцо любого вида",
+    "minecraft:gold_tool_materials": "Золотой слиток",
+    "minecraft:iron_tool_materials": "Железный слиток",
+    "minecraft:jungle_logs": "Бревно или тропическая древесина любого вида",
+    "minecraft:logs": "Бревно, древесина, стебель или гифы любого вида",
+    "minecraft:logs_that_burn": "Обычное бревно или древесина любого вида",
+    "minecraft:mangrove_logs": "Мангровое бревно или древесина любого вида",
+    "minecraft:oak_logs": "Дубовое бревно или древесина любого вида",
+    "minecraft:pale_oak_logs": "Бревно или древесина бледного дуба любого вида",
+    "minecraft:planks": "Доски любого вида",
+    "minecraft:smelts_to_glass": "Песок или красный песок",
+    "minecraft:soul_fire_base_blocks": "Песок душ или почва душ",
+    "minecraft:spruce_logs": "Еловое бревно или древесина любого вида",
+    "minecraft:stone_crafting_materials": "Булыжник, чернит или колотый глубинный сланец",
+    "minecraft:terracotta": "Терракота любого цвета",
+    "minecraft:warped_stems": "Искажённый стебель или гифы любого вида",
+    "minecraft:wooden_tool_materials": "Доски любого вида",
+    "minecraft:wool": "Шерсть любого цвета"
   }
 }

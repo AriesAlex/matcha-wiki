@@ -6,11 +6,13 @@
     :class="{ linked: referencePath }"
     :to="referencePath || undefined"
     :tabindex="referencePath ? undefined : 0"
-    :role="referencePath ? undefined : 'note'"
+    :role="referencePath ? undefined : 'button'"
     :aria-describedby="visible ? tooltipId : undefined"
+    :aria-expanded="referencePath ? undefined : visible"
     @pointerenter="showAtPointer"
     @pointermove="moveWithPointer"
-    @pointerleave="hide"
+    @pointerleave="hideOnPointerLeave"
+    @pointerdown="showOnTouch"
     @focus="showAtElement"
     @blur="hide"
     @keydown.esc="hide"
@@ -34,34 +36,35 @@
       >
         <MinecraftText :text="line" />
       </p>
-      <template v-if="ingredientEntries.length">
+      <template v-if="referenceEntries.length">
         <div
-          v-for="entry in ingredientEntries"
+          v-for="entry in referenceEntries"
           :key="entry.id"
           class="identity"
         >
-          <span v-if="entry.vanillaName && entry.vanillaName !== entry.name">
-            В обычном Minecraft: <b>{{ entry.vanillaName }}</b>
+          <span
+            v-if="referenceEntries.length > 1"
+            class="variant"
+          >
+            {{ entry.name }}
           </span>
-          <span v-else>Ванильный предмет: <b>{{ entry.name }}</b></span>
-          <code>{{ entry.id }}</code>
-          <small v-if="entry.obtainHint">{{ entry.obtainHint }}</small>
+          <span v-if="showsVanillaAppearance(entry)">
+            В обычном Minecraft выглядит как: <b>{{ entry.vanillaName }}</b>
+          </span>
+          <small v-if="showsObtainHint(entry)">Где искать: {{ entry.obtainHint }}</small>
         </div>
       </template>
-      <template v-else-if="item">
-        <code>{{ item.model ?? item.carrier }}</code>
-        <small v-if="item.model">
-          Техническая основа: {{ itemBaseName }} · {{ item.carrier }}
-        </small>
-        <small v-else>Вариант задаётся components</small>
-      </template>
-      <code v-else-if="stack">{{ stack.carrier }}</code>
     </aside>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import type { IngredientView, ItemView, StackView } from '../types/wiki'
+import type {
+  IngredientGlossaryEntry,
+  IngredientView,
+  ItemView,
+  StackView
+} from '../types/wiki'
 
 defineOptions({
   inheritAttrs: false
@@ -96,28 +99,31 @@ const tooltipTitle = computed(() => (
 ))
 const tooltipLore = computed(() => props.item?.lore.slice(0, 3) ?? [])
 const glossaryIds = computed(() => (
-  props.ingredient?.ids ?? (props.stack ? [props.stack.carrier] : [])
+  props.ingredient?.ids
+  ?? (props.stack ? [props.stack.carrier] : undefined)
+  ?? (props.item ? [props.item.carrier] : [])
 ))
-const ingredientEntries = computed(() => (
+const referenceEntries = computed(() => (
   glossaryIds.value
     .map(id => catalog.ingredientGlossary[id])
     .filter(entry => entry !== undefined)
     .slice(0, 4)
 ))
-const itemBaseName = computed(() => (
-  props.item
-    ? catalog.ingredientGlossary[props.item.carrier]?.vanillaName ?? props.item.carrier
-    : ''
-))
 const tooltipId = useId()
 const tooltip = useTemplateRef<HTMLElement>('tooltip')
-const visible = ref(false)
+const activeTooltipId = useState<string | null>(
+  'wiki:active-item-tooltip',
+  () => null
+)
+const visible = computed(() => activeTooltipId.value === tooltipId)
 const left = ref(0)
 const top = ref(0)
+let touchHideTimer: ReturnType<typeof setTimeout> | undefined
 
 async function showAtPointer(event: PointerEvent): Promise<void> {
   if (event.pointerType === 'touch') return
-  visible.value = true
+  clearTouchHideTimer()
+  activeTooltipId.value = tooltipId
   await nextTick()
   setPosition(event.clientX, event.clientY)
 }
@@ -127,12 +133,29 @@ function moveWithPointer(event: PointerEvent): void {
   setPosition(event.clientX, event.clientY)
 }
 
-async function showAtElement(event: FocusEvent): Promise<void> {
+async function showOnTouch(event: PointerEvent): Promise<void> {
+  if (event.pointerType !== 'touch' || referencePath.value) return
+
+  event.preventDefault()
+  if (visible.value) {
+    hide()
+    return
+  }
+
+  await showAtElement(event)
+  touchHideTimer = setTimeout(hide, 4_000)
+}
+
+async function showAtElement(event: Event): Promise<void> {
   const target = event.currentTarget as HTMLElement
   const bounds = target.getBoundingClientRect()
-  visible.value = true
+  activeTooltipId.value = tooltipId
   await nextTick()
   setPosition(bounds.right, bounds.bottom)
+}
+
+function hideOnPointerLeave(event: PointerEvent): void {
+  if (event.pointerType !== 'touch') hide()
 }
 
 function setPosition(anchorX: number, anchorY: number): void {
@@ -151,8 +174,31 @@ function setPosition(anchorX: number, anchorY: number): void {
 }
 
 function hide(): void {
-  visible.value = false
+  clearTouchHideTimer()
+  if (activeTooltipId.value === tooltipId) {
+    activeTooltipId.value = null
+  }
 }
+
+function clearTouchHideTimer(): void {
+  if (touchHideTimer !== undefined) {
+    clearTimeout(touchHideTimer)
+    touchHideTimer = undefined
+  }
+}
+
+function showsVanillaAppearance(entry: IngredientGlossaryEntry): boolean {
+  return Boolean(entry.vanillaName) && (
+    props.item?.isCustom === true
+    || entry.vanillaName !== entry.name
+  )
+}
+
+function showsObtainHint(entry: IngredientGlossaryEntry): boolean {
+  return Boolean(entry.obtainHint) && props.item?.isCustom !== true
+}
+
+onBeforeUnmount(hide)
 </script>
 
 <style scoped lang="scss">
@@ -183,9 +229,9 @@ function hide(): void {
   line-height: 1.35;
   pointer-events: none;
   text-shadow: 2px 2px 0 #2d2d2d;
+  animation: tooltip-arrive 90ms ease-out;
 
   strong,
-  code,
   small {
     display: block;
   }
@@ -204,7 +250,6 @@ function hide(): void {
     margin-top: 6px;
 
     span,
-    code,
     small {
       display: block;
     }
@@ -213,21 +258,29 @@ function hide(): void {
       color: #bfbfbf;
     }
 
+    .variant {
+      margin-bottom: 2px;
+      color: #fff;
+      font-weight: 700;
+    }
+
     b {
       color: #fff;
     }
   }
 
-  code {
-    margin-top: 5px;
-    color: #aaa;
-    font-size: 11px;
-  }
-
   small {
-    margin-top: 2px;
+    max-width: 290px;
+    margin-top: 4px;
     color: #aaaaff;
     font-size: 11px;
+  }
+}
+
+@keyframes tooltip-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
   }
 }
 </style>

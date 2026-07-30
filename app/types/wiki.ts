@@ -30,6 +30,19 @@ export interface IngredientView {
   icons: string[]
 }
 
+export type RecipeRequirementRole =
+  | 'ingredient'
+  | 'template'
+  | 'base'
+  | 'addition'
+
+export interface RecipeRequirementView {
+  id: string
+  role: RecipeRequirementRole
+  count: number
+  ingredient: IngredientView
+}
+
 export interface IngredientGlossaryEntry {
   id: string
   name: string
@@ -50,6 +63,7 @@ export interface RecipeView {
   pattern?: string[]
   key?: Record<string, IngredientView>
   ingredients: IngredientView[]
+  requirements: RecipeRequirementView[]
   result?: StackView
   experience?: number
   cookingTime?: number
@@ -66,12 +80,22 @@ export interface ItemGuide {
   note?: string
 }
 
+export interface ItemRelationStackView {
+  stack: StackView
+  title: string
+}
+
 export interface ItemRelationView {
   kind: 'recipe' | 'trade' | 'loot'
   title: string
   description: string
   icon?: string
   to?: string
+  context?: string
+  contextDetail?: string
+  cost?: ItemRelationStackView[]
+  result?: ItemRelationStackView
+  details?: string[]
   technical?: boolean
   sourcePath: string
 }
@@ -155,6 +179,16 @@ export interface WikiCatalog {
   items: ItemView[]
   recipes: RecipeView[]
   advancements: AdvancementView[]
+}
+
+export interface WikiSearchEntry {
+  kind: 'item' | 'recipe' | 'advancement'
+  title: string
+  description: string
+  category: string
+  path: string
+  icon?: string
+  terms: string
 }
 
 export interface WikiTocLink {

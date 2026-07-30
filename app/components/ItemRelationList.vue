@@ -4,8 +4,17 @@
       v-for="relation in relations"
       :key="`${relation.kind}:${relation.sourcePath}:${relation.title}`"
     >
+      <ItemTradeRelation
+        v-if="hasTradeExchange(relation)"
+        :relation="relation"
+      />
+      <ItemRecipeRelation
+        v-else-if="relation.kind === 'recipe' && relation.result"
+        :relation="{ ...relation, result: relation.result }"
+      />
       <component
         :is="relation.to ? NuxtLink : 'div'"
+        v-else
         class="relation"
         :class="{ linked: relation.to }"
         :to="relation.to"
@@ -48,6 +57,7 @@ import {
 } from '@phosphor-icons/vue'
 import type { Component } from 'vue'
 import type { ItemRelationView } from '../types/wiki'
+import { hasTradeExchange } from '../utils/itemRelations'
 
 defineProps<{
   relations: ItemRelationView[]

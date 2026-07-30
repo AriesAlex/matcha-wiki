@@ -1,5 +1,9 @@
 <template>
-  <article v-if="page" class="content-page">
+  <article
+    v-if="page"
+    ref="article"
+    class="content-page"
+  >
     <header class="page-heading">
       <p class="eyebrow">{{ page.category }}</p>
       <h1>{{ page.title }}</h1>
@@ -28,21 +32,27 @@
       v-if="page.sourcePaths?.length"
       class="article-sources"
     >
-      <h2>Источники в паке</h2>
-      <ul role="list">
-        <li
-          v-for="source in page.sourcePaths"
-          :key="source"
-        >
-          <code>{{ source }}</code>
-        </li>
-      </ul>
+      <details>
+        <summary>Для проверки данных</summary>
+        <p>Статья сверена со следующими файлами игрового пака:</p>
+        <ul role="list">
+          <li
+            v-for="source in page.sourcePaths"
+            :key="source"
+          >
+            <code>{{ source }}</code>
+          </li>
+        </ul>
+      </details>
     </footer>
   </article>
 </template>
 
 <script setup lang="ts">
+import type { WikiTocLink } from '~/types/wiki'
+
 const route = useRoute()
+const article = useTemplateRef<HTMLElement>('article')
 const pagePath = computed(() => normalizeWikiPath(route.path))
 const {
   data: page,
@@ -52,6 +62,11 @@ const {
   () => `wiki:${pagePath.value}`,
   () => queryCollection('wiki').path(pagePath.value).first()
 )
+const tocLinks = computed(
+  () => (page.value?.body?.toc?.links as WikiTocLink[] | undefined) ?? []
+)
+
+useArticleScrollspy(article, tocLinks, pagePath)
 
 if (import.meta.server && pageError.value) {
   throw pageError.value
@@ -211,12 +226,21 @@ useSeoMeta({
 
   .article-sources {
     margin-top: 72px;
-    padding: 22px;
-    background: var(--surface-quiet);
 
-    h2 {
-      margin: 0 0 10px;
-      font-size: 1.25rem;
+    summary {
+      width: fit-content;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    p {
+      margin: 8px 0 10px;
+      color: var(--muted);
+      font-size: 13px;
     }
 
     ul {
@@ -224,7 +248,8 @@ useSeoMeta({
       flex-direction: column;
       gap: 8px;
       margin: 0;
-      padding: 0;
+      padding: 16px 20px;
+      background: var(--surface-quiet);
       list-style: none;
     }
 

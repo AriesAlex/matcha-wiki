@@ -1,9 +1,23 @@
 import type {
+  ItemRelationStackView,
   ItemRelationView,
   ItemView,
   WikiCatalog
 } from '../types/wiki'
 import { resolveStackItem } from './itemReference'
+
+export function hasTradeExchange(
+  relation: ItemRelationView
+): relation is ItemRelationView & {
+  context: string
+  cost: ItemRelationStackView[]
+  result: ItemRelationStackView
+} {
+  return relation.kind === 'trade'
+    && Boolean(relation.context)
+    && Boolean(relation.cost?.length)
+    && relation.result !== undefined
+}
 
 export function resolveItemRecipeUses(
   catalog: WikiCatalog,
@@ -16,17 +30,33 @@ export function resolveItemRecipeUses(
     const resultItem = recipe.result
       ? resolveStackItem(catalog.items, recipe.result)
       : undefined
-    const carrierName = catalog.ingredientGlossary[item.carrier]?.name ?? item.carrier
+    const ordinaryItem = catalog.ingredientGlossary[item.carrier]
+    const ordinaryItemName = ordinaryItem?.vanillaName
+      ?? ordinaryItem?.name
+      ?? 'обычный предмет'
+    const title = resultItem?.title ?? recipe.result?.name ?? 'Результат рецепта'
+
     return [{
       kind: 'recipe' as const,
-      title: resultItem?.title ?? recipe.result?.name ?? recipe.id,
+      title,
       description: use.technical
-        ? `${recipe.station} · подходит вместо «${carrierName}», потому что техническая основа предмета — ${item.carrier}.`
-        : `${recipe.station} · используется как ингредиент.`,
+        ? `Риск потери: рецепт принимает любой предмет вида «${ordinaryItemName}». Этот особый экземпляр будет уничтожен.`
+        : 'Нужен как ингредиент.',
       icon: recipe.result?.icon,
       to: `/recipes/${recipe.namespace}/${recipe.path}`,
+      context: playerStationName(recipe.station),
+      result: recipe.result
+        ? {
+            stack: recipe.result,
+            title
+          }
+        : undefined,
       technical: use.technical,
       sourcePath: recipe.sourcePath
     }]
   })
+}
+
+function playerStationName(station: string): string {
+  return station.split(':', 1)[0]?.trim() || station
 }

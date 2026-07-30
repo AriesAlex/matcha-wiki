@@ -157,7 +157,7 @@
       class="details"
       :to="detailsLink"
     >
-      Открыть рецепт и источник
+      {{ detailsLabel }}
     </NuxtLink>
   </figure>
 </template>
@@ -232,7 +232,19 @@ const ingredientReferences = computed(() => {
     item: resolveIngredientItem(catalog.items, ingredient)
   }))
 })
-const detailsLink = computed(() => `/recipes/${props.recipe.namespace}/${props.recipe.path}`)
+const recipeDetailsLink = computed(() => (
+  `/recipes/${props.recipe.namespace}/${props.recipe.path}`
+))
+const detailsLink = computed(() => (
+  resultItem.value
+    ? `/items/${resultItem.value.slug}`
+    : recipeDetailsLink.value
+))
+const detailsLabel = computed(() => (
+  resultItem.value
+    ? 'Открыть страницу предмета'
+    : 'Открыть способ изготовления'
+))
 const showDetailsLink = computed(() => normalizeWikiPath(route.path) !== detailsLink.value)
 </script>
 

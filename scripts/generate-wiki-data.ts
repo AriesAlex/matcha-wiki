@@ -27,10 +27,19 @@ import type {
   WikiCatalog
 } from '../app/types/wiki'
 import {
-  resolveIngredientItem,
   resolveStackItem
 } from '../app/utils/itemReference'
-import { resolveItemRecipeUses } from '../app/utils/itemRelations'
+import {
+  buildRecipeRequirements,
+  smithingRequirementRoles,
+  type SmithingIngredients
+} from './lib/recipeRequirements'
+import { russianWordForm } from './lib/russianGrammar'
+import { createSearchIndex } from './lib/searchIndex'
+import {
+  buildVanillaPlannerSupplement,
+  type PackFilterEntry
+} from './lib/vanillaPlannerRecipes'
 
 type JsonObject = Record<string, unknown>
 type JsonValue = JsonObject | JsonValue[] | string | number | boolean | null
@@ -83,18 +92,21 @@ interface AdvancementGuideRegistry {
 interface IngredientGuideRegistry {
   schemaVersion: 1
   entries: Record<string, string>
+  tagNames: Record<string, string>
 }
 
 interface ItemGuideRegistry {
   schemaVersion: 1
   entries: Record<string, ItemGuide>
+  itemNames: Record<string, string>
   lootLocations: Record<string, string>
+  tradeProfessions: Record<string, string>
 }
 
 interface TradeRecord {
   sourcePath: string
   profession: string
-  level: number
+  level?: number
   wants: StackView
   gives: StackView
 }
@@ -200,11 +212,25 @@ function main(): void {
 
   const tags = loadItemTags()
   const recipes = loadRecipes(tags)
+  const packMetadata = readJson<{
+    filter?: { block?: PackFilterEntry[] }
+  }>(resolve(packDir, 'pack.mcmeta'))
+  const craftingPlanner = buildVanillaPlannerSupplement({
+    minecraftVersion: project.minecraftVersion,
+    vanillaFiles: vanillaAssets,
+    packFilters: packMetadata.filter?.block ?? [],
+    packRecipes: recipes,
+    normalizeIngredient: value => normalizeIngredient(value, tags),
+    stationName
+  })
   const ingredientGlossary = buildIngredientGlossary(recipes)
   const variants = captureVariants()
-  const items = buildItems(recipes, variants)
-  attachItemRelations(items, recipes)
-  const advancements = loadAdvancements(items, recipes)
+  const extractedItems = buildItems(recipes, variants)
+  attachItemRelations(extractedItems, recipes)
+  const advancements = loadAdvancements(extractedItems, recipes)
+  const items = extractedItems.filter(isPlayerFacingItem)
+  disambiguateItemTitles(items)
+  items.sort(compareItems)
   const files = walkFiles(packDir)
 
   const catalog: WikiCatalog = {
@@ -229,7 +255,9 @@ function main(): void {
   }
 
   writeJson(resolve(generatedDir, 'catalog.json'), catalog)
+  writeJson(resolve(generatedDir, 'crafting-planner.json'), craftingPlanner)
   writeJson(resolve(generatedDir, 'search-index.json'), createSearchIndex(catalog))
+  writeJson(resolve(publicGeneratedDir, 'crafting-planner.json'), craftingPlanner)
   writeJson(resolve(generatedDir, 'meta.json'), {
     generatedAt: catalog.generatedAt,
     pack: catalog.pack,
@@ -399,6 +427,12 @@ function loadRecipes(tags: Map<string, string[]>): RecipeView[] {
           Object.entries(data.key).map(([symbol, value]) => [symbol, normalizeIngredient(value, tags)])
         )
       : undefined
+    const smithingIngredients: SmithingIngredients = {}
+    for (const role of smithingRequirementRoles) {
+      if (data[role] !== undefined) {
+        smithingIngredients[role] = normalizeIngredient(data[role], tags)
+      }
+    }
 
     let ingredients: IngredientView[]
     if (key && pattern) {
@@ -409,12 +443,20 @@ function loadRecipes(tags: Map<string, string[]>): RecipeView[] {
     } else if (data.ingredient !== undefined) {
       ingredients = [normalizeIngredient(data.ingredient, tags)]
     } else {
-      ingredients = ['template', 'base', 'addition']
-        .filter(field => data[field] !== undefined)
-        .map(field => normalizeIngredient(data[field], tags))
+      ingredients = smithingRequirementRoles.flatMap((role) => {
+        const ingredient = smithingIngredients[role]
+        return ingredient ? [ingredient] : []
+      })
     }
 
     const result = parseStack(data.result)
+    const requirements = buildRecipeRequirements({
+      type,
+      pattern,
+      key,
+      ingredients,
+      smithing: smithingIngredients
+    })
 
     recipes.push({
       id: `${namespace}:${recipePath}`,
@@ -428,6 +470,7 @@ function loadRecipes(tags: Map<string, string[]>): RecipeView[] {
       pattern,
       key,
       ingredients,
+      requirements,
       result,
       experience: typeof data.experience === 'number' ? data.experience : undefined,
       cookingTime: typeof data.cookingtime === 'number'
@@ -549,11 +592,13 @@ function buildItems(
       ?? firstTranslationKey([
         `item.kleispack.${modelPath.replaceAll('/', '.')}`,
         `item.minecraft.${modelPath.replaceAll('/', '.')}`,
-        `block.minecraft.${modelPath.replaceAll('/', '.')}`
+        `block.minecraft.${modelPath.replaceAll('/', '.')}`,
+        `item.minecraft.tipped_arrow.effect.${modelPath.replaceAll('/', '.')}`
       ])
-    const name = candidateNameKey
-      ? translateKey(candidateNameKey)
-      : richest?.name || nameForResource(model)
+    const name = itemGuideRegistry.itemNames[model]
+      ?? (candidateNameKey
+        ? translateKey(candidateNameKey)
+        : richest?.name || nameForResource(model))
     const description = candidateNameKey
       ? firstTranslation([
           `${candidateNameKey}.desc`,
@@ -621,17 +666,14 @@ function buildItems(
         model,
         carrier,
         modelPath,
+        richest?.name,
         en[candidateNameKey ?? ''] ?? ''
       ].filter(Boolean))]
     })
   }
 
   items.push(...buildComponentItems(recipes))
-  disambiguateItemTitles(items)
-  return items.sort((left, right) => {
-    const customOrder = Number(right.isCustom) - Number(left.isCustom)
-    return customOrder || left.title.localeCompare(right.title, 'ru')
-  })
+  return items.sort(compareItems)
 }
 
 function buildComponentItems(recipes: RecipeView[]): ItemView[] {
@@ -718,8 +760,21 @@ function disambiguateItemTitles(items: ItemView[]): void {
     if (group.length < 2) {
       continue
     }
+
+    const stations = group.map(item => (
+      item.sources
+        .find(source => source.kind === 'recipe')
+        ?.label.replace(/^Рецепт:\s*/, '')
+    ))
+    const hasDistinctStations = stations.every(Boolean)
+      && new Set(stations).size === group.length
+
     for (const item of group) {
-      const qualifier = item.lore[0]
+      const station = item.sources
+        .find(source => source.kind === 'recipe')
+        ?.label.replace(/^Рецепт:\s*/, '')
+      const qualifier = (hasDistinctStations ? station : undefined)
+        ?? item.lore[0]
         ?? item.description
         ?? formatIdentifier(item.model ?? item.id)
       item.title = `${item.name}: ${qualifier}`
@@ -727,9 +782,38 @@ function disambiguateItemTitles(items: ItemView[]): void {
   }
 }
 
+function isPlayerFacingItem(item: ItemView): boolean {
+  const hasGameplaySource = item.sources.some(source => (
+    source.kind === 'recipe'
+    || source.kind === 'trade'
+    || source.kind === 'loot'
+  ))
+
+  return Boolean(
+    hasGameplaySource
+    || item.guide
+    || item.description
+    || item.lore.length
+    || item.effects.length
+    || item.attributes.length
+    || item.recipeIds.length
+    || item.obtainedFrom.length
+    || item.usedIn.length
+  )
+}
+
+function compareItems(left: ItemView, right: ItemView): number {
+  const customOrder = Number(right.isCustom) - Number(left.isCustom)
+  return customOrder || left.title.localeCompare(right.title, 'ru')
+}
+
 function attachItemRelations(items: ItemView[], recipes: RecipeView[]): void {
   const knownItemIds = new Set(items.flatMap(item => [item.id, item.model].filter(Boolean)))
-  const staleGuides = Object.keys(itemGuideRegistry.entries)
+  const curatedItemIds = [
+    ...Object.keys(itemGuideRegistry.entries),
+    ...Object.keys(itemGuideRegistry.itemNames)
+  ]
+  const staleGuides = curatedItemIds
     .filter(id => !knownItemIds.has(id))
   if (staleGuides.length) {
     throw new Error(`Гайды ссылаются на отсутствующие предметы: ${staleGuides.join(', ')}`)
@@ -762,28 +846,28 @@ function attachItemRelations(items: ItemView[], recipes: RecipeView[]): void {
   for (const trade of trades) {
     const wantedItem = resolveStackItem(items, trade.wants)
     const givenItem = resolveStackItem(items, trade.gives)
-    const context = tradeContext(trade)
-    const exchange = `${formatTradeStack(trade.wants)} → ${formatTradeStack(trade.gives)}`
-    const resultDetails = describeStackEnchantments(trade.gives)
+    const relation = tradeRelation(trade, wantedItem, givenItem)
 
     if (wantedItem) {
       wantedItem.usedIn.push({
         kind: 'trade',
-        title: stackDisplayTitle(trade.gives),
-        description: `${context} · ${exchange}.${resultDetails ? ` ${resultDetails}` : ''}`,
+        title: stackDisplayTitle(trade.gives, givenItem),
+        description: `${relation.context} принимает этот предмет.`,
         icon: trade.gives.icon,
         to: exactStackItemPath(items, trade.gives, ambiguousTradeModels)
           ?? '/mechanics/villagers',
+        ...relation,
         sourcePath: trade.sourcePath
       })
     }
     if (givenItem) {
       givenItem.obtainedFrom.push({
         kind: 'trade',
-        title: `Обмен: ${context}`,
-        description: `${exchange}.`,
+        title: 'Получение через обмен',
+        description: `${relation.context} попросит «${stackDisplayTitle(trade.wants, wantedItem)}».`,
         icon: trade.wants.icon,
         to: exactStackItemPath(items, trade.wants, ambiguousTradeModels),
+        ...relation,
         sourcePath: trade.sourcePath
       })
     }
@@ -809,7 +893,7 @@ function loadTradeRecords(): TradeRecord[] {
     && normalizePath(file).includes('/villager_trade/')
   ))) {
     const sourcePath = normalizePath(relative(rootDir, path))
-    const match = sourcePath.match(/\/villager_trade\/([^/]+)\/(\d+)\//)
+    const match = sourcePath.match(/\/villager_trade\/([^/]+)\/(.+)\.json$/)
     const data = readJson<JsonObject>(path)
     const wants = parseStack(data.wants)
     const gives = parseStack(data.gives)
@@ -820,7 +904,9 @@ function loadTradeRecords(): TradeRecord[] {
     records.push({
       sourcePath,
       profession: match[1],
-      level: Number(match[2]),
+      level: /^\d+\//.test(match[2])
+        ? Number(match[2].split('/')[0])
+        : undefined,
       wants,
       gives
     })
@@ -858,29 +944,54 @@ function exactStackItemPath(
   return item ? `/items/${item.slug}` : undefined
 }
 
-function tradeContext(trade: TradeRecord): string {
+function tradeRelation(
+  trade: TradeRecord,
+  wantedItem?: ItemView,
+  givenItem?: ItemView
+): Pick<
+  ItemRelationView,
+  'context' | 'contextDetail' | 'cost' | 'result' | 'details'
+> & { context: string } {
   const translationKey = trade.profession === 'wandering_trader'
     ? 'entity.minecraft.wandering_trader'
     : `entity.minecraft.villager.${trade.profession}`
-  const profession = ru[translationKey] ?? formatIdentifier(trade.profession)
-  return `${profession}, уровень ${trade.level}`
+  const profession = ru[translationKey]
+    ?? itemGuideRegistry.tradeProfessions[trade.profession]
+    ?? formatIdentifier(trade.profession)
+  const enchantments = stackEnchantments(trade.gives)
+
+  return {
+    context: profession,
+    contextDetail: trade.level ? `${trade.level}-й уровень` : undefined,
+    cost: [{
+      stack: trade.wants,
+      title: stackDisplayTitle(trade.wants, wantedItem)
+    }],
+    result: {
+      stack: trade.gives,
+      title: stackDisplayTitle(trade.gives, givenItem)
+    },
+    details: enchantments.length ? enchantments : undefined
+  }
 }
 
-function formatTradeStack(stack: StackView): string {
-  return `${stack.count} × ${stackDisplayTitle(stack)}`
-}
-
-function stackDisplayTitle(stack: StackView): string {
+function stackDisplayTitle(stack: StackView, item?: ItemView): string {
   const lore = extractLore(stack.components ?? {})
-  return lore[0] ? `${stack.name}: ${lore[0]}` : stack.name
+  const name = item?.name ?? stack.name
+  if (stack.model === 'minecraft:application' && lore.length >= 2) {
+    const age = lore[0].replace(/^Возраст:\s*/, '')
+    const culture = lore[1].replace(/^Культура:\s*/, '')
+    return `${name}: ${age}, ${culture} культура`
+  }
+  return lore[0] ? `${name}: ${lore[0]}` : name
 }
 
-function describeStackEnchantments(stack: StackView): string | undefined {
+function stackEnchantments(stack: StackView): string[] {
   const components = stack.components ?? {}
   const rawEnchantments = components['minecraft:stored_enchantments']
     ?? components['minecraft:enchantments']
   if (!isObject(rawEnchantments)) {
-    return undefined
+    return []
   }
   const levels = isObject(rawEnchantments.levels)
     ? rawEnchantments.levels
@@ -893,7 +1004,7 @@ function describeStackEnchantments(stack: StackView): string | undefined {
         ?? formatIdentifier(resourcePath(normalized))
       return `${name} ${romanLevel(level)}`
     })
-  return enchantments.length ? `Чары: ${enchantments.join(', ')}.` : undefined
+  return enchantments
 }
 
 function romanLevel(level: number): string {
@@ -984,6 +1095,9 @@ function lootRelation(record: LootTableRecord): ItemRelationView | undefined {
   const path = resourcePath(record.id)
   if (path.startsWith('chests/')) {
     const locationPath = path.slice('chests/'.length)
+    if (locationPath.startsWith('equipment/')) {
+      return undefined
+    }
     const location = itemGuideRegistry.lootLocations[locationPath]
       ?? formatIdentifier(locationPath)
     return {
@@ -1037,12 +1151,17 @@ function dedupeItemRelations(relations: ItemRelationView[]): ItemRelationView[] 
     recipe: 2
   }
   return [...new Map(relations.map(relation => [
-    `${relation.kind}:${relation.sourcePath}:${relation.title}`,
+    relationPresentationKey(relation),
     relation
   ])).values()].sort((left, right) => (
     order[left.kind] - order[right.kind]
     || left.title.localeCompare(right.title, 'ru')
   ))
+}
+
+function relationPresentationKey(relation: ItemRelationView): string {
+  const { sourcePath: _sourcePath, ...presentation } = relation
+  return JSON.stringify(presentation)
 }
 
 function loadAssetItems(): AssetItem[] {
@@ -1226,7 +1345,7 @@ function normalizeIngredient(value: unknown, tags: Map<string, string[]>): Ingre
 
   const uniqueIds = [...new Set(ids)]
   const label = tag
-    ? `Любой предмет из ${formatIdentifier(tag)}`
+    ? ingredientGuideRegistry.tagNames[tag] ?? `Любой подходящий предмет`
     : uniqueIds.map(nameForResource).join(' или ') || 'Особый ингредиент'
 
   return {
@@ -1341,7 +1460,7 @@ function describeIngredientSources(
   if (sources?.archaeology) clauses.push('Встречается в археологии')
   if (sources?.chests) clauses.push('Встречается в сундуках')
   if (recipeCount) {
-    const recipeWord = recipeCount === 1 ? 'рецепт' : recipeCount < 5 ? 'рецепта' : 'рецептов'
+    const recipeWord = russianWordForm(recipeCount, ['рецепт', 'рецепта', 'рецептов'])
     clauses.push(`Есть ${recipeCount} ${recipeWord} получения`)
   }
 
@@ -1917,85 +2036,6 @@ function flattenText(value: unknown): string {
       : ''
   const extra = Array.isArray(value.extra) ? value.extra.map(flattenText).join('') : ''
   return `${ownText}${extra}`.replace(/§[0-9a-fk-or]/gi, '').trim()
-}
-
-function createSearchIndex(catalog: WikiCatalog): Array<Record<string, unknown>> {
-  return [
-    ...catalog.items.map((item) => {
-      const recipeRelations = resolveItemRecipeUses(catalog, item)
-        .filter(relation => !relation.technical)
-      return {
-        kind: 'item',
-        title: item.title,
-        description: item.guide?.summary ?? item.description ?? item.category,
-        path: `/items/${item.slug}`,
-        icon: item.icon,
-        terms: [
-          item.title,
-          item.name,
-          item.description,
-          item.guide?.summary,
-          item.guide?.note,
-          item.category,
-          ...item.aliases,
-          ...item.obtainedFrom.flatMap(relation => [relation.title, relation.description]),
-          ...item.usedIn.flatMap(relation => [relation.title, relation.description]),
-          ...recipeRelations.flatMap(relation => [relation.title, relation.description])
-        ].filter(Boolean).join(' ')
-      }
-    }),
-    ...catalog.recipes.map((recipe) => {
-      const resultItem = recipe.result
-        ? resolveStackItem(catalog.items, recipe.result)
-        : undefined
-      const ingredientTitles = recipe.ingredients.map(ingredient => (
-        resolveIngredientItem(catalog.items, ingredient)?.title ?? ingredient.label
-      ))
-
-      return {
-        kind: 'recipe',
-        title: resultItem?.title ?? recipe.result?.name ?? recipe.id,
-        description: `${recipe.station}: ${ingredientTitles.join(', ')}`,
-        path: `/recipes/${recipe.namespace}/${recipe.path}`,
-        icon: recipe.result?.icon,
-        terms: [
-          recipe.id,
-          recipe.station,
-          recipe.type,
-          resultItem?.title,
-          recipe.result?.name,
-          recipe.result?.carrier,
-          ...recipe.ingredients.flatMap((ingredient, index) => [
-            ingredientTitles[index],
-            ingredient.label,
-            ingredient.tag,
-            ...ingredient.ids.flatMap((id) => {
-              const glossary = catalog.ingredientGlossary[id]
-              return [id, glossary?.name, glossary?.vanillaName, glossary?.obtainHint]
-            })
-          ])
-        ].filter(Boolean).join(' ')
-      }
-    }),
-    ...catalog.advancements.map(advancement => ({
-      kind: 'advancement',
-      title: advancement.title,
-      description: advancement.description,
-      path: `/progression#${advancement.slug}`,
-      icon: advancement.icon.icon,
-      terms: [
-        advancement.title,
-        advancement.description,
-        advancement.id,
-        advancement.guide?.note,
-        advancement.guide?.intendedPath,
-        advancement.guide?.exactCondition,
-        advancement.guide?.link?.label,
-        ...(advancement.guide?.searchTerms ?? []),
-        ...(advancement.guide?.entries.map(entry => entry.label) ?? [])
-      ].filter(Boolean).join(' ')
-    }))
-  ]
 }
 
 function validateCatalog(catalog: WikiCatalog): void {

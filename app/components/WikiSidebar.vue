@@ -1,6 +1,7 @@
 <template>
   <aside
     id="site-sidebar"
+    ref="sidebar"
     class="site-sidebar"
     :class="{ open }"
     @keydown.esc="emit('close')"
@@ -51,6 +52,7 @@
             >
               <WikiArticleToc
                 v-if="headingsFor(link.to).length"
+                :active-id="activeHeadingId"
                 :links="headingsFor(link.to)"
                 :path="link.to"
               />
@@ -82,6 +84,7 @@
                     v-if="headingsFor(child.to).length"
                     v-show="isExpanded(child.to)"
                     :id="panelId(child.to)"
+                    :active-id="activeHeadingId"
                     :links="headingsFor(child.to)"
                     :path="child.to"
                   />
@@ -94,7 +97,7 @@
     </nav>
 
     <div class="sidebar-release">
-      <PhTranslate :size="20" />
+      <PhTranslate :size="20" aria-hidden="true" />
       <div>
         <strong>Русский форк ArieX</strong>
         <p>
@@ -111,12 +114,14 @@
 </template>
 
 <script setup lang="ts">
+import { usePreferredReducedMotion } from '@vueuse/core'
 import { PhCaretRight, PhTranslate } from '@phosphor-icons/vue'
 import type { WikiNavigationLink } from '~/data/wikiNavigation'
 import { wikiNavigation } from '~/data/wikiNavigation'
 import type { WikiTocLink } from '~/types/wiki'
+import { scrollTopToReveal } from '~/utils/articleNavigation'
 
-defineProps<{
+const props = defineProps<{
   open: boolean
 }>()
 
@@ -125,7 +130,15 @@ const emit = defineEmits<{
 }>()
 
 const route = useRoute()
+const sidebar = useTemplateRef<HTMLElement>('sidebar')
 const currentPath = computed(() => normalizeWikiPath(route.path))
+const preferredMotion = usePreferredReducedMotion()
+const { activeHeading } = useActiveArticleHeading()
+const activeHeadingId = computed(() => (
+  activeHeading.value.path === currentPath.value
+    ? activeHeading.value.id
+    : null
+))
 
 const { data: articles } = await useAsyncData(
   'wiki:sidebar-articles',
@@ -155,6 +168,23 @@ watch(
     expandedPaths.value = [...new Set([...expandedPaths.value, ...activePaths])]
   },
   { immediate: true }
+)
+
+watch(
+  [
+    activeHeadingId,
+    () => props.open,
+    currentPath
+  ],
+  async ([activeId]) => {
+    if (!activeId) {
+      return
+    }
+
+    await nextTick()
+    revealActiveHeading()
+  },
+  { flush: 'post' }
 )
 
 function isCurrent(path: string): boolean {
@@ -189,6 +219,29 @@ function panelId(path: string): string {
 
 function disclosureLabel(link: WikiNavigationLink): string {
   return `${isExpanded(link.to) ? 'Свернуть' : 'Развернуть'} «${link.label}»`
+}
+
+function revealActiveHeading(): void {
+  const container = sidebar.value
+  const target = container?.querySelector<HTMLElement>('[aria-current="location"]')
+  if (!container || !target || target.getClientRects().length === 0) {
+    return
+  }
+
+  const nextScrollTop = scrollTopToReveal(
+    container.getBoundingClientRect(),
+    target.getBoundingClientRect(),
+    container.scrollTop,
+    14
+  )
+  if (Math.abs(nextScrollTop - container.scrollTop) < 1) {
+    return
+  }
+
+  container.scrollTo({
+    top: nextScrollTop,
+    behavior: preferredMotion.value === 'reduce' ? 'auto' : 'smooth'
+  })
 }
 </script>
 

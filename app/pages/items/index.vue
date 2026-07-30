@@ -4,8 +4,8 @@
       <p class="eyebrow">Справочник</p>
       <h1>Предметы</h1>
       <p>
-        В каталоге есть не только вещи с отдельной текстурой. Варианты на одном
-        vanilla carrier различаются model и components, поэтому вики показывает техническую основу явно.
+        Еда, инструменты, реликвии и другие вещи из Matcha. Откройте предмет,
+        чтобы узнать, зачем он нужен, где его искать и как изготовить.
       </p>
     </header>
 
@@ -15,13 +15,19 @@
         <span class="visually-hidden">Поиск предмета</span>
         <input
           v-model="query"
+          name="item-search"
           type="search"
-          placeholder="Название или resource ID"
+          placeholder="Название предмета…"
+          autocomplete="off"
+          spellcheck="false"
         >
       </label>
       <label>
         <span class="visually-hidden">Категория предметов</span>
-        <select v-model="category">
+        <select
+          v-model="category"
+          name="item-category"
+        >
           <option
             v-for="option in categories"
             :key="option"
@@ -30,7 +36,7 @@
           </option>
         </select>
       </label>
-      <p>Найдено: {{ filteredItems.length }}</p>
+      <p aria-live="polite">Показано: {{ filteredItems.length }}</p>
     </div>
 
     <ul class="item-index">
@@ -46,13 +52,19 @@
               alt=""
               width="40"
               height="40"
+              loading="lazy"
+              decoding="async"
             >
           </span>
           <span>
             <strong><MinecraftText :text="item.title" /></strong>
             <small>{{ item.category }}</small>
           </span>
-          <code>{{ item.model ?? item.carrier }}</code>
+          <PhArrowRight
+            class="arrow"
+            :size="20"
+            aria-hidden="true"
+          />
         </NuxtLink>
       </li>
     </ul>
@@ -64,15 +76,17 @@
         width="88"
         height="88"
       >
-      <p>Ничего не найдено. Сбросьте категорию или попробуйте технический ID.</p>
+      <p>Ничего не найдено. Сбросьте категорию или проверьте название предмета.</p>
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
-import { PhMagnifyingGlass } from '@phosphor-icons/vue'
+import { watchDebounced } from '@vueuse/core'
+import { PhArrowRight, PhMagnifyingGlass } from '@phosphor-icons/vue'
 
 const route = useRoute()
+const router = useRouter()
 const catalog = useWikiCatalog()
 const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const category = ref(typeof route.query.category === 'string' ? route.query.category : 'Все')
@@ -99,9 +113,23 @@ const filteredItems = computed(() => {
   })
 })
 
+watchDebounced(
+  [query, category],
+  ([nextQuery, nextCategory]) => {
+    void router.replace({
+      query: {
+        ...route.query,
+        q: nextQuery.trim() || undefined,
+        category: nextCategory === 'Все' ? undefined : nextCategory
+      }
+    })
+  },
+  { debounce: 180 }
+)
+
 useSeoMeta({
   title: 'Предметы',
-  description: `Каталог ${catalog.stats.items} предметов Matcha Flavoured с рецептами, компонентами и техническими основами.`
+  description: `Каталог ${catalog.stats.items} предметов Matcha Flavoured: получение, применение, рецепты и свойства.`
 })
 </script>
 
@@ -160,14 +188,19 @@ useSeoMeta({
     padding: 0;
     list-style: none;
 
-    li + li {
-      border-top: 1px solid var(--edge);
+    li {
+      content-visibility: auto;
+      contain-intrinsic-size: 68px;
+
+      + li {
+        border-top: 1px solid var(--edge);
+      }
     }
 
     a {
       min-height: 68px;
       display: grid;
-      grid-template-columns: 48px minmax(180px, 1fr) minmax(160px, 0.8fr);
+      grid-template-columns: 48px minmax(0, 1fr) auto;
       align-items: center;
       gap: 14px;
       padding: 8px;
@@ -177,6 +210,11 @@ useSeoMeta({
       &:hover {
         color: var(--ink);
         background: var(--surface-quiet);
+
+        .arrow {
+          color: var(--accent);
+          transform: translateX(3px);
+        }
       }
     }
 
@@ -211,10 +249,11 @@ useSeoMeta({
       }
     }
 
-    code {
+    .arrow {
       color: var(--muted);
-      font-size: 12px;
-      text-align: right;
+      transition:
+        color 120ms ease,
+        transform 120ms ease;
     }
   }
 
@@ -252,12 +291,7 @@ useSeoMeta({
 
     .item-index {
       a {
-        grid-template-columns: 48px minmax(0, 1fr);
-      }
-
-      code {
-        grid-column: 2;
-        text-align: left;
+        grid-template-columns: 48px minmax(0, 1fr) auto;
       }
     }
   }
