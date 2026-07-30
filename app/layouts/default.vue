@@ -16,7 +16,11 @@
           <PhList v-else :size="22" aria-hidden="true" />
         </button>
 
-        <NuxtLink class="brand" to="/">
+        <NuxtLink
+          class="brand"
+          to="/"
+          aria-label="Matcha Wiki"
+        >
           <img
             :src="useAssetPath('/generated/ui/pack.png')"
             alt=""
@@ -404,6 +408,26 @@ onBeforeUnmount(() => {
         flex-direction: column;
         gap: 14px;
         padding: 24px 16px;
+      }
+    }
+  }
+
+  @media (max-width: 350px) {
+    .header-inner {
+      gap: 6px;
+      padding-inline: 6px;
+    }
+
+    .brand {
+      gap: 0;
+
+      img {
+        width: 36px;
+        height: 36px;
+      }
+
+      span {
+        display: none;
       }
     }
   }
