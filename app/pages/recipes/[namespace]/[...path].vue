@@ -81,9 +81,10 @@ import { PhArrowLeft, PhCode, PhGitBranch } from '@phosphor-icons/vue'
 
 const route = useRoute()
 const catalog = useWikiCatalog()
-const pathParts = Array.isArray(route.params.path) ? route.params.path : [route.params.path]
-const recipeId = `${route.params.namespace}:${pathParts.join('/')}`
-const recipe = computed(() => catalog.recipes.find(entry => entry.id === recipeId))
+const recipeId = computed(() => (
+  `${normalizeRouteParam(route.params.namespace)}:${normalizeRouteParam(route.params.path)}`
+))
+const recipe = computed(() => catalog.recipes.find(entry => entry.id === recipeId.value))
 
 if (import.meta.server && !recipe.value) {
   throw createError({
@@ -115,7 +116,7 @@ const ingredientEntries = computed(() => (
 
 useSeoMeta({
   title: () => `Рецепт: ${stripMinecraftFormatting(
-    resultItem.value?.title ?? recipe.value?.result?.name ?? recipeId
+    resultItem.value?.title ?? recipe.value?.result?.name ?? recipeId.value
   )}`,
   description: () => {
     const current = recipe.value

@@ -127,7 +127,8 @@ import { PhArrowLeft, PhCode, PhGitBranch, PhSparkle } from '@phosphor-icons/vue
 
 const route = useRoute()
 const catalog = useWikiCatalog()
-const item = computed(() => catalog.items.find(entry => entry.slug === route.params.slug))
+const itemSlug = computed(() => normalizeRouteParam(route.params.slug))
+const item = computed(() => catalog.items.find(entry => entry.slug === itemSlug.value))
 
 if (import.meta.server && !item.value) {
   throw createError({
