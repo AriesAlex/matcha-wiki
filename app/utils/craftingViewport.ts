@@ -31,7 +31,7 @@ export interface ClampCraftingViewportPanOptions {
 
 export const DEFAULT_CRAFTING_VIEWPORT_SCALE_RANGE
   : Readonly<CraftingViewportScaleRange> = Object.freeze({
-    minScale: 0.35,
+    minScale: 0.01,
     maxScale: 2.5
   })
 

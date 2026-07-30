@@ -34,15 +34,17 @@ describe('crafting viewport math', () => {
     })
   })
 
-  it('keeps very wide crafting routes readable at the default overview scale', () => {
+  it('fits every branch of a very wide crafting route into the overview', () => {
     const transform = fitCraftingViewport(
       { width: 358, height: 560 },
       { x: 0, y: 0, width: 18_568, height: 1_572 },
       { padding: 34 }
     )
 
-    expect(transform.scale).toBe(0.35)
-    expect(transform.y).toBe(34)
+    expect(transform.scale).toBeCloseTo(290 / 18_568)
+    expect(18_568 * transform.scale).toBeLessThanOrEqual(290)
+    expect(transform.x).toBeCloseTo(34)
+    expect(transform.y).toBeGreaterThan(34)
   })
 
   it('accounts for non-zero content bounds when centering', () => {
