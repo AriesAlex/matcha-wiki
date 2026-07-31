@@ -5,31 +5,36 @@ import type {
   CraftingGraphLayoutOptions,
   CraftingGraphModel,
   CraftingGraphNode,
-  CraftingGraphNodeKind,
   CraftingGraphNodeSize,
   CraftingGraphNodeView,
   CraftingGraphView
 } from '../types/craftingGraph'
+import {
+  hiddenCraftingAlternativeCount,
+  visibleCraftingAlternatives
+} from './craftingGraphAlternatives'
 
 export const CRAFTING_GRAPH_ITEM_SIZE: CraftingGraphNodeSize
-  = Object.freeze({ width: 172, height: 76 })
+  = Object.freeze({ width: 268, height: 148 })
 
-export const CRAFTING_GRAPH_METHOD_SIZE: CraftingGraphNodeSize
-  = Object.freeze({ width: 148, height: 50 })
+export const CRAFTING_GRAPH_RECIPE_GRID_SIZE: CraftingGraphNodeSize
+  = Object.freeze({ width: 244, height: 292 })
 
-export const CRAFTING_GRAPH_CONTEXT_SIZE: CraftingGraphNodeSize
-  = Object.freeze({ width: 132, height: 46 })
+export const CRAFTING_GRAPH_RECIPE_COMPACT_SIZE: CraftingGraphNodeSize
+  = Object.freeze({ width: 244, height: 190 })
 
-export const CRAFTING_GRAPH_NODE_SIZES: Readonly<
-  Record<CraftingGraphNodeKind, CraftingGraphNodeSize>
-> = Object.freeze({
-  item: CRAFTING_GRAPH_ITEM_SIZE,
-  method: CRAFTING_GRAPH_METHOD_SIZE,
-  context: CRAFTING_GRAPH_CONTEXT_SIZE
-})
+export const CRAFTING_GRAPH_SOURCE_SIZE: CraftingGraphNodeSize
+  = Object.freeze({ width: 288, height: 174 })
 
-const DEFAULT_COLUMN_GAP = 48
-const DEFAULT_ROW_GAP = 64
+export const CRAFTING_GRAPH_ALTERNATIVES_WIDTH = 320
+export const CRAFTING_GRAPH_ALTERNATIVES_HEADER_HEIGHT = 78
+export const CRAFTING_GRAPH_ALTERNATIVE_OPTION_HEIGHT = 88
+export const CRAFTING_GRAPH_ALTERNATIVE_SEPARATOR_HEIGHT = 18
+export const CRAFTING_GRAPH_ALTERNATIVES_MORE_HEIGHT = 52
+export const CRAFTING_GRAPH_ALTERNATIVES_BOTTOM_PADDING = 12
+
+const DEFAULT_COLUMN_GAP = 56
+const DEFAULT_ROW_GAP = 76
 const DEFAULT_PADDING = 32
 
 export function layoutCraftingGraph(
@@ -64,13 +69,8 @@ export function layoutCraftingGraph(
       const view = Object.freeze<CraftingGraphNodeView>({
         instanceId: node.instanceId,
         node,
-        planNode: node.planNode,
-        kind: node.kind,
-        path: node.path,
-        detail: node.detail,
-        status: node.status,
         x,
-        y: y + (layerHeight - size.height) / 2,
+        y,
         width: size.width,
         height: size.height,
         depth
@@ -108,10 +108,19 @@ function assignDepths(
   nodeOrder: ReadonlyMap<string, number>
 ): Map<string, number> {
   const outgoing = new Map<string, CraftingGraphEdge[]>()
+  const incomingCount = new Map(
+    graph.nodes.map(node => [node.instanceId, 0])
+  )
   for (const edge of graph.edges) {
+    if (
+      edge.cyclic
+      || !incomingCount.has(edge.from)
+      || !incomingCount.has(edge.to)
+    ) continue
     const edges = outgoing.get(edge.from) ?? []
     edges.push(edge)
     outgoing.set(edge.from, edges)
+    incomingCount.set(edge.to, (incomingCount.get(edge.to) ?? 0) + 1)
   }
   for (const edges of outgoing.values()) {
     edges.sort((left, right) => (
@@ -121,8 +130,11 @@ function assignDepths(
     ))
   }
 
-  const depths = new Map([[graph.rootId, 0]])
-  const queue = [graph.rootId]
+  const depths = new Map<string, number>([[graph.rootId, 0]])
+  const queue = [...incomingCount]
+    .filter(([, count]) => count === 0)
+    .map(([instanceId]) => instanceId)
+    .sort((left, right) => compareNodeOrder(left, right, nodeOrder))
   let cursor = 0
 
   while (cursor < queue.length) {
@@ -130,10 +142,15 @@ function assignDepths(
     cursor += 1
     if (!currentId) continue
     const currentDepth = depths.get(currentId) ?? 0
+    depths.set(currentId, currentDepth)
     for (const edge of outgoing.get(currentId) ?? []) {
-      if (depths.has(edge.to)) continue
-      depths.set(edge.to, currentDepth + 1)
-      queue.push(edge.to)
+      depths.set(
+        edge.to,
+        Math.max(depths.get(edge.to) ?? 0, currentDepth + 1)
+      )
+      const remaining = (incomingCount.get(edge.to) ?? 1) - 1
+      incomingCount.set(edge.to, remaining)
+      if (remaining === 0) queue.push(edge.to)
     }
   }
 
@@ -144,6 +161,16 @@ function assignDepths(
     }
   }
   return depths
+}
+
+function compareNodeOrder(
+  left: string,
+  right: string,
+  nodeOrder: ReadonlyMap<string, number>
+): number {
+  return (nodeOrder.get(left) ?? Number.MAX_SAFE_INTEGER)
+    - (nodeOrder.get(right) ?? Number.MAX_SAFE_INTEGER)
+    || left.localeCompare(right)
 }
 
 function groupLayers(
@@ -177,8 +204,37 @@ function layerWidth(
     + Math.max(0, nodes.length - 1) * columnGap
 }
 
+export function craftingGraphNodeSize(
+  node: CraftingGraphNode
+): CraftingGraphNodeSize {
+  if (node.kind === 'item') return CRAFTING_GRAPH_ITEM_SIZE
+  if (node.kind === 'source') return CRAFTING_GRAPH_SOURCE_SIZE
+  if (node.kind === 'recipe') {
+    return recipeUsesGrid(node.recipe.type)
+      ? CRAFTING_GRAPH_RECIPE_GRID_SIZE
+      : CRAFTING_GRAPH_RECIPE_COMPACT_SIZE
+  }
+
+  const optionCount = Math.max(1, visibleCraftingAlternatives(node).length)
+  const hasHiddenOptions = hiddenCraftingAlternativeCount(node) > 0
+  return {
+    width: CRAFTING_GRAPH_ALTERNATIVES_WIDTH,
+    height: CRAFTING_GRAPH_ALTERNATIVES_HEADER_HEIGHT
+      + optionCount * CRAFTING_GRAPH_ALTERNATIVE_OPTION_HEIGHT
+      + Math.max(0, optionCount - 1)
+      * CRAFTING_GRAPH_ALTERNATIVE_SEPARATOR_HEIGHT
+      + (hasHiddenOptions ? CRAFTING_GRAPH_ALTERNATIVES_MORE_HEIGHT : 0)
+      + CRAFTING_GRAPH_ALTERNATIVES_BOTTOM_PADDING
+  }
+}
+
 function nodeSize(node: CraftingGraphNode): CraftingGraphNodeSize {
-  return CRAFTING_GRAPH_NODE_SIZES[node.kind]
+  return craftingGraphNodeSize(node)
+}
+
+function recipeUsesGrid(type: string): boolean {
+  const kind = type.replace(/^.*:/, '')
+  return kind === 'crafting_shaped' || kind === 'crafting_shapeless'
 }
 
 function graphBounds(

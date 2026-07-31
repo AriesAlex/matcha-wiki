@@ -3,11 +3,8 @@ import type {
   CraftingPlanRequirement,
   CraftingTargetView
 } from '../../types/crafting'
-import type { CraftingGraphChoiceOption } from '../../types/craftingGraph'
-import {
-  formatIdentifier,
-  stripMinecraftFormatting
-} from '../format'
+import type { CraftingGraphAlternativeOption } from '../../types/craftingGraph'
+import { stripMinecraftFormatting } from '../format'
 import type {
   Projection,
   ProjectionEntry
@@ -19,7 +16,6 @@ import {
 
 export function collectProjection(root: CraftingPlanNode): Projection {
   const entries = new Map<string, ProjectionEntry>()
-  const stationTargetByResource = new Map<string, CraftingTargetView>()
   const activeNodes = new WeakSet<object>()
 
   function visit(node: CraftingPlanNode): void {
@@ -47,13 +43,6 @@ export function collectProjection(root: CraftingPlanNode): Projection {
     }
 
     activeNodes.add(node)
-    if (node.station) {
-      const stationResourceId = node.recipe?.stationResourceId
-      if (stationResourceId) {
-        stationTargetByResource.set(stationResourceId, node.station.target)
-      }
-      visit(node.station)
-    }
     for (const requirement of node.requirements) {
       visit(requirement.node)
     }
@@ -61,54 +50,7 @@ export function collectProjection(root: CraftingPlanNode): Projection {
   }
 
   visit(root)
-  return { entries, stationTargetByResource }
-}
-
-export function ensureProjectionEntry(
-  projection: Projection,
-  target: CraftingTargetView,
-  planNode?: CraftingPlanNode
-): void {
-  if (projection.entries.has(target.key)) return
-
-  const fallback = planNode ?? fallbackPlanNode(target)
-  projection.entries.set(target.key, {
-    targetKey: target.key,
-    occurrences: [fallback],
-    representative: fallback,
-    ownedAvailable: normalizeCount(fallback.ownedCount),
-    cyclic: fallback.state === 'cycle'
-  })
-}
-
-export function fallbackPlanNode(
-  target: CraftingTargetView
-): CraftingPlanNode {
-  return {
-    id: `graph-fallback|${target.key}`,
-    target,
-    requiredCount: 1,
-    ownedCount: 0,
-    missingCount: 1,
-    state: 'obtain',
-    recipeOptions: [],
-    batches: 0,
-    resultCount: 1,
-    requirements: []
-  }
-}
-
-export function fallbackStationTarget(
-  resourceId: string,
-  title: string
-): CraftingTargetView {
-  return {
-    key: `resource:${resourceId}`,
-    kind: 'resource',
-    resourceId,
-    title,
-    obtainHint: 'Этот рабочий блок нужно изготовить или найти.'
-  }
+  return { entries }
 }
 
 export function perBatchRequirementCount(
@@ -127,17 +69,15 @@ export function perBatchRequirementCount(
 
 export function choiceOptionsFor(
   requirement: CraftingPlanRequirement
-): readonly CraftingGraphChoiceOption[] {
+): readonly CraftingGraphAlternativeOption[] {
   const onlyOption = requirement.options.length === 1
     ? requirement.options[0]
     : undefined
-  const groupedResourceIds = onlyOption?.key.startsWith('resource:alternatives:')
-    ? onlyOption.resourceId.split('|').filter(Boolean)
-    : []
-  const targets = groupedResourceIds.length > 1 && onlyOption
-    ? groupedResourceIds.map(resourceId => expandGroupedTarget(onlyOption, resourceId))
+  const groupedTargets = onlyOption?.alternativeTargets ?? []
+  const targets = groupedTargets.length > 1
+    ? groupedTargets
     : requirement.options
-  const groupedSelection = groupedResourceIds.length > 1
+  const groupedSelection = groupedTargets.length > 1
     && requirement.selectedOptionKey === onlyOption?.key
 
   return Object.freeze(targets.map((target) => {
@@ -146,9 +86,12 @@ export function choiceOptionsFor(
     return Object.freeze({
       instanceId: stableId('option', requirement.id, target.key),
       key: target.key,
-      target,
+      title: stripMinecraftFormatting(target.title),
+      detail: alternativeDetail(target),
+      icon: target.icon,
+      path: target.detailsPath,
       selected,
-      detail: target.vanillaName ?? target.resourceId
+      targetKey: target.key
     })
   }))
 }
@@ -170,16 +113,11 @@ function representativeRank(node: CraftingPlanNode): number {
   return 1
 }
 
-function expandGroupedTarget(
-  group: CraftingTargetView,
-  resourceId: string
-): CraftingTargetView {
-  const suffix = formatIdentifier(resourceId)
-  return {
-    ...group,
-    key: `resource:${resourceId}`,
-    resourceId,
-    title: `${stripMinecraftFormatting(group.title)}: ${suffix}`,
-    vanillaName: undefined
-  }
+function alternativeDetail(target: CraftingTargetView): string {
+  return target.vanillaName
+    ?? target.item?.description
+    ?? target.item?.lore[0]
+    ?? target.obtainHint
+    ?? target.sources?.[0]?.detail
+    ?? ''
 }

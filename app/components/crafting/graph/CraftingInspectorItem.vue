@@ -9,25 +9,11 @@
         <dt>Отмечено</dt>
         <dd>{{ node.demand.owned }}</dd>
       </div>
-      <div v-if="node.demand.batches">
-        <dt>Подходов</dt>
-        <dd>{{ node.demand.batches }}</dd>
+      <div v-if="complete">
+        <dt>Статус</dt>
+        <dd class="ready">Готово</dd>
       </div>
     </dl>
-
-    <button
-      class="complete"
-      type="button"
-      :aria-pressed="complete"
-      @click="emit('toggle-subtree', node.instanceId)"
-    >
-      <PhCheckCircle
-        :size="20"
-        :weight="complete ? 'fill' : 'regular'"
-        aria-hidden="true"
-      />
-      {{ complete ? 'Вернуть ветку в план' : 'Отметить ветку готовой' }}
-    </button>
 
     <div
       v-if="node.planNode.recipeOptions.length"
@@ -47,7 +33,7 @@
             mode: 'craft'
           })"
         >
-          Изготовить
+          Сделать
         </button>
         <button
           type="button"
@@ -57,7 +43,7 @@
             mode: 'obtain'
           })"
         >
-          Получить
+          Найти
         </button>
       </div>
 
@@ -79,7 +65,6 @@
 </template>
 
 <script setup lang="ts">
-import { PhCheckCircle } from '@phosphor-icons/vue'
 import CraftingRecipeSelect from './CraftingRecipeSelect.vue'
 import type { CraftingMode } from '../../../types/crafting'
 import type { CraftingGraphItemNode } from '../../../types/craftingGraph'
@@ -97,28 +82,21 @@ interface RecipeSelection {
 const props = withDefaults(defineProps<{
   node: CraftingGraphItemNode
   complete?: boolean
-  mode?: CraftingMode
-  selectedRecipeId?: string
 }>(), {
-  complete: false,
-  mode: undefined,
-  selectedRecipeId: ''
+  complete: false
 })
 
 const emit = defineEmits<{
-  'toggle-subtree': [instanceId: string]
   'select-mode': [payload: ModeSelection]
   'select-recipe': [payload: RecipeSelection]
 }>()
 
 const plainTitle = computed(() => stripMinecraftFormatting(props.node.title))
 const effectiveMode = computed<CraftingMode>(() => (
-  props.mode
-  ?? (props.node.planNode.state === 'obtain' ? 'obtain' : 'craft')
+  props.node.planNode.state === 'obtain' ? 'obtain' : 'craft'
 ))
 const effectiveRecipeId = computed(() => (
-  props.selectedRecipeId
-  || props.node.planNode.recipe?.id
+  props.node.planNode.recipe?.id
   || props.node.planNode.recipeOptions[0]?.id
   || ''
 ))
@@ -148,27 +126,10 @@ const effectiveRecipeId = computed(() => (
       font-size: 18px;
       font-weight: 800;
       font-variant-numeric: tabular-nums;
-    }
-  }
 
-  .complete {
-    width: 100%;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    margin-top: 18px;
-    padding: 9px 12px;
-    color: var(--surface);
-    background: var(--accent);
-    border: 0;
-    font-size: 12px;
-    font-weight: 750;
-
-    &:hover,
-    &:focus-visible {
-      background: var(--accent-ink);
+      &.ready {
+        color: var(--accent);
+      }
     }
   }
 

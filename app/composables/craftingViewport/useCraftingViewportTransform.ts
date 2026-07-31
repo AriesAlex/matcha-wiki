@@ -7,6 +7,7 @@ import type {
 import { useCraftingViewportAnimation } from './useCraftingViewportAnimation'
 import type {
   CraftingViewportActionOptions,
+  FocusCraftingViewportOptions,
   SetCraftingViewportOptions,
   UseCraftingViewportOptions
 } from './types'
@@ -15,6 +16,7 @@ import {
   clampCraftingViewportPan,
   clampCraftingViewportScale,
   fitCraftingViewport,
+  focusCraftingViewportBounds,
   zoomCraftingViewportAt
 } from '../../utils/craftingViewport'
 import type {
@@ -94,6 +96,25 @@ export function useCraftingViewportTransform({
       { animate, markInteracted }
     )
     return true
+  }
+
+  function focusBounds(
+    bounds: CraftingViewportBounds,
+    {
+      animate = true,
+      markInteracted = false,
+      scale = 1,
+      verticalAnchor
+    }: FocusCraftingViewportOptions = {}
+  ): void {
+    applyTransform(
+      focusCraftingViewportBounds(
+        viewportSize.value,
+        bounds,
+        { ...scaleRange, scale, verticalAnchor }
+      ),
+      { animate, markInteracted }
+    )
   }
 
   function reset(
@@ -238,6 +259,7 @@ export function useCraftingViewportTransform({
     hasInteracted,
     transformStyle,
     fitMeasured,
+    focusBounds,
     reset,
     setTransform,
     panBy,

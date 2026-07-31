@@ -37,13 +37,16 @@ function selectRecipe(event: Event): void {
 
 function recipeLabel(recipe: CraftingRecipeView): string {
   const ingredients = recipe.requirements
+    .slice(0, 2)
     .map((requirement) => {
       const count = requirement.count > 1 ? `${requirement.count} × ` : ''
       return `${count}${stripMinecraftFormatting(requirement.ingredient.label)}`
     })
     .join(' + ')
+  const rest = recipe.requirements.length - 2
+  const summary = rest > 0 ? `${ingredients} + ещё ${rest}` : ingredients
   return ingredients
-    ? `${recipe.station}: ${ingredients}`
+    ? `${recipe.station}: ${summary}`
     : recipe.station
 }
 </script>

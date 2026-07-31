@@ -2,38 +2,28 @@ import type {
   CraftingPlanNode,
   CraftingPlanRequirement
 } from '../../types/crafting'
-import type { CraftingGraphChoiceOption } from '../../types/craftingGraph'
+import type { CraftingGraphAlternativeOption } from '../../types/craftingGraph'
 import type {
+  AlternativesAccumulator,
   BuildContext,
-  ChoiceAccumulator,
   ItemAccumulator,
-  MethodAccumulator,
   ParentRelation,
   Projection,
   ProjectionEntry,
-  SourceAccumulator,
-  StationDemand
+  RecipeAccumulator,
+  SourceAccumulator
 } from './internal'
-import {
-  itemInstanceId,
-  stableId
-} from './internal'
-import {
-  ensureProjectionEntry,
-  fallbackStationTarget
-} from './projection'
+import { stableId } from './internal'
 import { groupCraftingSources } from './sourceGroups'
 
 export function createBuildContext(projection: Projection): BuildContext {
   return {
     projection,
     items: new Map(),
-    methods: new Map(),
-    choices: new Map(),
-    stations: new Map(),
+    recipes: new Map(),
+    alternatives: new Map(),
     sources: new Map(),
-    edges: new Map(),
-    stationDemanded: new Set()
+    edges: new Map()
   }
 }
 
@@ -46,7 +36,7 @@ export function getOrCreateItem(
   if (existing) return existing
 
   const item: ItemAccumulator = {
-    instanceId: itemInstanceId(projection.targetKey),
+    instanceId: stableId('item', projection.targetKey),
     projection,
     path: Object.freeze([...path]),
     required: 0,
@@ -56,203 +46,124 @@ export function getOrCreateItem(
   return item
 }
 
-export function ensureRecipeMethod(
+export function ensureRecipe(
   context: BuildContext,
   item: ItemAccumulator,
   planNode: CraftingPlanNode
-): MethodAccumulator {
+): RecipeAccumulator {
   const recipe = planNode.recipe
   if (!recipe) {
     throw new Error(`Crafting node has no selected recipe: ${planNode.target.key}`)
   }
 
   const instanceId = stableId(
-    'method',
-    item.projection.targetKey,
     'recipe',
+    item.projection.targetKey,
     recipe.id
   )
-  const existing = context.methods.get(instanceId)
+  const existing = context.recipes.get(instanceId)
   if (existing) return existing
 
-  const method: MethodAccumulator = {
+  const recipeNode: RecipeAccumulator = {
     instanceId,
     ownerTargetKey: item.projection.targetKey,
     planNode,
-    methodKind: 'recipe',
     path: Object.freeze([...item.path, instanceId]),
     batches: 0
   }
-  context.methods.set(instanceId, method)
-  item.methodId = instanceId
+  context.recipes.set(instanceId, recipeNode)
+  item.recipeId = instanceId
   addEdge(context, {
     from: item.instanceId,
-    kind: 'method',
+    kind: 'recipe',
     detail: recipe.station,
     status: planNode.state
   }, instanceId, false)
-  return method
+  return recipeNode
 }
 
-export function ensureTerminalMethod(
+export function ensureIngredientAlternatives(
   context: BuildContext,
   item: ItemAccumulator,
-  planNode: CraftingPlanNode
-): MethodAccumulator {
-  const methodKind = planNode.state === 'cycle'
-    ? 'cycle'
-    : planNode.state === 'unknown'
-      ? 'unknown'
-      : 'obtain'
+  recipe: RecipeAccumulator,
+  requirement: CraftingPlanRequirement,
+  options: readonly CraftingGraphAlternativeOption[]
+): AlternativesAccumulator {
+  const recipeId = recipe.planNode.recipe?.id
+  if (!recipeId) {
+    throw new Error(`Alternatives have no recipe: ${item.projection.targetKey}`)
+  }
+
   const instanceId = stableId(
-    'method',
+    'alternatives',
+    'ingredient',
     item.projection.targetKey,
-    methodKind
+    recipeId,
+    requirement.id
   )
-  const existing = context.methods.get(instanceId)
+  const existing = context.alternatives.get(instanceId)
   if (existing) return existing
 
-  const method: MethodAccumulator = {
+  const alternatives: AlternativesAccumulator = {
     instanceId,
+    alternativeKind: 'ingredient',
     ownerTargetKey: item.projection.targetKey,
-    planNode,
-    methodKind,
-    path: Object.freeze([...item.path, instanceId]),
-    batches: 0
+    planNode: recipe.planNode,
+    requirement,
+    options,
+    path: Object.freeze([...recipe.path, instanceId]),
+    count: 0,
+    cyclic: false
   }
-  context.methods.set(instanceId, method)
-  item.methodId = instanceId
-  addEdge(context, {
-    from: item.instanceId,
-    kind: 'method',
-    detail: terminalMethodDetail(methodKind, planNode),
-    status: planNode.state
-  }, instanceId, methodKind === 'cycle')
-  return method
+  context.alternatives.set(instanceId, alternatives)
+  return alternatives
 }
 
 export function ensureSources(
   context: BuildContext,
   item: ItemAccumulator,
-  method: MethodAccumulator,
   planNode: CraftingPlanNode
 ): void {
   const sources = groupCraftingSources(planNode.target.sources ?? [])
+  if (!sources.length) return
 
-  for (const source of sources) {
-    const instanceId = stableId(
-      'context',
-      'source',
-      item.projection.targetKey,
-      source.id
-    )
-    let sourceNode: SourceAccumulator | undefined = context.sources.get(instanceId)
-    if (!sourceNode) {
-      sourceNode = {
-        instanceId,
-        ownerTargetKey: item.projection.targetKey,
-        planNode,
-        source,
-        path: Object.freeze([...method.path, instanceId])
-      }
-      context.sources.set(instanceId, sourceNode)
-    }
-
-    addEdge(context, {
-      from: method.instanceId,
-      kind: 'context',
-      detail: source.detail,
-      status: planNode.state
-    }, sourceNode.instanceId, false)
-  }
-}
-
-export function ensureChoice(
-  context: BuildContext,
-  item: ItemAccumulator,
-  method: MethodAccumulator,
-  requirement: CraftingPlanRequirement,
-  options: readonly CraftingGraphChoiceOption[]
-): ChoiceAccumulator {
-  const recipeId = method.planNode.recipe?.id
-  if (!recipeId) {
-    throw new Error(`Choice has no selected recipe: ${item.projection.targetKey}`)
+  if (sources.length === 1) {
+    ensureSingleSource(context, item, planNode, sources[0]!)
+    return
   }
 
   const instanceId = stableId(
-    'context',
-    'choice',
-    item.projection.targetKey,
-    recipeId,
-    requirement.id
+    'alternatives',
+    'source',
+    item.projection.targetKey
   )
-  const existing = context.choices.get(instanceId)
-  if (existing) return existing
-
-  const choice: ChoiceAccumulator = {
-    instanceId,
-    ownerTargetKey: item.projection.targetKey,
-    requirement,
-    options,
-    path: Object.freeze([...method.path, instanceId]),
-    count: 0,
-    cyclic: false
-  }
-  context.choices.set(instanceId, choice)
-  return choice
-}
-
-export function ensureStation(
-  context: BuildContext,
-  item: ItemAccumulator,
-  method: MethodAccumulator,
-  planNode: CraftingPlanNode
-): StationDemand | undefined {
-  const recipe = planNode.recipe
-  const resourceId = recipe?.stationResourceId
-  if (!recipe || !resourceId) return undefined
-
-  const stationTarget = context.projection.stationTargetByResource.get(resourceId)
-    ?? planNode.station?.target
-    ?? fallbackStationTarget(resourceId, recipe.station)
-  ensureProjectionEntry(context.projection, stationTarget, planNode.station)
-
-  const instanceId = stableId('context', 'station', resourceId)
-  let station = context.stations.get(instanceId)
-  if (!station) {
-    station = {
+  if (!context.alternatives.has(instanceId)) {
+    context.alternatives.set(instanceId, {
       instanceId,
+      alternativeKind: 'source',
       ownerTargetKey: item.projection.targetKey,
-      resourceId,
-      targetKey: stationTarget.key,
-      target: stationTarget,
-      path: Object.freeze([...method.path, instanceId]),
+      planNode,
+      options: Object.freeze(sources.map(source => Object.freeze({
+        instanceId: stableId('option', 'source', item.projection.targetKey, source.id),
+        key: source.id,
+        title: source.title,
+        detail: source.detail,
+        path: source.path,
+        sourceKind: source.kind,
+        selected: false
+      }))),
+      path: Object.freeze([...item.path, instanceId]),
+      count: 1,
       cyclic: false
-    }
-    context.stations.set(instanceId, station)
+    })
   }
 
   addEdge(context, {
-    from: method.instanceId,
-    kind: 'station',
-    detail: recipe.station,
+    from: item.instanceId,
+    kind: 'source',
+    detail: 'Выберите удобный способ',
     status: planNode.state
-  }, station.instanceId, false)
-
-  if (context.stationDemanded.has(station.instanceId)) return undefined
-  context.stationDemanded.add(station.instanceId)
-  return {
-    station,
-    relation: {
-      from: station.instanceId,
-      kind: 'context',
-      count: 1,
-      detail: 'Нужен один рабочий блок',
-      status: planNode.station?.state ?? 'obtain',
-      countMode: 'max'
-    },
-    path: [...station.path, itemInstanceId(station.targetKey)]
-  }
+  }, instanceId, false)
 }
 
 export function addEdge(
@@ -307,16 +218,34 @@ export function itemMissingCount(item: ItemAccumulator): number {
   )
 }
 
-function terminalMethodDetail(
-  kind: MethodAccumulator['methodKind'],
-  planNode: CraftingPlanNode
-): string {
-  if (kind === 'cycle') {
-    return 'Этот способ требует тот же предмет выше по цепочке'
+function ensureSingleSource(
+  context: BuildContext,
+  item: ItemAccumulator,
+  planNode: CraftingPlanNode,
+  source: NonNullable<CraftingPlanNode['target']['sources']>[number]
+): SourceAccumulator {
+  const instanceId = stableId(
+    'source',
+    item.projection.targetKey,
+    source.id
+  )
+  let sourceNode = context.sources.get(instanceId)
+  if (!sourceNode) {
+    sourceNode = {
+      instanceId,
+      ownerTargetKey: item.projection.targetKey,
+      planNode,
+      source,
+      path: Object.freeze([...item.path, instanceId])
+    }
+    context.sources.set(instanceId, sourceNode)
   }
-  if (kind === 'unknown') {
-    return 'Надёжный способ получения пока не найден'
-  }
-  return planNode.target.obtainHint
-    ?? 'Точный источник пока не описан'
+
+  addEdge(context, {
+    from: item.instanceId,
+    kind: 'source',
+    detail: source.detail,
+    status: planNode.state
+  }, sourceNode.instanceId, false)
+  return sourceNode
 }

@@ -207,6 +207,9 @@ function parseVanillaRecipe(
     station: options.stationName(type),
     resultId: result.id,
     resultCount: result.count,
+    pattern,
+    key,
+    ingredients,
     requirements,
     stationResourceId: stationResourceForRecipe({
       type,

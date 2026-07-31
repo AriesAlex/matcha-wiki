@@ -6,11 +6,10 @@ import type {
   CraftingTargetView
 } from '../app/types/crafting'
 import type {
-  CraftingGraphChoiceNode,
+  CraftingGraphAlternativesNode,
   CraftingGraphItemNode,
-  CraftingGraphMethodNode,
-  CraftingGraphSourceNode,
-  CraftingGraphStationNode
+  CraftingGraphRecipeNode,
+  CraftingGraphSourceNode
 } from '../app/types/craftingGraph'
 import { buildCraftingGraph } from '../app/utils/craftingGraphModel'
 
@@ -40,7 +39,7 @@ describe('crafting graph model', () => {
     const graph = buildCraftingGraph(root)
     const ingotNode = itemNode(graph, ingot.key)
     const oreNode = itemNode(graph, ore.key)
-    const ingotMethod = methodNode(graph, 'minecraft:copper_ingot')
+    const ingotRecipe = recipeNode(graph, 'minecraft:copper_ingot')
     const ingotEdges = graph.edges.filter(edge => edge.to === ingotNode.instanceId)
 
     expect(ingotNode.occurrences).toBe(2)
@@ -52,24 +51,40 @@ describe('crafting graph model', () => {
       produced: 4,
       surplus: 2
     })
-    expect(ingotMethod.batches).toBe(1)
+    expect(ingotRecipe.batches).toBe(1)
     expect(oreNode.demand.required).toBe(1)
     expect(ingotEdges).toHaveLength(1)
     expect(ingotEdges[0]?.count).toBe(2)
   })
 
-  it('keeps twenty same-title music discs as explicit OR options', () => {
+  it('keeps a music-disc set in one OR group without duplicating item nodes', () => {
     const discIds = Array.from(
       { length: 20 },
       (_, index) => `minecraft:music_disc_${index + 1}`
     )
+    const discTargets = discIds.map((resourceId, index): CraftingTargetView => ({
+      ...target(resourceId, `Пластинка «${index + 1}»`),
+      icon: `/textures/music_disc_${index + 1}.png`,
+      detailsPath: `/recipes/crafting/music_disc_${index + 1}`,
+      obtainHint: index === 0 ? 'Найдите в сокровищнице.' : undefined,
+      sources: index === 0
+        ? [{
+            id: 'vault-disc-1',
+            kind: 'location',
+            title: 'Сокровищница',
+            detail: 'Найдите в сокровищнице.',
+            path: '/locations/vault'
+          }]
+        : []
+    }))
     const groupedDisc: CraftingTargetView = {
       key: `resource:alternatives:${discIds.slice().sort().join('|')}`,
       kind: 'resource',
       resourceId: discIds.join('|'),
-      title: 'Пластинка'
+      title: 'Пластинка — любой вариант',
+      alternativeTargets: discTargets
     }
-    const output = target('minecraft:disc_fragment_5', 'Фрагмент пластинки')
+    const output = target('minecraft:disc_fragment_5', 'Осколок пластинки')
     const root = craftNode(output, {
       recipeId: 'matcha:disc_fragment_from_disc',
       requirements: [{
@@ -81,64 +96,63 @@ describe('crafting graph model', () => {
     })
 
     const graph = buildCraftingGraph(root)
-    const choice = graph.nodes.find(
-      (node): node is CraftingGraphChoiceNode => (
-        node.kind === 'context' && node.contextKind === 'choice'
+    const alternatives = graph.nodes.find(
+      (node): node is CraftingGraphAlternativesNode => (
+        node.kind === 'alternatives'
+        && node.alternativeKind === 'ingredient'
       )
     )
+    const discItems = graph.nodes.filter(node => (
+      node.kind === 'item'
+      && node.target.resourceId.includes('minecraft:music_disc_')
+    ))
 
-    expect(choice).toBeDefined()
-    expect(choice?.options).toHaveLength(20)
-    expect(new Set(choice?.options.map(option => option.key)).size).toBe(20)
-    expect(choice?.options.every(option => option.selected)).toBe(true)
-    expect(choice?.detail).toBe('Подойдёт любой из 20 вариантов')
-    expect(graph.edges.some(edge => (
-      edge.from === choice?.instanceId
-      && edge.kind === 'selected-option'
-    ))).toBe(true)
+    expect(alternatives).toBeDefined()
+    expect(alternatives?.options).toHaveLength(20)
+    expect(new Set(alternatives?.options.map(option => option.key)).size).toBe(20)
+    expect(alternatives?.options.every(option => option.selected)).toBe(true)
+    expect(alternatives?.options[0]).toMatchObject({
+      title: 'Пластинка «1»',
+      detail: 'Найдите в сокровищнице.',
+      icon: '/textures/music_disc_1.png',
+      path: '/recipes/crafting/music_disc_1',
+      targetKey: 'resource:minecraft:music_disc_1'
+    })
+    expect(discItems).toHaveLength(0)
+    expect(graph.edges.filter(edge => edge.to === alternatives?.instanceId))
+      .toEqual([expect.objectContaining({ kind: 'alternative' })])
+    expect(graph.edges.filter(edge => edge.from === alternatives?.instanceId))
+      .toHaveLength(0)
   })
 
-  it('shares one station context and one reusable station item', () => {
+  it('does not materialize station or obtain proxy nodes', () => {
     const craftingTable = target('minecraft:crafting_table', 'Верстак')
-    const partA = target('matcha:part_a', 'Деталь А')
-    const partB = target('matcha:part_b', 'Деталь Б')
+    const material = target('minecraft:iron_ingot', 'Железный слиток')
     const output = target('matcha:assembly', 'Сборка')
-    const stationPlan = ownedNode(craftingTable)
-    const firstPart = craftNode(partA, {
-      recipeId: 'matcha:part_a',
-      station: 'Верстак',
-      stationResourceId: 'minecraft:crafting_table',
-      stationNode: stationPlan
-    })
-    const secondPart = craftNode(partB, {
-      recipeId: 'matcha:part_b',
-      station: 'Верстак',
-      stationResourceId: 'minecraft:crafting_table'
-    })
     const root = craftNode(output, {
       recipeId: 'matcha:assembly',
-      requirements: [
-        { child: firstPart, count: 1 },
-        { child: secondPart, count: 1 }
-      ]
+      station: 'Верстак',
+      stationResourceId: 'minecraft:crafting_table',
+      requirements: [{ child: obtainNode(material), count: 1 }]
     })
 
     const graph = buildCraftingGraph(root)
-    const stations = graph.nodes.filter(
-      (node): node is CraftingGraphStationNode => (
-        node.kind === 'context' && node.contextKind === 'station'
-      )
-    )
-    const tableItems = graph.nodes.filter(node => (
-      node.kind === 'item' && node.target.key === craftingTable.key
-    ))
-    const stationEdges = graph.edges.filter(edge => edge.kind === 'station')
+    const terminalGraph = buildCraftingGraph(obtainNode(material))
 
-    expect(stations).toHaveLength(1)
-    expect(tableItems).toHaveLength(1)
-    expect(stations[0]?.itemNodeId).toBe(tableItems[0]?.instanceId)
-    expect(stationEdges).toHaveLength(2)
-    expect(tableItems[0]?.demand.required).toBe(1)
+    expect(graph.nodes.map(node => node.kind).sort()).toEqual([
+      'item',
+      'item',
+      'recipe'
+    ])
+    expect(graph.nodes.some(node => (
+      node.kind === 'item' && node.target.key === craftingTable.key
+    ))).toBe(false)
+    expect(graph.edges.map(edge => edge.kind).sort()).toEqual([
+      'recipe',
+      'requirement'
+    ])
+    expect(terminalGraph.nodes.map(node => node.kind)).toEqual(['item'])
+    expect(terminalGraph.edges).toHaveLength(0)
   })
 
   it('guards a selected cycle without duplicating the root demand', () => {
@@ -186,7 +200,7 @@ describe('crafting graph model', () => {
 
     const graph = buildCraftingGraph(root)
     const rootItem = itemNode(graph, output.key)
-    const rootMethod = methodNode(graph, 'matcha:plates')
+    const outputRecipe = recipeNode(graph, 'matcha:plates')
     const ingredientItem = itemNode(graph, ingredient.key)
 
     expect(rootItem.demand).toEqual({
@@ -197,17 +211,18 @@ describe('crafting graph model', () => {
       produced: 6,
       surplus: 1
     })
-    expect(rootMethod).toMatchObject({
+    expect(outputRecipe).toMatchObject({
       batches: 3,
       resultCount: 2,
-      producedCount: 6
+      producedCount: 6,
+      surplus: 1
     })
     expect(ingredientItem.demand.required).toBe(9)
     expect(rootItem.planNode.requiredCount).toBe(5)
     expect(rootItem.planNode.batches).toBe(3)
   })
 
-  it('keeps concrete acquisition alternatives as linked source nodes', () => {
+  it('groups multiple acquisition sources behind one incoming edge', () => {
     const opal: CraftingTargetView = {
       ...target('minecraft:opal', 'Опал'),
       sources: [
@@ -229,21 +244,50 @@ describe('crafting graph model', () => {
     }
 
     const graph = buildCraftingGraph(obtainNode(opal))
-    const sources = graph.nodes.filter(
-      (node): node is CraftingGraphSourceNode => (
-        node.kind === 'context' && node.contextKind === 'source'
+    const alternatives = graph.nodes.find(
+      (node): node is CraftingGraphAlternativesNode => (
+        node.kind === 'alternatives'
+        && node.alternativeKind === 'source'
       )
     )
-    const sourceEdges = graph.edges.filter(edge => (
-      sources.some(source => source.instanceId === edge.to)
-    ))
+    const sourceNodes = graph.nodes.filter(node => node.kind === 'source')
+    const incoming = graph.edges.filter(edge => edge.to === alternatives?.instanceId)
 
-    expect(sources.map(source => source.source.path).sort()).toEqual([
+    expect(alternatives?.options.map(option => option.path).sort()).toEqual([
       '/locations/ancient-city',
-      '/mobs/elder-guardian',
+      '/mobs/elder-guardian'
     ])
-    expect(sourceEdges).toHaveLength(2)
-    expect(sourceEdges.every(edge => edge.kind === 'context')).toBe(true)
+    expect(sourceNodes).toHaveLength(0)
+    expect(incoming).toEqual([expect.objectContaining({
+      from: graph.rootId,
+      kind: 'source'
+    })])
+  })
+
+  it('links a single acquisition source directly without a generic method', () => {
+    const avesta: CraftingTargetView = {
+      ...target('minecraft:avesta', 'Авеста'),
+      sources: [{
+        id: 'desert-well-avesta',
+        kind: 'location',
+        title: 'Пустынный колодец',
+        detail: 'Исследуйте подозрительный песок.',
+        path: '/locations/desert-well'
+      }]
+    }
+
+    const graph = buildCraftingGraph(obtainNode(avesta))
+    const source = graph.nodes.find(
+      (node): node is CraftingGraphSourceNode => node.kind === 'source'
+    )
+
+    expect(graph.nodes.map(node => node.kind)).toEqual(['item', 'source'])
+    expect(source?.source.path).toBe('/locations/desert-well')
+    expect(graph.edges).toEqual([expect.objectContaining({
+      from: graph.rootId,
+      to: source?.instanceId,
+      kind: 'source'
+    })])
   })
 })
 
@@ -253,7 +297,6 @@ interface CraftNodeOptions {
   resultCount?: number
   station?: string
   stationResourceId?: string
-  stationNode?: CraftingPlanNode
   requirements?: Array<{
     id?: string
     child: CraftingPlanNode
@@ -276,11 +319,11 @@ function craftNode(
     role: 'ingredient' as const,
     count: requirement.count,
     ingredient: {
-      ids: [requirement.child.target.resourceId],
+      ids: (requirement.options ?? [requirement.child.target])
+        .map(option => option.resourceId),
       label: requirement.child.target.title,
-      icons: requirement.child.target.icon
-        ? [requirement.child.target.icon]
-        : []
+      icons: (requirement.options ?? [requirement.child.target])
+        .flatMap(option => option.icon ? [option.icon] : [])
     }
   }))
   const recipe: CraftingRecipeView = {
@@ -290,6 +333,7 @@ function craftNode(
     station: options.station ?? 'Инвентарь',
     targetKey: currentTarget.key,
     resultCount,
+    ingredients: recipeRequirements.map(requirement => requirement.ingredient),
     requirements: recipeRequirements,
     stationResourceId: options.stationResourceId
   }
@@ -326,7 +370,6 @@ function craftNode(
     recipe,
     batches,
     resultCount,
-    station: options.stationNode,
     requirements
   }
 }
@@ -346,15 +389,6 @@ function obtainNode(
     batches: 0,
     resultCount: 1,
     requirements: []
-  }
-}
-
-function ownedNode(currentTarget: CraftingTargetView): CraftingPlanNode {
-  return {
-    ...obtainNode(currentTarget),
-    ownedCount: 1,
-    missingCount: 0,
-    state: 'owned'
   }
 }
 
@@ -380,16 +414,15 @@ function itemNode(
   return node
 }
 
-function methodNode(
+function recipeNode(
   graph: ReturnType<typeof buildCraftingGraph>,
   recipeId: string
-): CraftingGraphMethodNode {
+): CraftingGraphRecipeNode {
   const node = graph.nodes.find(
-    (candidate): candidate is CraftingGraphMethodNode => (
-      candidate.kind === 'method'
-      && candidate.recipe?.id === recipeId
+    (candidate): candidate is CraftingGraphRecipeNode => (
+      candidate.kind === 'recipe' && candidate.recipe.id === recipeId
     )
   )
-  if (!node) throw new Error(`Missing graph method ${recipeId}`)
+  if (!node) throw new Error(`Missing graph recipe ${recipeId}`)
   return node
 }

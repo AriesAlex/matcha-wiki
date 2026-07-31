@@ -5,6 +5,7 @@ import type {
   UseCraftingViewportOptions
 } from './types'
 import type { CraftingViewportTransform } from '../../utils/craftingViewport'
+import { clampCraftingViewportScale } from '../../utils/craftingViewport'
 
 interface CraftingViewportInputOptions {
   rootRef: ShallowRef<HTMLElement | null>
@@ -31,17 +32,32 @@ export function useCraftingViewportInput({
   useEventListener(rootRef, 'keydown', onKeyDown)
 
   function onWheel(event: WheelEvent): void {
-    if (!event.ctrlKey && !event.metaKey) return
-
     const root = rootRef.value
-    if (!root) return
+    if (
+      !root
+      || (
+        event.target instanceof Element
+        && event.target.closest('[data-crafting-wheel-pass-through]')
+      )
+    ) return
 
-    event.preventDefault()
-    const rect = root.getBoundingClientRect()
     const delta = normalizedWheelDelta(event)
+    if (!Number.isFinite(delta) || delta === 0) return
+
     const factor = Math.exp(-delta * (options.wheelZoomSpeed ?? 0.0015))
-    zoomTo(
+    const nextScale = clampCraftingViewportScale(
       transform.value.scale * factor,
+      {
+        minScale: options.minScale,
+        maxScale: options.maxScale
+      }
+    )
+    event.preventDefault()
+    if (nextScale === transform.value.scale) return
+
+    const rect = root.getBoundingClientRect()
+    zoomTo(
+      nextScale,
       {
         x: event.clientX - rect.left,
         y: event.clientY - rect.top

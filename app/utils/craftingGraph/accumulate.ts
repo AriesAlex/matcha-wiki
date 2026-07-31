@@ -2,11 +2,9 @@ import type { CraftingPlanNode } from '../../types/crafting'
 import {
   addEdge,
   createBuildContext,
-  ensureChoice,
-  ensureRecipeMethod,
+  ensureIngredientAlternatives,
+  ensureRecipe,
   ensureSources,
-  ensureStation,
-  ensureTerminalMethod,
   getOrCreateItem,
   itemMissingCount
 } from './accumulatorNodes'
@@ -74,30 +72,15 @@ function requestItem(
   if (missing <= 0 || representative.state === 'owned') return
 
   if (representative.state !== 'craft' || !representative.recipe) {
-    const method = ensureTerminalMethod(context, item, representative)
-    ensureSources(context, item, method, representative)
+    ensureSources(context, item, representative)
     return
   }
 
-  const method = ensureRecipeMethod(context, item, representative)
+  const recipe = ensureRecipe(context, item, representative)
   const resultCount = Math.max(1, normalizeCount(representative.resultCount))
   const nextBatches = Math.ceil(missing / resultCount)
-  const additionalBatches = nextBatches - method.batches
-  method.batches = nextBatches
-
-  const stationDemand = ensureStation(context, item, method, representative)
-  if (stationDemand) {
-    const stationCycle = nextAncestry.has(stationDemand.station.targetKey)
-    stationDemand.station.cyclic ||= stationCycle
-    requestItem(
-      context,
-      stationDemand.station.targetKey,
-      1,
-      stationDemand.relation,
-      nextAncestry,
-      stationDemand.path
-    )
-  }
+  const additionalBatches = nextBatches - recipe.batches
+  recipe.batches = nextBatches
   if (additionalBatches <= 0) return
 
   for (const requirement of representative.requirements) {
@@ -107,28 +90,34 @@ function requestItem(
 
     const choiceOptions = choiceOptionsFor(requirement)
     if (choiceOptions.length > 1) {
-      const choice = ensureChoice(
+      const alternatives = ensureIngredientAlternatives(
         context,
         item,
-        method,
+        recipe,
         requirement,
         choiceOptions
       )
-      choice.count += count
+      alternatives.count += count
       addEdge(context, {
-        from: method.instanceId,
-        kind: 'context',
+        from: recipe.instanceId,
+        kind: 'alternative',
         count,
         role: requirement.role,
         detail: requirement.label,
         status: representative.state
-      }, choice.instanceId, false)
+      }, alternatives.instanceId, false)
+
+      // A tag-like requirement already exposes every valid material inside the
+      // alternatives group. Its synthetic combined target ("oak or spruce or
+      // ...") is not a real item and only adds a misleading extra branch.
+      if (choiceOptions.every(option => option.selected)) continue
+
       requestItem(
         context,
         requirement.node.target.key,
         count,
         {
-          from: choice.instanceId,
+          from: alternatives.instanceId,
           kind: 'selected-option',
           count,
           role: requirement.role,
@@ -136,7 +125,7 @@ function requestItem(
           status: requirement.node.state
         },
         nextAncestry,
-        [...choice.path, itemInstanceId(requirement.node.target.key)]
+        [...alternatives.path, itemInstanceId(requirement.node.target.key)]
       )
       continue
     }
@@ -146,7 +135,7 @@ function requestItem(
       requirement.node.target.key,
       count,
       {
-        from: method.instanceId,
+        from: recipe.instanceId,
         kind: 'requirement',
         count,
         role: requirement.role,
@@ -154,7 +143,7 @@ function requestItem(
         status: requirement.node.state
       },
       nextAncestry,
-      [...method.path, itemInstanceId(requirement.node.target.key)]
+      [...recipe.path, itemInstanceId(requirement.node.target.key)]
     )
   }
 }

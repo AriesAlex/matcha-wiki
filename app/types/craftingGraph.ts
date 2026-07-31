@@ -7,22 +7,13 @@ import type {
 } from './crafting'
 import type { RecipeRequirementRole } from './wiki'
 
-export type CraftingGraphNodeKind = 'item' | 'method' | 'context'
+export type CraftingGraphNodeKind
+  = 'item' | 'recipe' | 'source' | 'alternatives'
 
-export type CraftingGraphMethodKind =
-  | 'recipe'
-  | 'obtain'
-  | 'unknown'
-  | 'cycle'
+export type CraftingGraphAlternativeKind = 'ingredient' | 'source'
 
-export type CraftingGraphContextKind = 'choice' | 'station' | 'source'
-
-export type CraftingGraphEdgeKind =
-  | 'method'
-  | 'requirement'
-  | 'selected-option'
-  | 'station'
-  | 'context'
+export type CraftingGraphEdgeKind
+  = 'recipe' | 'requirement' | 'alternative' | 'selected-option' | 'source'
 
 export interface CraftingGraphDemand {
   readonly required: number
@@ -49,63 +40,55 @@ export interface CraftingGraphItemNode extends CraftingGraphNodeBase {
   readonly target: CraftingTargetView
   readonly demand: CraftingGraphDemand
   readonly occurrences: number
-  readonly methodIds: readonly string[]
+  readonly recipeIds: readonly string[]
   readonly detailsPath?: string
 }
 
-export interface CraftingGraphMethodNode extends CraftingGraphNodeBase {
-  readonly kind: 'method'
-  readonly methodKind: CraftingGraphMethodKind
+export interface CraftingGraphRecipeNode extends CraftingGraphNodeBase {
+  readonly kind: 'recipe'
   readonly targetKey: string
-  readonly recipe?: CraftingRecipeView
+  readonly recipe: CraftingRecipeView
   readonly batches: number
   readonly resultCount: number
   readonly producedCount: number
+  readonly surplus: number
   readonly detailsPath?: string
 }
 
-export interface CraftingGraphChoiceOption {
+export interface CraftingGraphAlternativeOption {
   readonly instanceId: string
   readonly key: string
-  readonly target: CraftingTargetView
-  readonly selected: boolean
+  readonly title: string
   readonly detail: string
+  readonly icon?: string
+  readonly path?: string
+  readonly sourceKind?: CraftingSourceView['kind']
+  readonly selected: boolean
+  readonly targetKey?: string
 }
 
-export interface CraftingGraphChoiceNode extends CraftingGraphNodeBase {
-  readonly kind: 'context'
-  readonly contextKind: 'choice'
-  readonly requirementId: string
-  readonly role: RecipeRequirementRole
-  readonly count: number
-  readonly selectedOptionKey: string
-  readonly options: readonly CraftingGraphChoiceOption[]
-}
-
-export interface CraftingGraphStationNode extends CraftingGraphNodeBase {
-  readonly kind: 'context'
-  readonly contextKind: 'station'
-  readonly resourceId: string
-  readonly target: CraftingTargetView
-  readonly itemNodeId: string
+export interface CraftingGraphAlternativesNode extends CraftingGraphNodeBase {
+  readonly kind: 'alternatives'
+  readonly alternativeKind: CraftingGraphAlternativeKind
+  readonly ownerTargetKey: string
+  readonly requirementId?: string
+  readonly role?: RecipeRequirementRole
+  readonly count?: number
+  readonly selectedOptionKey?: string
+  readonly options: readonly CraftingGraphAlternativeOption[]
 }
 
 export interface CraftingGraphSourceNode extends CraftingGraphNodeBase {
-  readonly kind: 'context'
-  readonly contextKind: 'source'
+  readonly kind: 'source'
   readonly source: CraftingSourceView
   readonly targetKey: string
 }
 
-export type CraftingGraphContextNode =
-  | CraftingGraphChoiceNode
-  | CraftingGraphStationNode
+export type CraftingGraphNode
+  = CraftingGraphItemNode
+  | CraftingGraphRecipeNode
+  | CraftingGraphAlternativesNode
   | CraftingGraphSourceNode
-
-export type CraftingGraphNode =
-  | CraftingGraphItemNode
-  | CraftingGraphMethodNode
-  | CraftingGraphContextNode
 
 export interface CraftingGraphEdge {
   readonly id: string
@@ -133,11 +116,6 @@ export interface CraftingGraphNodeSize {
 export interface CraftingGraphNodeView {
   readonly instanceId: string
   readonly node: CraftingGraphNode
-  readonly planNode: CraftingPlanNode
-  readonly kind: CraftingGraphNodeKind
-  readonly path: readonly string[]
-  readonly detail: string
-  readonly status: CraftingPlanState
   readonly x: number
   readonly y: number
   readonly width: number

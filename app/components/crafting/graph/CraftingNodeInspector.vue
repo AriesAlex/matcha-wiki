@@ -2,9 +2,14 @@
   <Transition name="inspector">
     <aside
       v-if="open && graphNode"
+      id="crafting-node-inspector"
+      ref="inspector"
       class="inspector"
-      role="region"
+      :role="mobileOpen ? 'dialog' : 'region'"
+      :aria-modal="mobileOpen ? 'true' : undefined"
       :aria-label="`Детали: ${plainTitle}`"
+      data-crafting-wheel-pass-through
+      tabindex="-1"
     >
       <header>
         <div class="heading">
@@ -26,10 +31,11 @@
           </span>
           <div>
             <p>{{ kindLabel }}</p>
-            <h3><MinecraftText :text="displayTitle" /></h3>
+            <h3><MinecraftText :text="graphNode.title" /></h3>
           </div>
         </div>
         <button
+          ref="closeButton"
           type="button"
           aria-label="Закрыть детали"
           title="Закрыть детали"
@@ -39,26 +45,22 @@
         </button>
       </header>
 
-      <p class="detail">{{ graphNode.detail }}</p>
+      <p v-if="detailText" class="detail">{{ detailText }}</p>
 
       <CraftingInspectorItem
         v-if="graphNode.kind === 'item'"
         :node="graphNode"
         :complete="complete"
-        :mode="mode"
-        :selected-recipe-id="selectedRecipeId"
-        @toggle-subtree="emit('toggle-subtree', $event)"
         @select-mode="emit('select-mode', $event)"
         @select-recipe="emit('select-recipe', $event)"
       />
-      <CraftingInspectorMethod
-        v-else-if="graphNode.kind === 'method'"
+      <CraftingInspectorRecipe
+        v-else-if="graphNode.kind === 'recipe'"
         :node="graphNode"
-        :selected-recipe-id="selectedRecipeId"
         @select-recipe="emit('select-recipe', $event)"
       />
-      <CraftingInspectorContext
-        v-else
+      <CraftingInspectorAlternatives
+        v-else-if="graphNode.kind === 'alternatives'"
         :node="graphNode"
         @select-option="emit('select-option', $event)"
       />
@@ -81,20 +83,18 @@ import {
   PhArrowsSplit,
   PhHammer,
   PhMapPin,
+  PhPawPrint,
   PhQuestion,
-  PhWarning,
-  PhWrench,
+  PhStorefront,
   PhX
 } from '@phosphor-icons/vue'
+import { useMediaQuery } from '@vueuse/core'
 import type { Component } from 'vue'
-import CraftingInspectorContext from './CraftingInspectorContext.vue'
+import CraftingInspectorAlternatives from './CraftingInspectorAlternatives.vue'
 import CraftingInspectorItem from './CraftingInspectorItem.vue'
-import CraftingInspectorMethod from './CraftingInspectorMethod.vue'
+import CraftingInspectorRecipe from './CraftingInspectorRecipe.vue'
 import type { CraftingMode } from '../../../types/crafting'
-import type {
-  CraftingGraphMethodNode,
-  CraftingGraphNodeView
-} from '../../../types/craftingGraph'
+import type { CraftingGraphNodeView } from '../../../types/craftingGraph'
 
 interface ModeSelection {
   targetKey: string
@@ -115,106 +115,104 @@ const props = withDefaults(defineProps<{
   node?: CraftingGraphNodeView
   open?: boolean
   complete?: boolean
-  mode?: CraftingMode
-  selectedRecipeId?: string
 }>(), {
   node: undefined,
   open: true,
-  complete: false,
-  mode: undefined,
-  selectedRecipeId: ''
+  complete: false
 })
 
 const emit = defineEmits<{
   close: []
-  'toggle-subtree': [instanceId: string]
   'select-mode': [payload: ModeSelection]
   'select-recipe': [payload: RecipeSelection]
   'select-option': [payload: OptionSelection]
 }>()
 
 const route = useRoute()
+const inspector = useTemplateRef<HTMLElement>('inspector')
+const closeButton = useTemplateRef<HTMLButtonElement>('closeButton')
+const isMobile = useMediaQuery('(max-width: 720px)')
 const graphNode = computed(() => props.node?.node)
-const plainTitle = computed(() => (
-  graphNode.value
-    ? stripMinecraftFormatting(displayTitle.value)
-    : ''
+const mobileOpen = computed(() => (
+  Boolean(props.open && graphNode.value && isMobile.value)
 ))
-const displayTitle = computed(() => {
+useModalFocusTrap(inspector, mobileOpen, closeButton, {
+  inertOutside: true
+})
+const plainTitle = computed(() => (
+  graphNode.value ? stripMinecraftFormatting(graphNode.value.title) : ''
+))
+const detailText = computed(() => {
   const current = graphNode.value
-  if (
-    current?.kind === 'method'
-    && current.methodKind === 'obtain'
-  ) return 'Получить в мире'
-  return current?.title ?? ''
+  if (!current || current.kind === 'alternatives') return ''
+  if (current.kind === 'item' && props.complete) {
+    return 'Этот предмет уже отмечен как готовый; его ветка больше не нужна.'
+  }
+  return current.kind === 'source' ? current.source.detail : current.detail
 })
 const iconUrl = computed(() => {
   const current = graphNode.value
-  if (!current) return ''
-  if (current.kind === 'item' && current.target.icon) {
-    return useAssetPath(current.target.icon)
-  }
-  if (
-    current.kind === 'context'
-    && current.contextKind === 'station'
-    && current.target.icon
-  ) {
-    return useAssetPath(current.target.icon)
-  }
-  return ''
+  return current?.kind === 'item' && current.target.icon
+    ? useAssetPath(current.target.icon)
+    : ''
 })
 const kindLabel = computed(() => {
   const current = graphNode.value
   if (!current) return ''
   if (current.kind === 'item') return 'Предмет'
-  if (current.kind === 'method') {
-    return current.methodKind === 'recipe'
-      ? 'Способ изготовления'
-      : 'Способ получения'
+  if (current.kind === 'recipe') return 'Как изготовить'
+  if (current.kind === 'alternatives') {
+    return current.alternativeKind === 'source'
+      ? 'Где получить'
+      : 'Выбор материала'
   }
-  if (current.contextKind === 'choice') return 'Выбор материала'
-  return current.contextKind === 'source' ? 'Источник' : 'Рабочее место'
+  return sourceKindLabel(current.source.kind)
 })
 const kindIcon = computed<Component>(() => {
   const current = graphNode.value
   if (!current || current.kind === 'item') return PhQuestion
-  if (current.kind === 'context') {
-    if (current.contextKind === 'choice') return PhArrowsSplit
-    return current.contextKind === 'source' ? PhMapPin : PhWrench
+  if (current.kind === 'recipe') return PhHammer
+  if (current.kind === 'alternatives') {
+    return current.alternativeKind === 'source' ? PhMapPin : PhArrowsSplit
   }
-  return methodIcon(current)
+  return {
+    location: PhMapPin,
+    mob: PhPawPrint,
+    trader: PhStorefront
+  }[current.source.kind]
 })
 const detailsPath = computed(() => {
   const current = graphNode.value
   if (!current) return ''
-  const path = current.kind === 'item' || current.kind === 'method'
+  const path = current.kind === 'item' || current.kind === 'recipe'
     ? current.detailsPath
-    : current.contextKind === 'source'
+    : current.kind === 'source'
       ? current.source.path
-      : current.contextKind === 'station' && current.target.item
-        ? `/items/${current.target.item.slug}`
-        : undefined
+      : undefined
 
   return path && normalizeWikiPath(route.path) !== normalizeWikiPath(path)
     ? path
     : ''
 })
-const detailsLabel = computed(() => (
-  graphNode.value?.kind === 'method'
-    ? 'Показать схему рецепта'
-    : graphNode.value?.kind === 'context'
-      && graphNode.value.contextKind === 'source'
-      ? 'Открыть источник'
-      : 'Открыть страницу предмета'
-))
-
-function methodIcon(node: CraftingGraphMethodNode): Component {
+const detailsLabel = computed(() => {
+  const current = graphNode.value
+  if (!current) return ''
+  if (current.kind === 'item') return 'Открыть страницу предмета'
+  if (current.kind === 'recipe') return 'Открыть полный рецепт'
+  if (current.kind !== 'source') return ''
   return {
-    recipe: PhHammer,
-    obtain: PhMapPin,
-    unknown: PhQuestion,
-    cycle: PhWarning
-  }[node.methodKind]
+    location: 'Подробнее об этом месте',
+    mob: 'Подробнее об этом существе',
+    trader: 'Подробнее об этом торговце'
+  }[current.source.kind]
+})
+
+function sourceKindLabel(kind: 'location' | 'mob' | 'trader'): string {
+  return {
+    location: 'Где искать',
+    mob: 'С кого выпадает',
+    trader: 'У кого обменять'
+  }[kind]
 }
 </script>
 
@@ -224,7 +222,7 @@ function methodIcon(node: CraftingGraphMethodNode): Component {
   top: 12px;
   right: 12px;
   bottom: 12px;
-  z-index: 5;
+  z-index: 8;
   width: min(350px, calc(100% - 24px));
   overflow: auto;
   padding: 18px;
@@ -233,6 +231,7 @@ function methodIcon(node: CraftingGraphMethodNode): Component {
   border: 1px solid var(--edge);
   box-shadow: 0 14px 38px var(--shadow);
   overscroll-behavior: contain;
+  touch-action: pan-y;
 
   > header {
     display: flex;
@@ -299,6 +298,7 @@ function methodIcon(node: CraftingGraphMethodNode): Component {
     margin: 16px 0 0;
     color: var(--muted);
     font-size: 13px;
+    line-height: 1.5;
   }
 
   .open {
@@ -337,7 +337,7 @@ function methodIcon(node: CraftingGraphMethodNode): Component {
   transform: translateX(8px);
 }
 
-@media (max-width: 620px) {
+@media (max-width: 720px) {
   .inspector {
     position: fixed;
     inset: auto 0 0;
@@ -351,6 +351,7 @@ function methodIcon(node: CraftingGraphMethodNode): Component {
     border-right: 0;
     border-bottom: 0;
     border-left: 0;
+    z-index: 130;
   }
 
   .inspector-enter-from,

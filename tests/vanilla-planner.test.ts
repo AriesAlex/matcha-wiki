@@ -11,7 +11,8 @@ import {
   createCraftingIndex,
   targetForAcquisitionTarget,
   targetForItem,
-  targetForResource
+  targetForResource,
+  targetsForIngredient
 } from '../app/utils/craftingIndex'
 import { buildCraftingGraph } from '../app/utils/craftingGraphModel'
 import { buildCraftingPlan } from '../app/utils/craftingPlan'
@@ -114,6 +115,38 @@ describe('vanilla planner supplement', () => {
     ))).toBe(true)
   })
 
+  it('preserves shaped grids for vanilla and pack recipes', () => {
+    const craftingTable = supplement.recipesByResult['minecraft:crafting_table']
+      .find(recipe => recipe.id === 'minecraft:crafting_table')
+
+    expect(craftingTable?.pattern).toEqual(['##', '##'])
+    expect(craftingTable?.key?.['#']).toMatchObject({
+      tag: 'minecraft:planks',
+      label: 'Доски любого вида'
+    })
+    expect(craftingTable?.ingredients).toEqual([craftingTable?.key?.['#']])
+
+    const bambooBlock = supplement.recipesByResult['minecraft:bamboo_block']
+      .find(recipe => recipe.id === 'minecraft:bamboo_block')
+    expect(bambooBlock?.pattern).toBeUndefined()
+    expect(bambooBlock?.ingredients).toHaveLength(9)
+    expect(bambooBlock?.ingredients.every(ingredient => (
+      ingredient.ids[0] === 'minecraft:bamboo'
+    ))).toBe(true)
+
+    const sourceNazar = catalog.recipes.find(recipe => recipe.id === 'crafting:nazar')
+    const indexedNazar = [...createCraftingIndex(catalog, supplement).recipesByTarget.values()]
+      .flat()
+      .find(recipe => recipe.id === 'crafting:nazar')
+
+    expect(sourceNazar?.pattern).toEqual(['EXX', 'XWX', 'XXE'])
+    expect(indexedNazar).toMatchObject({
+      pattern: sourceNazar?.pattern,
+      key: sourceNazar?.key,
+      ingredients: sourceNazar?.ingredients
+    })
+  })
+
   it('uses active raw-iron blasting and never resurrects filtered smelting', () => {
     const ironRecipes = supplement.recipesByResult['minecraft:iron_ingot']
       .map(recipe => recipe.id)
@@ -147,7 +180,6 @@ describe('vanilla planner supplement', () => {
     )
     const iron = findNode(plan, 'minecraft:iron_ingot')
     const rawIron = findNode(plan, 'minecraft:raw_iron')
-    const blastFurnace = findNode(plan, 'minecraft:blast_furnace')
 
     expect(iron?.recipe).toMatchObject({
       id: 'minecraft:iron_ingot_from_blasting_raw_iron',
@@ -156,11 +188,17 @@ describe('vanilla planner supplement', () => {
     })
     expect(iron?.recipe?.detailsPath).toBeUndefined()
     expect(rawIron?.state).toBe('obtain')
-    expect(blastFurnace?.recipe).toMatchObject({
-      id: 'crafting:blast_furnace',
-      origin: 'pack',
-      detailsPath: '/recipes/crafting/blast_furnace'
-    })
+
+    const graph = buildCraftingGraph(plan)
+    expect(graph.nodes.some(node => (
+      node.kind === 'recipe'
+      && node.targetKey === iron?.target.key
+      && node.title === 'Плавильная печь'
+    ))).toBe(true)
+    expect(graph.nodes.some(node => (
+      node.kind === 'item'
+      && node.target.resourceId === 'minecraft:blast_furnace'
+    ))).toBe(false)
   })
 
   it('localizes and illustrates vanilla stations in crafting paths', () => {
@@ -319,6 +357,7 @@ describe('vanilla planner supplement', () => {
     )
     const itemTarget = targetForItem(item, catalog)
     expect(resourceTarget.key).toBe(itemTarget.key)
+    expect(itemTarget.detailsPath).toBe(`/items/${item.slug}`)
 
     const plan = buildCraftingPlan(
       createCraftingIndex(catalog, supplement),
@@ -336,6 +375,15 @@ describe('vanilla planner supplement', () => {
     expect(plan.recipe?.id).toBe(
       'stonecutting:waxed_copper_chain_from_stonecutting_waxed_copper_block'
     )
+  })
+
+  it('does not link plain carriers to recipes for component-defined items', () => {
+    expect(targetForResource(catalog, 'minecraft:potion').detailsPath)
+      .toBeUndefined()
+    expect(targetForResource(catalog, 'minecraft:pumpkin_pie').detailsPath)
+      .toBeUndefined()
+    expect(targetForResource(catalog, 'minecraft:music_disc_13').detailsPath)
+      .toBe('/recipes/crafting/music_disc_13')
   })
 
   it('keeps customized vanilla gear and useful block transformations craftable', () => {
@@ -419,31 +467,107 @@ describe('vanilla planner supplement', () => {
     expect(fishermanOffers.length).toBeGreaterThan(1)
 
     const graph = buildCraftingGraph(plan)
-    const emeraldSources = graph.nodes.filter(node => (
-      node.kind === 'context'
-      && node.contextKind === 'source'
-      && node.targetKey === emerald.target.key
+    const sourceAlternatives = graph.nodes.find(node => (
+      node.kind === 'alternatives'
+      && node.alternativeKind === 'source'
+      && node.ownerTargetKey === emerald.target.key
     ))
     const sourcePages = new Set((emerald.target.sources ?? []).map(source => (
       `${source.kind}:${source.path.split('#')[0]}`
     )))
-    const fisherman = emeraldSources.filter(node => (
-      node.source.path === '/traders/fisherman'
+    expect(sourceAlternatives).toBeDefined()
+    if (!sourceAlternatives || sourceAlternatives.kind !== 'alternatives') return
+
+    const fisherman = sourceAlternatives.options.filter(option => (
+      option.path === '/traders/fisherman'
     ))
 
-    expect(emeraldSources).toHaveLength(sourcePages.size)
+    expect(sourceAlternatives.options).toHaveLength(sourcePages.size)
     expect(fisherman).toHaveLength(1)
-    expect(fisherman[0]?.source).toMatchObject({
+    expect(fisherman[0]).toMatchObject({
       title: 'Рыбак',
       path: '/traders/fisherman',
-      detail: expect.stringContaining(`: ${fishermanOffers.length}.`)
+      detail: `${fishermanOffers.length} предложений для обмена.`
     })
   })
 
   it('collapses indistinguishable alternative resources into one planner step', () => {
+    const discRecipe = catalog.recipes.find(recipe => (
+      recipe.id === 'crafting:disc_fragment_from_disc'
+    ))
+    const discIngredient = discRecipe?.requirements[0]?.ingredient
+    expect(discIngredient).toBeDefined()
+    if (!discIngredient) return
+
+    const catalogWithDiscSource: WikiCatalog = {
+      ...catalog,
+      acquisition: {
+        ...catalog.acquisition,
+        targets: [...catalog.acquisition.targets, {
+          id: 'resource:music-disc-lava-chicken',
+          slug: 'music-disc-lava-chicken',
+          title: 'Пластинка «Lava Chicken»',
+          stack: {
+            carrier: 'minecraft:music_disc_lava_chicken',
+            count: 1,
+            name: 'Пластинка'
+          }
+        }],
+        methods: [...catalog.acquisition.methods, {
+          id: 'zombie-music-disc-lava-chicken',
+          sourceId: 'test-zombie',
+          targetId: 'resource:music-disc-lava-chicken',
+          kind: 'mob',
+          context: 'Добыча с моба',
+          action: 'Победите зомби.',
+          quantity: { min: 1, max: 1 },
+          notes: [],
+          sourcePath: 'test'
+        }],
+        mobs: [...catalog.acquisition.mobs, {
+          id: 'test-zombie',
+          slug: 'zombie',
+          name: 'Зомби',
+          summary: 'Враждебный моб.',
+          where: 'На поверхности ночью.',
+          action: 'Победите зомби.',
+          aliases: [],
+          methodIds: ['zombie-music-disc-lava-chicken']
+        }]
+      }
+    }
+    const [groupedDisc] = targetsForIngredient(
+      catalogWithDiscSource,
+      discIngredient
+    )
+    const discTargets = groupedDisc?.alternativeTargets
+    const disc13 = discTargets?.find(target => (
+      target.resourceId === 'minecraft:music_disc_13'
+    ))
+    const lavaChicken = discTargets?.find(target => (
+      target.resourceId === 'minecraft:music_disc_lava_chicken'
+    ))
+
+    expect(discTargets).toHaveLength(20)
+    expect(disc13).toMatchObject({
+      title: 'Пластинка «13»',
+      icon: '/generated/textures/item/music_disc_13.png',
+      detailsPath: '/recipes/crafting/music_disc_13'
+    })
+    expect(lavaChicken).toMatchObject({
+      title: 'Пластинка «Lava Chicken»',
+      icon: '/generated/textures/item/music_disc_lava_chicken.png',
+      obtainHint: 'Победите зомби.',
+      sources: [{
+        title: 'Зомби',
+        detail: 'Победите зомби.',
+        path: '/mobs/zombie'
+      }]
+    })
+
     const plan = buildCraftingPlan(
-      createCraftingIndex(catalog, supplement),
-      targetForResource(catalog, 'minecraft:disc_fragment_5'),
+      createCraftingIndex(catalogWithDiscSource, supplement),
+      targetForResource(catalogWithDiscSource, 'minecraft:disc_fragment_5'),
       3,
       {
         modeByTarget: {},
@@ -461,6 +585,27 @@ describe('vanilla planner supplement', () => {
     expect(disc?.node.target.obtainHint).toBe(
       'Подойдёт любой из 20 вариантов. Выбирайте тот, который уже есть или проще получить.'
     )
+
+    const alternatives = buildCraftingGraph(plan).nodes.find(node => (
+      node.kind === 'alternatives'
+      && node.alternativeKind === 'ingredient'
+    ))
+    expect(alternatives?.options.some(option => (
+      option.title.includes('Music Disc')
+    ))).toBe(false)
+    expect(alternatives?.options.find(option => (
+      option.key === 'resource:minecraft:music_disc_13'
+    ))).toMatchObject({
+      title: 'Пластинка «13»',
+      icon: '/generated/textures/item/music_disc_13.png',
+      path: '/recipes/crafting/music_disc_13'
+    })
+    expect(alternatives?.options.find(option => (
+      option.key === 'resource:minecraft:music_disc_lava_chicken'
+    ))).toMatchObject({
+      title: 'Пластинка «Lava Chicken»',
+      detail: 'Победите зомби.'
+    })
   })
 })
 
@@ -469,10 +614,6 @@ function findNode(
   resourceId: string
 ): CraftingPlanNode | undefined {
   if (node.target.resourceId === resourceId) return node
-  if (node.station) {
-    const station = findNode(node.station, resourceId)
-    if (station) return station
-  }
   for (const requirement of node.requirements) {
     const found = findNode(requirement.node, resourceId)
     if (found) return found
@@ -488,19 +629,15 @@ function unexplainedTerminals(node: CraftingPlanNode): string[] {
   )
     ? [node.target.resourceId]
     : []
-  const station = node.station
-    ? unexplainedTerminals(node.station)
-    : []
   const requirements = node.requirements.flatMap(requirement => (
     unexplainedTerminals(requirement.node)
   ))
 
-  return [...current, ...station, ...requirements]
+  return [...current, ...requirements]
 }
 
 function containsCycle(node: CraftingPlanNode): boolean {
   return node.state === 'cycle'
-    || Boolean(node.station && containsCycle(node.station))
     || node.requirements.some(requirement => containsCycle(requirement.node))
 }
 

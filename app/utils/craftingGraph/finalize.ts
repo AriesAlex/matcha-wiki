@@ -3,15 +3,14 @@ import type {
   CraftingPlanState
 } from '../../types/crafting'
 import type {
-  CraftingGraphChoiceNode,
+  CraftingGraphAlternativesNode,
   CraftingGraphDemand,
   CraftingGraphEdge,
   CraftingGraphItemNode,
-  CraftingGraphMethodNode,
   CraftingGraphModel,
   CraftingGraphNode,
-  CraftingGraphSourceNode,
-  CraftingGraphStationNode
+  CraftingGraphRecipeNode,
+  CraftingGraphSourceNode
 } from '../../types/craftingGraph'
 import { stripMinecraftFormatting } from '../format'
 import type {
@@ -25,10 +24,8 @@ import {
 } from './internal'
 import {
   itemDetail,
-  methodDetail,
-  methodTitle
+  recipeDetail
 } from './presentation'
-import { fallbackPlanNode } from './projection'
 
 export function finalizeCraftingGraph(
   context: BuildContext,
@@ -36,7 +33,7 @@ export function finalizeCraftingGraph(
 ): CraftingGraphModel {
   const planSnapshots = new Map<string, CraftingPlanNode>()
   const itemNodes = new Map<string, CraftingGraphItemNode>()
-  const methodIdsByTarget = groupMethodIds(context)
+  const recipeIdsByTarget = groupRecipeIds(context)
 
   for (const item of context.items.values()) {
     const demand = itemDemand(item, context)
@@ -51,123 +48,100 @@ export function finalizeCraftingGraph(
       planNode,
       target,
       title: stripMinecraftFormatting(target.title),
-      detail: itemDetail(demand, status),
+      detail: itemDetail(demand, status, target),
       status,
       path: item.path,
       cyclic: item.cyclic,
       demand,
       occurrences: item.projection.occurrences.length,
-      methodIds: Object.freeze(
-        methodIdsByTarget.get(item.projection.targetKey) ?? []
+      recipeIds: Object.freeze(
+        recipeIdsByTarget.get(item.projection.targetKey) ?? []
       ),
-      detailsPath: target.item
-        ? `/items/${target.item.slug}`
-        : undefined
+      detailsPath: target.detailsPath
     }))
   }
 
-  const methodNodes = [...context.methods.values()].map((method) => {
-    const planNode = planSnapshots.get(method.ownerTargetKey)
-      ?? method.planNode
-    const recipe = method.planNode.recipe
-    const resultCount = recipe
-      ? Math.max(1, normalizeCount(recipe.resultCount))
-      : 1
-    const producedCount = method.batches * resultCount
-    const status = method.methodKind === 'cycle'
-      ? 'cycle'
-      : planNode.state
+  const recipeNodes = [...context.recipes.values()].map((entry) => {
+    const planNode = planSnapshots.get(entry.ownerTargetKey)
+      ?? entry.planNode
+    const recipe = entry.planNode.recipe
+    if (!recipe) {
+      throw new Error(`Recipe graph node lost its recipe: ${entry.instanceId}`)
+    }
 
-    return Object.freeze<CraftingGraphMethodNode>({
-      instanceId: method.instanceId,
-      kind: 'method',
-      methodKind: method.methodKind,
+    const resultCount = Math.max(1, normalizeCount(recipe.resultCount))
+    const producedCount = entry.batches * resultCount
+    const surplus = itemNodes.get(itemInstanceId(entry.ownerTargetKey))
+      ?.demand.surplus ?? 0
+
+    return Object.freeze<CraftingGraphRecipeNode>({
+      instanceId: entry.instanceId,
+      kind: 'recipe',
       planNode,
-      targetKey: method.ownerTargetKey,
+      targetKey: entry.ownerTargetKey,
       recipe,
-      title: methodTitle(method.methodKind, method.planNode),
-      detail: methodDetail(method.methodKind, {
-        ...planNode,
-        batches: method.batches
-      }),
-      status,
-      path: method.path,
-      cyclic: status === 'cycle',
-      batches: method.batches,
+      title: stripMinecraftFormatting(recipe.station),
+      detail: recipeDetail(entry.batches, resultCount, surplus),
+      status: planNode.state,
+      path: entry.path,
+      cyclic: false,
+      batches: entry.batches,
       resultCount,
       producedCount,
-      detailsPath: recipe?.detailsPath
+      surplus,
+      detailsPath: recipe.detailsPath
     })
   })
 
-  const choiceNodes = [...context.choices.values()].map((choice) => {
-    const planNode = planSnapshots.get(choice.ownerTargetKey)
-      ?? choice.requirement.node
-    const selected = choice.options.filter(option => option.selected)
-    const detail = selected.length === choice.options.length
-      ? `Подойдёт любой из ${choice.options.length} вариантов`
-      : `Выбрано: ${selected.map(option => option.target.title).join(', ')}`
+  const alternativesNodes = [...context.alternatives.values()].map((entry) => {
+    const planNode = planSnapshots.get(entry.ownerTargetKey)
+      ?? entry.planNode
+    const ingredient = entry.alternativeKind === 'ingredient'
+    const optionCount = entry.options.length
 
-    return Object.freeze<CraftingGraphChoiceNode>({
-      instanceId: choice.instanceId,
-      kind: 'context',
-      contextKind: 'choice',
+    return Object.freeze<CraftingGraphAlternativesNode>({
+      instanceId: entry.instanceId,
+      kind: 'alternatives',
+      alternativeKind: entry.alternativeKind,
+      ownerTargetKey: entry.ownerTargetKey,
       planNode,
-      title: stripMinecraftFormatting(choice.requirement.label),
-      detail,
+      title: ingredient ? 'Выберите материал' : 'Где взять',
+      detail: ingredient
+        ? `Подойдёт один из ${optionCount} вариантов.`
+        : `Выберите один из ${optionCount} способов.`,
       status: planNode.state,
-      path: choice.path,
-      cyclic: choice.cyclic,
-      requirementId: choice.requirement.id,
-      role: choice.requirement.role,
-      count: choice.count,
-      selectedOptionKey: choice.requirement.selectedOptionKey,
-      options: choice.options
+      path: entry.path,
+      cyclic: entry.cyclic,
+      requirementId: entry.requirement?.id,
+      role: entry.requirement?.role,
+      count: ingredient ? normalizeCount(entry.count) : undefined,
+      selectedOptionKey: entry.requirement?.selectedOptionKey,
+      options: entry.options
     })
   })
 
-  const stationNodes = [...context.stations.values()].map((station) => {
-    const planNode = planSnapshots.get(station.targetKey)
-      ?? planSnapshots.get(station.ownerTargetKey)
-      ?? fallbackPlanNode(station.target)
+  const sourceNodes = [...context.sources.values()].map((entry) => {
+    const planNode = planSnapshots.get(entry.ownerTargetKey)
+      ?? entry.planNode
 
-    return Object.freeze<CraftingGraphStationNode>({
-      instanceId: station.instanceId,
-      kind: 'context',
-      contextKind: 'station',
+    return Object.freeze<CraftingGraphSourceNode>({
+      instanceId: entry.instanceId,
+      kind: 'source',
       planNode,
-      title: stripMinecraftFormatting(station.target.title),
-      detail: 'Рабочее место для этого способа',
+      title: entry.source.title,
+      detail: entry.source.detail,
       status: planNode.state,
-      path: station.path,
-      cyclic: station.cyclic,
-      resourceId: station.resourceId,
-      target: station.target,
-      itemNodeId: itemInstanceId(station.targetKey)
-    })
-  })
-
-  const sourceNodes = [...context.sources.values()].map(source => (
-    Object.freeze<CraftingGraphSourceNode>({
-      instanceId: source.instanceId,
-      kind: 'context',
-      contextKind: 'source',
-      planNode: source.planNode,
-      title: source.source.title,
-      detail: source.source.detail,
-      status: source.planNode.state,
-      path: source.path,
+      path: entry.path,
       cyclic: false,
-      source: source.source,
-      targetKey: source.ownerTargetKey
+      source: entry.source,
+      targetKey: entry.ownerTargetKey
     })
-  ))
+  })
 
   const nodes = sortNodes([
     ...itemNodes.values(),
-    ...methodNodes,
-    ...choiceNodes,
-    ...stationNodes,
+    ...recipeNodes,
+    ...alternativesNodes,
     ...sourceNodes
   ])
   const nodeById = new Map(nodes.map(node => [node.instanceId, node]))
@@ -195,12 +169,12 @@ export function finalizeCraftingGraph(
   })
 }
 
-function groupMethodIds(context: BuildContext): Map<string, string[]> {
+function groupRecipeIds(context: BuildContext): Map<string, string[]> {
   const grouped = new Map<string, string[]>()
-  for (const method of context.methods.values()) {
-    const ids = grouped.get(method.ownerTargetKey) ?? []
-    ids.push(method.instanceId)
-    grouped.set(method.ownerTargetKey, ids)
+  for (const recipe of context.recipes.values()) {
+    const ids = grouped.get(recipe.ownerTargetKey) ?? []
+    ids.push(recipe.instanceId)
+    grouped.set(recipe.ownerTargetKey, ids)
   }
   for (const ids of grouped.values()) ids.sort()
   return grouped
@@ -225,12 +199,12 @@ function itemDemand(
   const required = normalizeCount(item.required)
   const owned = Math.min(item.projection.ownedAvailable, required)
   const missing = required - owned
-  const method = item.methodId
-    ? context.methods.get(item.methodId)
+  const recipe = item.recipeId
+    ? context.recipes.get(item.recipeId)
     : undefined
-  const batches = method?.batches ?? 0
-  const resultCount = method?.planNode.recipe
-    ? Math.max(1, normalizeCount(method.planNode.recipe.resultCount))
+  const batches = recipe?.batches ?? 0
+  const resultCount = recipe?.planNode.recipe
+    ? Math.max(1, normalizeCount(recipe.planNode.recipe.resultCount))
     : 1
   const produced = batches * resultCount
 

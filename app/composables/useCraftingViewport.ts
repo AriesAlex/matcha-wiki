@@ -13,6 +13,7 @@ import { useCraftingViewportTransform } from './craftingViewport/useCraftingView
 import type {
   CraftingViewportActionOptions,
   CraftingViewportControls,
+  FocusCraftingViewportOptions,
   UseCraftingViewportOptions
 } from './craftingViewport/types'
 import type {
@@ -65,6 +66,15 @@ export function useCraftingViewport(
     return transformControls.fitMeasured(animate, markInteracted)
   }
 
+  function focusBounds(
+    bounds: CraftingViewportBounds,
+    actionOptions: FocusCraftingViewportOptions = {}
+  ): boolean {
+    if (!measurement.measure()) return false
+    transformControls.focusBounds(bounds, actionOptions)
+    return true
+  }
+
   useCraftingViewportPointerGestures({
     rootRef,
     gestureMode,
@@ -109,6 +119,7 @@ export function useCraftingViewport(
     transformStyle: transformControls.transformStyle,
     measure: measurement.measure,
     fit,
+    focusBounds,
     reset: transformControls.reset,
     setTransform: transformControls.setTransform,
     panBy: transformControls.panBy,

@@ -1,4 +1,5 @@
 import type {
+  IngredientView,
   ItemView,
   RecipeRequirementRole,
   RecipeRequirementView,
@@ -8,7 +9,13 @@ import type {
 export type CraftingMode = 'craft' | 'obtain'
 export type CraftingRecipeOrigin = 'pack' | 'vanilla'
 
-export interface CraftingRecipeView {
+export interface CraftingRecipeLayout {
+  pattern?: string[]
+  key?: Record<string, IngredientView>
+  ingredients: IngredientView[]
+}
+
+export interface CraftingRecipeView extends CraftingRecipeLayout {
   id: string
   origin: CraftingRecipeOrigin
   type: string
@@ -20,7 +27,7 @@ export interface CraftingRecipeView {
   detailsPath?: string
 }
 
-export interface CraftingSupplementRecipe {
+export interface CraftingSupplementRecipe extends CraftingRecipeLayout {
   id: string
   type: string
   station: string
@@ -53,9 +60,11 @@ export interface CraftingTargetView {
   title: string
   icon?: string
   item?: ItemView
+  detailsPath?: string
   vanillaName?: string
   obtainHint?: string
   sources?: readonly CraftingSourceView[]
+  alternativeTargets?: readonly CraftingTargetView[]
 }
 
 export interface CraftingIndex {
@@ -98,7 +107,6 @@ export interface CraftingPlanNode {
   recipe?: CraftingRecipeView
   batches: number
   resultCount: number
-  station?: CraftingPlanNode
   requirements: CraftingPlanRequirement[]
 }
 

@@ -2,73 +2,128 @@ import { describe, expect, it } from 'vitest'
 import type {
   CraftingGraphEdge,
   CraftingGraphItemNode,
-  CraftingGraphMethodNode,
-  CraftingGraphModel
+  CraftingGraphModel,
+  CraftingGraphRecipeNode
 } from '../app/types/craftingGraph'
 import type {
   CraftingPlanNode,
+  CraftingRecipeView,
   CraftingTargetView
 } from '../app/types/crafting'
-import { craftingSubtreeProgress } from '../app/utils/craftingGraphProgress'
+import {
+  craftingGraphActivity,
+  craftingItemProgress
+} from '../app/utils/craftingGraphProgress'
 
 describe('crafting graph progress', () => {
-  it('collects each item below the selected node once', () => {
+  it('dims only exclusive descendants while keeping a shared item active', () => {
     const graph = graphModel([
-      itemNode('root', 'item:warding-sword', 1),
-      methodNode('forge'),
-      itemNode('silver', 'resource:silver', 3),
-      itemNode('handle', 'resource:handle', 1)
+      itemNode('root', 'item:root', 1),
+      itemNode('complete', 'item:complete', 1),
+      itemNode('open', 'item:open', 1),
+      recipeNode('complete-recipe'),
+      recipeNode('open-recipe'),
+      itemNode('shared', 'item:shared', 1),
+      itemNode('exclusive', 'item:exclusive', 1)
     ], [
-      edge('root', 'forge'),
-      edge('forge', 'silver'),
-      edge('forge', 'handle'),
-      edge('handle', 'silver')
+      edge('root', 'complete'),
+      edge('root', 'open'),
+      edge('complete', 'complete-recipe'),
+      edge('complete-recipe', 'shared'),
+      edge('complete-recipe', 'exclusive'),
+      edge('open', 'open-recipe'),
+      edge('open-recipe', 'shared')
     ])
 
-    expect(craftingSubtreeProgress(graph, 'root', {})).toEqual({
-      targetKeys: [
-        'item:warding-sword',
-        'resource:handle',
-        'resource:silver'
+    expect(craftingGraphActivity(graph, new Set(['complete']))).toEqual({
+      activeNodeIds: [
+        'root',
+        'complete',
+        'open',
+        'open-recipe',
+        'shared'
       ],
-      ownedByTarget: {
-        'item:warding-sword': 1,
-        'resource:handle': 1,
-        'resource:silver': 3
-      },
-      complete: false
+      inactiveNodeIds: ['complete-recipe', 'exclusive'],
+      activeEdgeIds: [
+        'root-complete',
+        'root-open',
+        'open-open-recipe',
+        'open-recipe-shared'
+      ],
+      inactiveEdgeIds: [
+        'complete-complete-recipe',
+        'complete-recipe-shared',
+        'complete-recipe-exclusive'
+      ]
     })
   })
 
-  it('stops on cycles and reports a completed subtree', () => {
+  it('keeps cycles finite and treats broken references as inactive', () => {
     const graph = graphModel([
-      itemNode('root', 'item:a', 1),
-      methodNode('method'),
-      itemNode('child', 'item:b', 2)
+      itemNode('root', 'item:root', 1),
+      recipeNode('recipe'),
+      itemNode('detached', 'item:detached', 1)
     ], [
-      edge('root', 'method'),
-      edge('method', 'child'),
-      edge('child', 'root')
+      edge('root', 'recipe'),
+      edge('recipe', 'root'),
+      edge('recipe', 'missing'),
+      edge('missing', 'detached')
     ])
 
-    expect(craftingSubtreeProgress(graph, 'root', {
-      'item:a': 1,
-      'item:b': 2
-    }).complete).toBe(true)
+    expect(craftingGraphActivity(graph, new Set(['recipe', 'missing'])))
+      .toEqual({
+        activeNodeIds: ['root', 'recipe'],
+        inactiveNodeIds: ['detached'],
+        activeEdgeIds: ['root-recipe', 'recipe-root'],
+        inactiveEdgeIds: ['recipe-missing', 'missing-detached']
+      })
   })
 
-  it('returns an empty incomplete selection for an unknown node', () => {
-    expect(craftingSubtreeProgress(graphModel([], []), 'missing', {}))
-      .toEqual({
-        targetKeys: [],
-        ownedByTarget: {},
-        complete: false
-      })
+  it('returns a fully inactive graph when the root is missing', () => {
+    const graph = {
+      ...graphModel([
+        itemNode('item', 'item:detached', 1)
+      ], []),
+      rootId: 'missing'
+    }
+
+    expect(craftingGraphActivity(graph, new Set())).toEqual({
+      activeNodeIds: [],
+      inactiveNodeIds: ['item'],
+      activeEdgeIds: [],
+      inactiveEdgeIds: []
+    })
+  })
+
+  it('stores only the checked item and leaves shared requirements alone', () => {
+    const graph = graphModel([
+      itemNode('sword', 'item:warding-sword', 1),
+      recipeNode('forge'),
+      itemNode('iron', 'resource:iron', 8)
+    ], [
+      edge('sword', 'forge'),
+      edge('forge', 'iron')
+    ])
+
+    expect(craftingItemProgress(graph, 'sword')).toEqual({
+      targetKey: 'item:warding-sword',
+      required: 1
+    })
+  })
+
+  it('ignores recipes and unknown node IDs', () => {
+    const graph = graphModel([
+      itemNode('root', 'item:root', 1),
+      recipeNode('recipe')
+    ], [edge('root', 'recipe')])
+
+    expect(craftingItemProgress(graph, 'recipe')).toBeUndefined()
+    expect(craftingItemProgress(graph, 'missing')).toBeUndefined()
   })
 })
 
 function graphModel(
-  nodes: Array<CraftingGraphItemNode | CraftingGraphMethodNode>,
+  nodes: Array<CraftingGraphItemNode | CraftingGraphRecipeNode>,
   edges: CraftingGraphEdge[]
 ): CraftingGraphModel {
   return {
@@ -103,26 +158,28 @@ function itemNode(
       surplus: 0
     },
     occurrences: 1,
-    methodIds: []
+    recipeIds: []
   }
 }
 
-function methodNode(instanceId: string): CraftingGraphMethodNode {
+function recipeNode(instanceId: string): CraftingGraphRecipeNode {
   const planNode = plan(instanceId, `item:${instanceId}`, 1)
+  const recipe = recipeView(instanceId, planNode.target.key)
   return {
     instanceId,
-    kind: 'method',
+    kind: 'recipe',
     planNode,
     title: 'Верстак',
     detail: '',
     status: 'craft',
     path: [],
     cyclic: false,
-    methodKind: 'recipe',
     targetKey: planNode.target.key,
+    recipe,
     batches: 1,
     resultCount: 1,
-    producedCount: 1
+    producedCount: 1,
+    surplus: 0
   }
 }
 
@@ -159,6 +216,19 @@ function plan(
     recipeOptions: [],
     batches: 1,
     resultCount: 1,
+    requirements: []
+  }
+}
+
+function recipeView(id: string, targetKey: string): CraftingRecipeView {
+  return {
+    id,
+    origin: 'pack',
+    type: 'minecraft:crafting_shaped',
+    station: 'Верстак',
+    targetKey,
+    resultCount: 1,
+    ingredients: [],
     requirements: []
   }
 }

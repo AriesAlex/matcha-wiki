@@ -4,6 +4,7 @@ import {
   clampCraftingViewportPan,
   clampCraftingViewportScale,
   fitCraftingViewport,
+  focusCraftingViewportBounds,
   zoomCraftingViewportAt
 } from '../app/utils/craftingViewport'
 
@@ -80,6 +81,35 @@ describe('crafting viewport math', () => {
       x: 0,
       y: 0,
       scale: 1
+    })
+  })
+
+  it('focuses a node at an explicit scale and vertical viewport anchor', () => {
+    expect(focusCraftingViewportBounds(
+      { width: 800, height: 600 },
+      { x: 100, y: 200, width: 200, height: 100 },
+      {
+        scale: 1.2,
+        verticalAnchor: 0.25,
+        minScale: 0.35,
+        maxScale: 2
+      }
+    )).toEqual({
+      x: 160,
+      y: -150,
+      scale: 1.2
+    })
+  })
+
+  it('clamps focus scale and anchors before the viewport is measured', () => {
+    expect(focusCraftingViewportBounds(
+      { width: 0, height: 600 },
+      { x: 100, y: 200, width: 200, height: 100 },
+      { scale: 4, verticalAnchor: 2, minScale: 0.35, maxScale: 2 }
+    )).toEqual({
+      x: 0,
+      y: 0,
+      scale: 2
     })
   })
 

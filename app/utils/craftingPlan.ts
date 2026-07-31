@@ -5,10 +5,7 @@ import type {
   CraftingRecipeView,
   CraftingTargetView
 } from '../types/crafting'
-import {
-  targetForResource,
-  targetsForIngredient
-} from './craftingIndex'
+import { targetsForIngredient } from './craftingIndex'
 
 interface BuildOptions {
   maxDepth?: number
@@ -18,7 +15,6 @@ interface BuildContext {
   index: CraftingIndex
   selections: CraftingPlanSelections
   inventory: Map<string, number>
-  plannedStations: Set<string>
   maxDepth: number
 }
 
@@ -40,7 +36,6 @@ export function buildCraftingPlan(
     index,
     selections,
     inventory,
-    plannedStations: new Set(),
     maxDepth: options.maxDepth ?? 18
   }, target, normalizeRequiredCount(requiredCount), [], 0)
 }
@@ -114,12 +109,6 @@ function buildNode(
   const batches = Math.ceil(missingCount / resultCount)
   const nextAncestry = [...ancestry, target.key]
   const branchContext = forkBuildContext(context)
-  const station = buildStationNode(
-    branchContext,
-    recipe,
-    nextAncestry,
-    depth + 1
-  )
   const requirements = recipe.requirements.map((requirement) => {
     const options = targetsForIngredient(context.index.catalog, requirement.ingredient)
     const choiceKey = recipeChoiceKey(target, recipe.id, requirement.id)
@@ -157,7 +146,6 @@ function buildNode(
     recipe,
     batches,
     resultCount,
-    station,
     requirements
   }
   const explicitlyCrafting = selectedMode === 'craft' || Boolean(selectedRecipeId)
@@ -171,27 +159,6 @@ function buildNode(
 
   commitBuildContext(context, branchContext)
   return plan
-}
-
-function buildStationNode(
-  context: BuildContext,
-  recipe: CraftingRecipeView,
-  ancestry: string[],
-  depth: number
-): CraftingPlanNode | undefined {
-  if (!recipe.stationResourceId) return undefined
-
-  const target = targetForResource(
-    context.index.catalog,
-    recipe.stationResourceId
-  )
-  if (ancestry.includes(target.key)) {
-    return buildNode(context, target, 1, ancestry, depth, false)
-  }
-  if (context.plannedStations.has(target.key)) return undefined
-
-  context.plannedStations.add(target.key)
-  return buildNode(context, target, 1, ancestry, depth, false)
 }
 
 function chooseRecipe(
@@ -258,15 +225,13 @@ function hasKnownSource(target: CraftingTargetView): boolean {
 
 function containsCycle(node: CraftingPlanNode): boolean {
   return node.state === 'cycle'
-    || Boolean(node.station && containsCycle(node.station))
     || node.requirements.some(requirement => containsCycle(requirement.node))
 }
 
 function forkBuildContext(context: BuildContext): BuildContext {
   return {
     ...context,
-    inventory: new Map(context.inventory),
-    plannedStations: new Set(context.plannedStations)
+    inventory: new Map(context.inventory)
   }
 }
 
@@ -275,5 +240,4 @@ function commitBuildContext(
   source: BuildContext
 ): void {
   target.inventory = source.inventory
-  target.plannedStations = source.plannedStations
 }

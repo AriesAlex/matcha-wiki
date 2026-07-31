@@ -2,13 +2,12 @@ import type {
   CraftingPlanNode,
   CraftingPlanRequirement,
   CraftingPlanState,
-  CraftingSourceView,
-  CraftingTargetView
+  CraftingSourceView
 } from '../../types/crafting'
 import type {
-  CraftingGraphChoiceOption,
-  CraftingGraphEdgeKind,
-  CraftingGraphMethodKind
+  CraftingGraphAlternativeKind,
+  CraftingGraphAlternativeOption,
+  CraftingGraphEdgeKind
 } from '../../types/craftingGraph'
 import type { RecipeRequirementRole } from '../../types/wiki'
 
@@ -22,7 +21,6 @@ export interface ProjectionEntry {
 
 export interface Projection {
   readonly entries: Map<string, ProjectionEntry>
-  readonly stationTargetByResource: Map<string, CraftingTargetView>
 }
 
 export interface ItemAccumulator {
@@ -31,35 +29,26 @@ export interface ItemAccumulator {
   readonly path: readonly string[]
   required: number
   cyclic: boolean
-  methodId?: string
+  recipeId?: string
 }
 
-export interface MethodAccumulator {
+export interface RecipeAccumulator {
   readonly instanceId: string
   readonly ownerTargetKey: string
   readonly planNode: CraftingPlanNode
-  readonly methodKind: CraftingGraphMethodKind
   readonly path: readonly string[]
   batches: number
 }
 
-export interface ChoiceAccumulator {
+export interface AlternativesAccumulator {
   readonly instanceId: string
+  readonly alternativeKind: CraftingGraphAlternativeKind
   readonly ownerTargetKey: string
-  readonly requirement: CraftingPlanRequirement
-  readonly options: readonly CraftingGraphChoiceOption[]
+  readonly planNode: CraftingPlanNode
+  readonly requirement?: CraftingPlanRequirement
+  readonly options: readonly CraftingGraphAlternativeOption[]
   readonly path: readonly string[]
   count: number
-  cyclic: boolean
-}
-
-export interface StationAccumulator {
-  readonly instanceId: string
-  readonly ownerTargetKey: string
-  readonly resourceId: string
-  readonly targetKey: string
-  readonly target: CraftingTargetView
-  readonly path: readonly string[]
   cyclic: boolean
 }
 
@@ -96,18 +85,10 @@ export interface ParentRelation {
 export interface BuildContext {
   readonly projection: Projection
   readonly items: Map<string, ItemAccumulator>
-  readonly methods: Map<string, MethodAccumulator>
-  readonly choices: Map<string, ChoiceAccumulator>
-  readonly stations: Map<string, StationAccumulator>
+  readonly recipes: Map<string, RecipeAccumulator>
+  readonly alternatives: Map<string, AlternativesAccumulator>
   readonly sources: Map<string, SourceAccumulator>
   readonly edges: Map<string, EdgeAccumulator>
-  readonly stationDemanded: Set<string>
-}
-
-export interface StationDemand {
-  readonly station: StationAccumulator
-  readonly relation: ParentRelation
-  readonly path: readonly string[]
 }
 
 export interface AccumulatedGraph {

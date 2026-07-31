@@ -25,6 +25,14 @@ export interface FitCraftingViewportOptions
   padding?: number
 }
 
+export interface FocusCraftingViewportBoundsOptions
+  extends Partial<CraftingViewportScaleRange> {
+  /** Requested zoom level. The configured scale range is still respected. */
+  scale?: number
+  /** Vertical viewport position for the bounds centre: 0 is top, 1 is bottom. */
+  verticalAnchor?: number
+}
+
 export interface ClampCraftingViewportPanOptions {
   visibleMargin?: number
 }
@@ -98,6 +106,36 @@ export function fitCraftingViewport(
     y: scaledHeight > availableHeight
       ? padding - boundsY * scale
       : (height - scaledHeight) / 2 - boundsY * scale,
+    scale
+  }
+}
+
+export function focusCraftingViewportBounds(
+  viewport: CraftingViewportSize,
+  bounds: CraftingViewportBounds,
+  options: FocusCraftingViewportBoundsOptions = {}
+): CraftingViewportTransform {
+  const width = positiveFinite(viewport.width)
+  const height = positiveFinite(viewport.height)
+  const scale = clampCraftingViewportScale(options.scale ?? 1, options)
+
+  if (!width || !height) {
+    return { x: 0, y: 0, scale }
+  }
+
+  const boundsCenterX = finiteOr(bounds.x, 0)
+    + nonNegativeFinite(bounds.width) / 2
+  const boundsCenterY = finiteOr(bounds.y, 0)
+    + nonNegativeFinite(bounds.height) / 2
+  const verticalAnchor = clamp(
+    finiteOr(options.verticalAnchor, 0.28),
+    0,
+    1
+  )
+
+  return {
+    x: width / 2 - boundsCenterX * scale,
+    y: height * verticalAnchor - boundsCenterY * scale,
     scale
   }
 }

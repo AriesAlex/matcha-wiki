@@ -11,7 +11,11 @@
     <div class="bar">
       <div>
         <strong>Карта пути</strong>
-        <span>Нажмите предмет, чтобы отметить его ветку</span>
+        <span>
+          {{ isMobile
+            ? 'Щипок — масштаб · тяните карту, чтобы двигать'
+            : 'Колесо — масштаб · тяните фон, чтобы двигать карту' }}
+        </span>
       </div>
 
       <button
@@ -45,7 +49,6 @@
       tabindex="0"
       :style="viewport.rootStyle.value"
       data-crafting-viewport-background
-      @keydown.esc="closeOverlay"
     >
       <div
         ref="contentRef"
@@ -56,7 +59,11 @@
         ]"
         data-crafting-viewport-background
       >
-        <CraftingGraphEdges :edges="graph.edges" />
+        <CraftingGraphEdges
+          :edges="graph.edges"
+          :highlighted-node-id="highlightedNodeId"
+          :inactive-edge-ids="activity.inactiveEdgeIds"
+        />
 
         <CraftingGraphNode
           v-for="node in graph.nodes"
@@ -64,14 +71,28 @@
           :node="node"
           :selected="selectedId === node.instanceId"
           :complete="completedNodeIds.includes(node.instanceId)"
+          :inactive="inactiveNodeIds.has(node.instanceId)"
           :style="nodeStyle(node)"
-          @select="selectNode"
-          @toggle-subtree="toggleSubtree"
+          @open-details="openDetails"
+          @toggle-item="toggleItem"
+          @select-option="selectOption"
+          @focus-node="focusNode"
+          @highlight="highlightedNodeId = $event"
           @tooltip-open="openTooltip"
           @tooltip-move="moveTooltip"
           @tooltip-close="closeTooltip"
         />
       </div>
+
+      <CraftingNodeInspector
+        :node="selectedNode"
+        :open="Boolean(selectedNode)"
+        :complete="selectedId ? completedNodeIds.includes(selectedId) : false"
+        @close="closeDetails"
+        @select-mode="emit('select-mode', $event.targetKey, $event.mode)"
+        @select-recipe="emit('select-recipe', $event.targetKey, $event.recipeId)"
+        @select-option="emit('select-option', $event.requirementKey, $event.targetKey)"
+      />
 
       <button
         v-if="gesturesActive && !fullscreen"
@@ -87,32 +108,23 @@
     <CraftingGraphTooltip
       :node="tooltip.node"
       :visible="tooltip.visible && !fullscreenInspector"
+      :complete="tooltip.node ? completedNodeIds.includes(tooltip.node.instanceId) : false"
       :x="tooltip.x"
       :y="tooltip.y"
-    />
-
-    <CraftingNodeInspector
-      :node="selectedNode"
-      :open="Boolean(selectedNode)"
-      :complete="selectedNodeComplete"
-      @close="selectedId = ''"
-      @toggle-subtree="toggleSubtree"
-      @select-mode="emit('select-mode', $event.targetKey, $event.mode)"
-      @select-recipe="emit('select-recipe', $event.targetKey, $event.recipeId)"
-      @select-option="emit('select-option', $event.requirementKey, $event.targetKey)"
     />
 
     <p class="visually-hidden" aria-live="polite">
       {{ announcement }}
     </p>
 
-    <CraftingGraphTextPlan :nodes="graph.nodes" />
+    <CraftingGraphTextPlan :graph="graph" />
   </div>
 </template>
 
 <script setup lang="ts">
 import {
   useEventListener,
+  useMediaQuery,
   useScrollLock
 } from '@vueuse/core'
 import {
@@ -122,10 +134,12 @@ import {
 import type { CSSProperties } from 'vue'
 import CraftingNodeInspector from './CraftingNodeInspector.vue'
 import type {
+  CraftingGraphModel,
   CraftingGraphNodeView,
   CraftingGraphView
 } from '../../../types/craftingGraph'
 import type { CraftingMode } from '../../../types/crafting'
+import { craftingGraphActivity } from '../../../utils/craftingGraphProgress'
 import { DEFAULT_CRAFTING_VIEWPORT_SCALE_RANGE } from '../../../utils/craftingViewport'
 
 interface TooltipState {
@@ -146,8 +160,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  select: [instanceId: string]
-  'toggle-subtree': [instanceId: string]
+  'toggle-item': [instanceId: string]
   'select-mode': [targetKey: string, mode: CraftingMode]
   'select-recipe': [targetKey: string, recipeId: string]
   'select-option': [requirementKey: string, targetKey: string]
@@ -160,28 +173,62 @@ const scaleRange = DEFAULT_CRAFTING_VIEWPORT_SCALE_RANGE
 const gesturesActive = ref(false)
 const fullscreen = ref(false)
 const selectedId = ref('')
+const highlightedNodeId = ref('')
 const announcement = ref('')
 const tooltip = reactive<TooltipState>({
   visible: false,
   x: 0,
   y: 0
 })
+let selectionTrigger: HTMLElement | null = null
 const body = computed(() => import.meta.client ? document.body : null)
 const bodyScrollLocked = useScrollLock(body)
+const isMobile = useMediaQuery('(max-width: 720px)')
 const viewport = useCraftingViewport({
   bounds: () => props.graph.bounds,
   activated: gesturesActive,
   fullscreen,
-  autoFit: true,
+  autoFit: false,
   fitPadding: 34
 })
 
 watch(rootRef, element => viewport.rootRef.value = element, { immediate: true })
 watch(contentRef, element => viewport.contentRef.value = element, { immediate: true })
+watch(
+  () => [rootRef.value, contentRef.value, props.graph.rootId] as const,
+  async ([root, content]) => {
+    if (!root || !content) return
+    await nextTick()
+    focusRootAtScale(false, false)
+  },
+  { immediate: true, flush: 'post' }
+)
+watch(
+  () => props.graph.nodes,
+  (nodes, previousNodes) => {
+    if (!selectedId.value || nodes.some(node => node.instanceId === selectedId.value)) {
+      return
+    }
+
+    const previous = previousNodes?.find(node => (
+      node.instanceId === selectedId.value
+    ))
+    selectedId.value = previous
+      ? nodes.find(node => sameGraphSubject(node, previous))?.instanceId ?? ''
+      : ''
+  },
+  { flush: 'sync' }
+)
 watch(fullscreen, (value) => {
-  bodyScrollLocked.value = value
   if (value) gesturesActive.value = true
 })
+watch(
+  [fullscreen, isMobile, selectedId],
+  ([isFullscreen, mobile, selection]) => {
+    bodyScrollLocked.value = isFullscreen || (mobile && Boolean(selection))
+  },
+  { immediate: true }
+)
 
 useEventListener(
   () => import.meta.client ? window : null,
@@ -198,11 +245,16 @@ onBeforeUnmount(() => {
 const selectedNode = computed(() => (
   props.graph.nodes.find(node => node.instanceId === selectedId.value)
 ))
-const selectedNodeComplete = computed(() => (
-  selectedNode.value
-    ? props.completedNodeIds.includes(selectedNode.value.instanceId)
-    : false
+const graphModel = computed<CraftingGraphModel>(() => ({
+  rootId: props.graph.rootId,
+  nodes: props.graph.nodes.map(node => node.node),
+  edges: props.graph.edges
+}))
+const activity = computed(() => craftingGraphActivity(
+  graphModel.value,
+  new Set(props.completedNodeIds)
 ))
+const inactiveNodeIds = computed(() => new Set(activity.value.inactiveNodeIds))
 const fullscreenInspector = computed(() => (
   fullscreen.value && Boolean(selectedNode.value)
 ))
@@ -225,20 +277,45 @@ function nodeStyle(node: CraftingGraphNodeView): CSSProperties {
   }
 }
 
-function selectNode(instanceId: string): void {
+function openDetails(instanceId: string): void {
+  selectionTrigger = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null
   selectedId.value = instanceId
   closeTooltip()
-  emit('select', instanceId)
 }
 
-function toggleSubtree(instanceId: string): void {
-  selectedId.value = instanceId
+async function closeDetails(): Promise<void> {
+  selectedId.value = ''
   closeTooltip()
-  emit('toggle-subtree', instanceId)
+  await nextTick()
+  if (selectionTrigger?.isConnected) selectionTrigger.focus()
+  selectionTrigger = null
+}
+
+function toggleItem(instanceId: string): void {
+  closeTooltip()
+  emit('toggle-item', instanceId)
   const node = props.graph.nodes.find(entry => entry.instanceId === instanceId)
   announcement.value = node
     ? `Обновлена ветка «${stripMinecraftFormatting(node.node.title)}».`
     : 'Ветка обновлена.'
+}
+
+function selectOption(requirementKey: string, targetKey: string): void {
+  closeTooltip()
+  emit('select-option', requirementKey, targetKey)
+}
+
+function focusNode(instanceId: string): void {
+  const node = props.graph.nodes.find(entry => entry.instanceId === instanceId)
+  if (!node) return
+  viewport.focusBounds(node, {
+    scale: viewport.transform.value.scale,
+    verticalAnchor: 0.46,
+    animate: false,
+    markInteracted: true
+  })
 }
 
 function openTooltip(
@@ -260,27 +337,30 @@ function closeTooltip(): void {
 }
 
 function focusRoot(): void {
+  focusRootAtScale(true, true)
+}
+
+function focusRootAtScale(animate: boolean, markInteracted: boolean): void {
   const root = props.graph.nodes.find(node => node.instanceId === props.graph.rootId)
   if (!root) return
 
-  const scale = viewport.transform.value.scale
-  viewport.setTransform({
-    scale,
-    x: viewport.viewportSize.value.width / 2
-      - (root.x + root.width / 2) * scale,
-    y: Math.max(30, viewport.viewportSize.value.height * 0.16)
-      - root.y * scale
-  }, { animate: true })
+  viewport.focusBounds(root, {
+    scale: 1,
+    verticalAnchor: 0.24,
+    animate,
+    markInteracted
+  })
 }
 
-function toggleFullscreen(): void {
+async function toggleFullscreen(): Promise<void> {
   fullscreen.value = !fullscreen.value
-  nextTick(() => viewport.fit())
+  await nextTick()
+  focusRootAtScale(true, false)
 }
 
-function closeOverlay(): void {
+async function closeOverlay(): Promise<void> {
   if (selectedId.value) {
-    selectedId.value = ''
+    await closeDetails()
     return
   }
   if (fullscreen.value) {
@@ -288,6 +368,31 @@ function closeOverlay(): void {
     return
   }
   gesturesActive.value = false
+}
+
+function sameGraphSubject(
+  candidate: CraftingGraphNodeView,
+  previous: CraftingGraphNodeView
+): boolean {
+  if (candidate.node.kind !== previous.node.kind) return false
+  if (candidate.node.kind === 'item' && previous.node.kind === 'item') {
+    return candidate.node.target.key === previous.node.target.key
+  }
+  if (candidate.node.kind === 'recipe' && previous.node.kind === 'recipe') {
+    return candidate.node.targetKey === previous.node.targetKey
+  }
+  if (
+    candidate.node.kind === 'alternatives'
+    && previous.node.kind === 'alternatives'
+  ) {
+    return candidate.node.ownerTargetKey === previous.node.ownerTargetKey
+      && candidate.node.requirementId === previous.node.requirementId
+      && candidate.node.alternativeKind === previous.node.alternativeKind
+  }
+  return candidate.node.kind === 'source'
+    && previous.node.kind === 'source'
+    && candidate.node.targetKey === previous.node.targetKey
+    && candidate.node.source.id === previous.node.source.id
 }
 </script>
 

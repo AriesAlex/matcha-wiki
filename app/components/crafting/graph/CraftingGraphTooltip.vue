@@ -11,7 +11,7 @@
       <strong><MinecraftText :text="displayTitle" /></strong>
       <p v-if="amountLabel">{{ amountLabel }}</p>
       <p class="state">{{ stateLabel }}</p>
-      <p>{{ graphNode.detail }}</p>
+      <p v-if="detailLabel">{{ detailLabel }}</p>
       <small v-if="vanillaName">
         В обычном Minecraft: {{ vanillaName }}
       </small>
@@ -25,12 +25,14 @@ import type { CraftingGraphNodeView } from '../../../types/craftingGraph'
 const props = withDefaults(defineProps<{
   node?: CraftingGraphNodeView
   visible?: boolean
+  complete?: boolean
   x?: number
   y?: number
   id?: string
 }>(), {
   node: undefined,
   visible: false,
+  complete: false,
   x: 0,
   y: 0,
   id: ''
@@ -42,23 +44,25 @@ const tooltip = useTemplateRef<HTMLElement>('tooltip')
 const left = ref(0)
 const top = ref(0)
 const graphNode = computed(() => props.node?.node)
-const displayTitle = computed(() => {
-  const current = graphNode.value
-  if (
-    current?.kind === 'method'
-    && current.methodKind === 'obtain'
-  ) return 'Получить в мире'
-  return current?.title ?? ''
-})
+const displayTitle = computed(() => graphNode.value?.title ?? '')
 const amountLabel = computed(() => {
   const current = graphNode.value
   if (!current || current.kind !== 'item') return ''
+  if (props.complete) return `Количество: ${current.demand.required}`
   if (!current.demand.owned) return `Нужно: ${current.demand.required}`
-  return `Нужно: ${current.demand.required} · Есть: ${current.demand.owned}`
+  return `Нужно: ${current.demand.required}, есть: ${current.demand.owned}`
+})
+const detailLabel = computed(() => {
+  const current = graphNode.value
+  if (!current) return ''
+  if (current.kind !== 'item') return current.detail
+  if (props.complete) return ''
+  return current.status === 'obtain' ? current.detail : ''
 })
 const stateLabel = computed(() => {
   const current = graphNode.value
   if (!current) return ''
+  if (current.kind === 'item' && props.complete) return 'Готово'
   return {
     owned: 'Готово',
     craft: 'Нужно изготовить',
@@ -69,12 +73,9 @@ const stateLabel = computed(() => {
 })
 const vanillaName = computed(() => {
   const current = graphNode.value
-  if (!current) return ''
-  if (current.kind === 'item') return current.target.vanillaName ?? ''
-  if (current.kind === 'context' && current.contextKind === 'station') {
-    return current.target.vanillaName ?? ''
-  }
-  return ''
+  return current?.kind === 'item'
+    ? current.target.vanillaName ?? ''
+    : ''
 })
 
 watch(

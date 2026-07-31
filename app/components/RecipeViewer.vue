@@ -184,17 +184,15 @@ const typeTitles: Record<string, string> = {
   campfire_cooking: 'Готовка на костре'
 }
 const typeTitle = computed(() => typeTitles[kind.value] ?? 'Рецепт')
+const gridSlots = computed(() => craftingRecipeGridSlots(props.recipe))
 const shapedGrid = computed<Array<Array<IngredientView | null>>>(() => {
-  return Array.from({ length: 3 }, (_, rowIndex) => {
-    const row = props.recipe.pattern?.[rowIndex] ?? ''
-    return Array.from({ length: 3 }, (_, columnIndex) => {
-      const symbol = row.charAt(columnIndex)
-      return symbol && symbol !== ' ' ? props.recipe.key?.[symbol] ?? null : null
-    })
-  })
+  return Array.from(
+    { length: 3 },
+    (_, rowIndex) => gridSlots.value.slice(rowIndex * 3, rowIndex * 3 + 3)
+  )
 })
 const shapelessItems = computed<Array<IngredientView | undefined>>(() => (
-  Array.from({ length: 9 }, (_, index) => props.recipe.ingredients[index])
+  gridSlots.value.map(ingredient => ingredient ?? undefined)
 ))
 const smithingSlots = computed(() => (
   ['Шаблон', 'Основа', 'Добавка'].map((label, index) => ({

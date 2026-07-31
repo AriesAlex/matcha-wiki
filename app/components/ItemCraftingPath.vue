@@ -9,8 +9,8 @@
         <p class="eyebrow">Путь изготовления</p>
         <h2 id="crafting-path-heading">С чего начать</h2>
         <p>
-          Это живая карта подготовки. Нажмите предмет, который уже получили:
-          он и всё под ним будут отмечены готовыми.
+          Откройте карточку, чтобы узнать подробности. Галочка справа отмечает
+          предмет готовым и приглушает уже ненужную часть пути.
         </p>
       </div>
 
@@ -27,7 +27,7 @@
     <CraftingGraphCanvas
       :graph="graphView"
       :completed-node-ids="completedNodeIds"
-      @toggle-subtree="toggleSubtree"
+      @toggle-item="toggleItem"
       @select-mode="progress.setMode"
       @select-recipe="progress.selectRecipe"
       @select-option="progress.selectOption"
@@ -68,12 +68,12 @@ const structuralPlan = computed(() => buildCraftingPlan(
 ))
 const graphModel = computed(() => buildCraftingGraph(structuralPlan.value))
 const graphView = computed(() => layoutCraftingGraph(graphModel.value))
-const routeProgress = computed(() => craftingSubtreeProgress(
-  graphModel.value,
-  graphModel.value.rootId,
-  progress.state.value.ownedByTarget
-))
-const hasRouteProgress = computed(() => routeProgress.value.targetKeys.some(
+const routeTargetKeys = computed(() => [...new Set(
+  graphModel.value.nodes.flatMap(node => (
+    node.kind === 'item' ? [node.target.key] : []
+  ))
+)])
+const hasRouteProgress = computed(() => routeTargetKeys.value.some(
   targetKey => (progress.state.value.ownedByTarget[targetKey] ?? 0) > 0
 ))
 const completedNodeIds = computed(() => graphModel.value.nodes.flatMap((node) => {
@@ -83,24 +83,21 @@ const completedNodeIds = computed(() => graphModel.value.nodes.flatMap((node) =>
     ? [node.instanceId]
     : []
 }))
+const completedNodeIdSet = computed(() => new Set(completedNodeIds.value))
 
-function toggleSubtree(instanceId: string): void {
-  const subtree = craftingSubtreeProgress(
-    graphModel.value,
-    instanceId,
-    progress.state.value.ownedByTarget
-  )
-  if (!subtree.targetKeys.length) return
+function toggleItem(instanceId: string): void {
+  const item = craftingItemProgress(graphModel.value, instanceId)
+  if (!item) return
 
-  if (subtree.complete) {
-    progress.clearOwnedBatch([...subtree.targetKeys])
+  if (completedNodeIdSet.value.has(instanceId)) {
+    progress.clearOwnedBatch([item.targetKey])
   } else {
-    progress.setOwnedBatch({ ...subtree.ownedByTarget })
+    progress.setOwnedBatch({ [item.targetKey]: item.required })
   }
 }
 
 function clearRouteProgress(): void {
-  progress.clearOwnedBatch([...routeProgress.value.targetKeys])
+  progress.clearOwnedBatch(routeTargetKeys.value)
 }
 </script>
 

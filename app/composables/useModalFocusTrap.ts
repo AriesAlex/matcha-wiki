@@ -46,13 +46,14 @@ export function useModalFocusTrap(
   )
 
   useEventListener(
-    () => import.meta.client ? document : null,
+    () => toValue(container) ?? null,
     'keydown',
     (event: KeyboardEvent) => {
       if (!toValue(open) || event.key !== 'Tab') return
 
       const dialog = toValue(container)
       if (!dialog) return
+      event.stopPropagation()
 
       const focusable = [...dialog.querySelectorAll<HTMLElement>(focusableSelector)]
         .filter(element => !element.hidden && element.getClientRects().length > 0)

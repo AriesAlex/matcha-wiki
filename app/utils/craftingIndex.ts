@@ -34,6 +34,11 @@ import {
   resolveAcquisitionTargetForStack
 } from './acquisition'
 
+const resourceRecipePathsByCatalog = new WeakMap<
+  WikiCatalog,
+  Map<string, string | undefined>
+>()
+
 export function createCraftingIndex(
   catalog: WikiCatalog,
   supplement?: CraftingPlannerSupplement
@@ -65,6 +70,9 @@ export function createCraftingIndex(
       station: recipe.station,
       targetKey: target.key,
       resultCount: Math.max(1, recipe.result.count),
+      pattern: recipe.pattern,
+      key: recipe.key,
+      ingredients: recipe.ingredients,
       requirements: recipe.requirements,
       stationResourceId: stationResourceForRecipe(recipe),
       detailsPath: recipePath(recipe.namespace, recipe.path)
@@ -130,6 +138,7 @@ export function targetForItem(
     title: item.title,
     icon: item.icon,
     item,
+    detailsPath: `/items/${item.slug}`,
     obtainHint: allSources[0]?.detail ?? itemAcquisitionHint(item),
     sources: allSources
   }
@@ -221,9 +230,9 @@ export function targetsForIngredient(
     )))
     if (exactItem) return targetForItem(exactItem, catalog)
 
-    const icon = ingredient.icons.length === ingredient.ids.length
-      ? ingredient.icons[index]
-      : ingredient.icons[0]
+    const icon = ingredient.icons[index]
+      ?? catalog.ingredientGlossary[id]?.icon
+      ?? ingredient.icons[0]
     return targetForResource(catalog, id, ingredient.label, icon)
   })
 
@@ -286,6 +295,7 @@ export function targetForResource(
     resourceId,
     title,
     icon: icon ?? glossary?.icon,
+    detailsPath: resourceRecipePath(catalog, resourceId),
     vanillaName: vanillaName && vanillaName !== title
       ? vanillaName
       : undefined,
@@ -298,6 +308,10 @@ function groupAlternativeTargets(
   ingredient: IngredientView,
   targets: CraftingTargetView[]
 ): CraftingTargetView {
+  const alternativeTargets = targets.map(target => ({
+    ...target,
+    title: disambiguateAlternativeTitle(target)
+  }))
   const hints = [...new Set(targets
     .map(target => target.obtainHint)
     .filter((hint): hint is string => Boolean(hint)))]
@@ -313,10 +327,48 @@ function groupAlternativeTargets(
     title: ingredient.label,
     icon: ingredient.icons[0],
     sources,
+    alternativeTargets,
     obtainHint: count <= 3 && hints.length === 1
       ? hints[0]
       : `Подойдёт любой из ${count} вариантов. Выбирайте тот, который уже есть или проще получить.`
   }
+}
+
+function disambiguateAlternativeTitle(target: CraftingTargetView): string {
+  const title = stripMinecraftFormatting(target.title)
+  const musicDiscTitle = /^minecraft:music_disc_(.+)$/
+    .exec(target.resourceId)?.[1]
+
+  return musicDiscTitle
+    ? `${title} «${formatIdentifier(musicDiscTitle)}»`
+    : `${title}: ${formatIdentifier(target.resourceId)}`
+}
+
+function resourceRecipePath(
+  catalog: WikiCatalog,
+  resourceId: string
+): string | undefined {
+  let paths = resourceRecipePathsByCatalog.get(catalog)
+  if (!paths) {
+    paths = new Map()
+    for (const recipe of catalog.recipes) {
+      const result = recipe.result
+      if (
+        !result
+        || result.model
+        || Object.keys(result.components ?? {}).length > 0
+      ) continue
+
+      const path = recipePath(recipe.namespace, recipe.path)
+      paths.set(
+        result.carrier,
+        paths.has(result.carrier) ? undefined : path
+      )
+    }
+    resourceRecipePathsByCatalog.set(catalog, paths)
+  }
+
+  return paths.get(resourceId)
 }
 
 function isCraftableResult(

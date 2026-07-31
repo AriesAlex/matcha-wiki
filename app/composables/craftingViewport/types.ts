@@ -22,6 +22,12 @@ export interface SetCraftingViewportOptions
   markInteracted?: boolean
 }
 
+export interface FocusCraftingViewportOptions
+  extends SetCraftingViewportOptions {
+  scale?: number
+  verticalAnchor?: number
+}
+
 export interface UseCraftingViewportOptions
   extends Partial<CraftingViewportScaleRange> {
   activated?: MaybeRefOrGetter<boolean>
@@ -51,6 +57,10 @@ export interface CraftingViewportControls {
   transformStyle: ComputedRef<CSSProperties>
   measure: () => boolean
   fit: (options?: CraftingViewportActionOptions) => boolean
+  focusBounds: (
+    bounds: CraftingViewportBounds,
+    options?: FocusCraftingViewportOptions
+  ) => boolean
   reset: (options?: CraftingViewportActionOptions) => void
   setTransform: (
     transform: CraftingViewportTransform,

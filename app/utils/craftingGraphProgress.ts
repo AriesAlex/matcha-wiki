@@ -2,54 +2,77 @@ import type {
   CraftingGraphModel
 } from '../types/craftingGraph'
 
-export interface CraftingSubtreeProgress {
-  readonly targetKeys: readonly string[]
-  readonly ownedByTarget: Readonly<Record<string, number>>
-  readonly complete: boolean
+export interface CraftingItemProgress {
+  readonly targetKey: string
+  readonly required: number
 }
 
-export function craftingSubtreeProgress(
+export interface CraftingGraphActivity {
+  readonly activeNodeIds: readonly string[]
+  readonly inactiveNodeIds: readonly string[]
+  readonly activeEdgeIds: readonly string[]
+  readonly inactiveEdgeIds: readonly string[]
+}
+
+export function craftingGraphActivity(
   graph: CraftingGraphModel,
-  instanceId: string,
-  currentOwnedByTarget: Readonly<Record<string, number>>
-): CraftingSubtreeProgress {
+  completedItemNodeIds: ReadonlySet<string>
+): CraftingGraphActivity {
   const nodesById = new Map(
     graph.nodes.map(node => [node.instanceId, node] as const)
   )
-  const childrenById = Map.groupBy(graph.edges, edge => edge.from)
-  const targetCounts = new Map<string, number>()
-  const pending = [instanceId]
-  const visited = new Set<string>()
+  const edgesBySource = Map.groupBy(
+    graph.edges.map((edge, index) => ({ edge, index })),
+    ({ edge }) => edge.from
+  )
+  const activeNodeIds = new Set<string>()
+  const activeEdgeIndexes = new Set<number>()
+  const pending = [graph.rootId]
 
   while (pending.length) {
     const nodeId = pending.pop()
-    if (!nodeId || visited.has(nodeId)) continue
-    visited.add(nodeId)
+    if (!nodeId || activeNodeIds.has(nodeId)) continue
 
     const node = nodesById.get(nodeId)
     if (!node) continue
-    if (node.kind === 'item') {
-      targetCounts.set(
-        node.target.key,
-        Math.max(
-          targetCounts.get(node.target.key) ?? 0,
-          node.demand.required
-        )
-      )
-    }
+    activeNodeIds.add(nodeId)
 
-    for (const edge of childrenById.get(nodeId) ?? []) {
+    const isCompletedItem = node.kind === 'item'
+      && completedItemNodeIds.has(nodeId)
+    if (isCompletedItem) continue
+
+    for (const { edge, index } of edgesBySource.get(nodeId) ?? []) {
+      if (!nodesById.has(edge.to)) continue
+      activeEdgeIndexes.add(index)
       pending.push(edge.to)
     }
   }
 
-  const ownedByTarget = Object.fromEntries(targetCounts)
   return {
-    targetKeys: [...targetCounts.keys()],
-    ownedByTarget,
-    complete: targetCounts.size > 0
-      && [...targetCounts].every(([targetKey, count]) => (
-        (currentOwnedByTarget[targetKey] ?? 0) >= count
-      ))
+    activeNodeIds: graph.nodes
+      .filter(node => activeNodeIds.has(node.instanceId))
+      .map(node => node.instanceId),
+    inactiveNodeIds: graph.nodes
+      .filter(node => !activeNodeIds.has(node.instanceId))
+      .map(node => node.instanceId),
+    activeEdgeIds: graph.edges
+      .filter((_, index) => activeEdgeIndexes.has(index))
+      .map(edge => edge.id),
+    inactiveEdgeIds: graph.edges
+      .filter((_, index) => !activeEdgeIndexes.has(index))
+      .map(edge => edge.id)
+  }
+}
+
+export function craftingItemProgress(
+  graph: CraftingGraphModel,
+  instanceId: string
+): CraftingItemProgress | undefined {
+  const node = graph.nodes.find(candidate => candidate.instanceId === instanceId)
+  if (node?.kind !== 'item') return undefined
+
+  return {
+    targetKey: node.target.key,
+    required: node.demand.required
   }
 }

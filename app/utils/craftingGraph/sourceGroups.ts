@@ -53,10 +53,24 @@ function groupedSourceDetail(
   count: number
 ): string {
   if (source.kind === 'trader') {
-    return `Вариантов обмена у торговца «${source.title}»: ${count}. Откройте страницу торговца и выберите подходящий.`
+    return `${count} ${plural(count, 'предложение', 'предложения', 'предложений')} для обмена.`
   }
   if (source.kind === 'location') {
-    return `Вариантов добычи в локации «${source.title}»: ${count}. Откройте страницу локации, чтобы сравнить условия.`
+    return `${count} ${plural(count, 'вариант', 'варианта', 'вариантов')} добычи в этой локации.`
   }
-  return `Вариантов добычи у существа «${source.title}»: ${count}. Откройте страницу существа, чтобы сравнить условия.`
+  return `${count} ${plural(count, 'вариант', 'варианта', 'вариантов')} добычи у этого существа.`
+}
+
+function plural(
+  count: number,
+  one: string,
+  few: string,
+  many: string
+): string {
+  const lastTwo = count % 100
+  const last = count % 10
+  if (lastTwo >= 11 && lastTwo <= 14) return many
+  if (last === 1) return one
+  if (last >= 2 && last <= 4) return few
+  return many
 }
