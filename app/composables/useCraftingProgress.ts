@@ -1,15 +1,11 @@
 import { useStorage } from '@vueuse/core'
 import type { Ref } from 'vue'
-import type {
-  CraftingMode,
-  CraftingProgressState
-} from '../types/crafting'
+import type { CraftingProgressState } from '../types/crafting'
 
 interface CraftingProgress {
   state: Ref<CraftingProgressState>
   setOwnedBatch: (ownedByTarget: Record<string, number>) => void
   clearOwnedBatch: (targetKeys: string[]) => void
-  setMode: (targetKey: string, mode?: CraftingMode) => void
   selectRecipe: (targetKey: string, recipeId: string) => void
   selectOption: (requirementKey: string, targetKey: string) => void
 }
@@ -26,6 +22,11 @@ export function useCraftingProgress(): CraftingProgress {
       mergeDefaults: true
     }
   )
+
+  watch(state, (value) => {
+    if (!('modeByTarget' in value)) return
+    state.value = normalizeProgressState(value)
+  }, { immediate: true })
 
   const progress: CraftingProgress = {
     state,
@@ -57,14 +58,6 @@ export function useCraftingProgress(): CraftingProgress {
         )
       }
     },
-    setMode(targetKey, mode) {
-      state.value = {
-        ...state.value,
-        modeByTarget: mode
-          ? { ...state.value.modeByTarget, [targetKey]: mode }
-          : withoutKey(state.value.modeByTarget, targetKey)
-      }
-    },
     selectRecipe(targetKey, recipeId) {
       state.value = {
         ...state.value,
@@ -91,19 +84,19 @@ export function useCraftingProgress(): CraftingProgress {
 function emptyProgress(): CraftingProgressState {
   return {
     ownedByTarget: {},
-    modeByTarget: {},
     recipeByTarget: {},
     optionByRequirement: {}
   }
 }
 
-function withoutKey<T>(
-  record: Record<string, T>,
-  key: string
-): Record<string, T> {
-  return Object.fromEntries(
-    Object.entries(record).filter(([entryKey]) => entryKey !== key)
-  )
+function normalizeProgressState(
+  value: CraftingProgressState
+): CraftingProgressState {
+  return {
+    ownedByTarget: value.ownedByTarget ?? {},
+    recipeByTarget: value.recipeByTarget ?? {},
+    optionByRequirement: value.optionByRequirement ?? {}
+  }
 }
 
 function normalizeOwnedCount(count: number): number {

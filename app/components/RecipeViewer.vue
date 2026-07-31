@@ -3,11 +3,6 @@
     class="panel"
     :aria-label="typeTitle"
   >
-    <figcaption>
-      <strong>{{ typeTitle }}</strong>
-      <span>{{ recipe.station }}</span>
-    </figcaption>
-
     <div class="body">
       <div class="scheme">
         <div
@@ -259,28 +254,11 @@ const showDetailsLink = computed(() => normalizeWikiPath(route.path) !== details
     inset 2px 2px 0 var(--recipe-highlight),
     inset -2px -2px 0 var(--recipe-shadow);
 
-  figcaption {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 4px 16px;
-
-    strong {
-      font-size: 15px;
-    }
-
-    span {
-      color: var(--recipe-muted);
-      font-size: 13px;
-    }
-  }
-
   .body {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-top: 14px;
+    margin-top: 0;
 
     .grid {
       display: grid;

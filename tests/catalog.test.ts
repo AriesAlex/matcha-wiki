@@ -206,6 +206,99 @@ describe('generated wiki catalog', () => {
     }
   })
 
+  it('extracts effects from consumables and potion contents', () => {
+    const itemByRecipe = (recipeId: string) => catalog.items.find(item => (
+      item.recipeIds.includes(recipeId)
+    ))
+    const itemByModel = (model: string) => catalog.items.find(item => item.model === model)
+
+    expect(itemByModel('minecraft:apotropaic_arrow')?.effects).toEqual([
+      expect.objectContaining({
+        id: 'minecraft:instant_health',
+        level: 2,
+        durationSeconds: 0
+      })
+    ])
+    expect(itemByModel('minecraft:nightshade_arrow')?.effects).toEqual([
+      expect.objectContaining({
+        id: 'minecraft:poison',
+        level: 2,
+        durationSeconds: 3
+      })
+    ])
+    expect(itemByRecipe('food:pickled_mushrooms')?.effects).toContainEqual(
+      expect.objectContaining({ id: 'minecraft:regeneration', level: 3 })
+    )
+    expect(itemByRecipe('food:pickled_red_mushrooms')?.effects).toContainEqual(
+      expect.objectContaining({
+        id: 'minecraft:poison',
+        level: 2,
+        durationSeconds: 60
+      })
+    )
+    expect(itemByRecipe('potions:estus_flask')?.effects).toContainEqual(
+      expect.objectContaining({
+        id: 'minecraft:instant_health',
+        level: 2,
+        durationSeconds: 0
+      })
+    )
+    expect(itemByRecipe('food:milk_bottle')?.effects).toEqual([
+      expect.objectContaining({
+        id: 'minecraft:clear_all_effects',
+        durationSeconds: null
+      })
+    ])
+
+    for (const recipeId of [
+      'crafting:chicken_noodle_soup',
+      'food:bread',
+      'food:bread_campfire',
+      'food:honey_ginger_tea',
+      'food:honey_ginger_tea_campfire'
+    ]) {
+      expect(itemByRecipe(recipeId)?.effects, recipeId).toContainEqual(
+        expect.objectContaining({
+          id: 'minecraft:remove_effects',
+          name: 'Снимает вредные эффекты',
+          description: expect.stringContaining('Отравление'),
+          durationSeconds: null
+        })
+      )
+    }
+
+    const componentOnlyLootModels = [
+      'minecraft:apple',
+      'minecraft:baked_potato',
+      'minecraft:beetroot',
+      'minecraft:beetroot_soup',
+      'minecraft:carrot',
+      'minecraft:chorus_fruit',
+      'minecraft:enchanted_golden_apple',
+      'minecraft:glow_berries',
+      'minecraft:golden_apple',
+      'minecraft:golden_carrot',
+      'minecraft:melon_slice',
+      'minecraft:sweet_berries'
+    ]
+    const componentOnlyLootItems = catalog.items
+      .filter(item => componentOnlyLootModels.includes(item.model ?? ''))
+      .sort((left, right) => (left.model ?? '').localeCompare(right.model ?? ''))
+    expect(componentOnlyLootItems.map(item => item.model)).toEqual(componentOnlyLootModels)
+    expect(componentOnlyLootItems.every(item => (
+      item.sources.some(source => source.kind === 'loot')
+      && item.effects.length > 0
+    ))).toBe(true)
+    expect(itemByModel('minecraft:chorus_fruit')?.effects).toContainEqual(
+      expect.objectContaining({
+        id: 'minecraft:teleport_randomly',
+        name: 'Случайная телепортация',
+        description: expect.stringContaining('8 блоков'),
+        durationSeconds: null
+      })
+    )
+  })
+
   it('localizes custom enchantments through their declared translation keys', () => {
     const offers = new Map(
       allTradeOffers(catalog.traders).map(offer => [offer.id, offer])
@@ -224,6 +317,33 @@ describe('generated wiki catalog', () => {
     }
     expect(offers.get('minecraft:butcher/4/butcher_knife')?.details)
       .toContain('Добыча II')
+
+    const blessings = catalog.items.filter(item => (
+      item.category === 'Благословения'
+    ))
+    expect(blessings).toHaveLength(22)
+    expect(blessings.every(item => item.enchantments.length > 0)).toBe(true)
+    expect(
+      blessings.flatMap(item => item.enchantments).map(enchantment => enchantment.name)
+    ).not.toContain(expect.stringMatching(/^[a-z_]+$/))
+
+    const customDescriptions = new Map(
+      blessings.flatMap(item => item.enchantments)
+        .filter(enchantment => enchantment.id.startsWith('main:'))
+        .map(enchantment => [enchantment.id, enchantment.description])
+    )
+    expect([...customDescriptions.keys()].sort()).toEqual([
+      'main:anemos',
+      'main:freezing_protection',
+      'main:reach',
+      'main:traversal',
+      'main:warding2',
+      'main:zephyr'
+    ])
+    expect([...customDescriptions.values()].every(Boolean)).toBe(true)
+    expect(customDescriptions.get('main:reach')).toContain('2 блока')
+    expect(customDescriptions.get('main:warding2')).toContain('12 блоков')
+    expect(customDescriptions.get('main:zephyr')).toContain('2,25 секунды')
   })
 
   it('formats refugee variants and runtime map names for players', () => {
@@ -256,6 +376,11 @@ describe('generated wiki catalog', () => {
     }
 
     expect(avesta.guide?.summary).toContain('валюта глашатая второго уровня')
+    const wardingSword = catalog.items.find(item => (
+      item.model === 'minecraft:warding_sword'
+    ))
+    expect(wardingSword?.guide?.summary).toContain('атаковать для этого не требуется')
+    expect(wardingSword?.guide?.note).toContain('до 20 единиц в секунду')
     expect(avesta.obtainedFrom.map(relation => relation.title)).toEqual([
       'Пустынная пирамида'
     ])

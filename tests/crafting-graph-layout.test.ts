@@ -41,11 +41,48 @@ describe('crafting graph layout', () => {
       height: CRAFTING_GRAPH_RECIPE_GRID_SIZE.height,
       depth: 1
     })
+    expect(recipeView?.height).toBeLessThan(240)
     expect(view.nodes.every(node => node.y >= (rootView?.y ?? 0))).toBe(true)
     expect(view.nodes.every(node => (
       node.width === craftingGraphNodeSize(node.node).width
       && node.height === craftingGraphNodeSize(node.node).height
     ))).toBe(true)
+  })
+
+  it('keeps short source cards compact and grows only for useful copy', () => {
+    const shortTarget: CraftingTargetView = {
+      ...target('matcha:short-source', 'Короткий источник'),
+      sources: [{
+        id: 'nether-fortress',
+        kind: 'location',
+        title: 'Адская крепость',
+        detail: 'Ищите сундуки внутри переходов.',
+        path: '/locations/nether-fortress'
+      }]
+    }
+    const longTarget: CraftingTargetView = {
+      ...target('matcha:long-source', 'Подробный источник'),
+      sources: [{
+        id: 'bastion-remnant',
+        kind: 'location',
+        title: 'Развалины бастиона с сокровищницей',
+        detail: 'Проверяйте перекрёстки и закрытые коридоры. Сундук находится внутри проходов и может быть спрятан за стеной.',
+        path: '/locations/bastion-remnant'
+      }]
+    }
+    const shortSource = buildCraftingGraph(obtainNode(shortTarget)).nodes
+      .find(node => node.kind === 'source')
+    const longSource = buildCraftingGraph(obtainNode(longTarget)).nodes
+      .find(node => node.kind === 'source')
+
+    expect(shortSource).toBeDefined()
+    expect(longSource).toBeDefined()
+    if (!shortSource || !longSource) return
+
+    const shortSize = craftingGraphNodeSize(shortSource)
+    const longSize = craftingGraphNodeSize(longSource)
+    expect(shortSize.height).toBeLessThan(174)
+    expect(longSize.height).toBeGreaterThan(shortSize.height)
   })
 
   it('reserves the full dynamic height of an OR group without overlap', () => {

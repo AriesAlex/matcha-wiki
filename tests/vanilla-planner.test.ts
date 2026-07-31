@@ -171,7 +171,6 @@ describe('vanilla planner supplement', () => {
       targetForItem(item, catalog),
       1,
       {
-        modeByTarget: {},
         recipeByTarget: {},
         optionByRequirement: {}
       },
@@ -226,7 +225,6 @@ describe('vanilla planner supplement', () => {
       targetForResource(catalog, 'minecraft:crafting_table'),
       1,
       {
-        modeByTarget: {},
         recipeByTarget: {},
         optionByRequirement: {}
       },
@@ -252,7 +250,6 @@ describe('vanilla planner supplement', () => {
       targetForResource(catalog, 'minecraft:campfire'),
       1,
       {
-        modeByTarget: {},
         recipeByTarget: {},
         optionByRequirement: {}
       },
@@ -290,7 +287,6 @@ describe('vanilla planner supplement', () => {
         targetForItem(item, catalog),
         1,
         {
-          modeByTarget: {},
           recipeByTarget: {},
           optionByRequirement: {}
         },
@@ -302,7 +298,7 @@ describe('vanilla planner supplement', () => {
     }
   })
 
-  it('prefers real sulfur sources to a circular conversion recipe', () => {
+  it('shows real sulfur sources alongside its circular conversion recipe', () => {
     const sulfur = catalog.acquisition.targets.find(target => (
       target.title === 'Кусок серы'
     ))
@@ -316,7 +312,6 @@ describe('vanilla planner supplement', () => {
       target,
       1,
       {
-        modeByTarget: {},
         recipeByTarget: {},
         optionByRequirement: {}
       },
@@ -324,24 +319,44 @@ describe('vanilla planner supplement', () => {
     )
 
     expect(target.sources?.length).toBeGreaterThan(0)
-    expect(automatic.state).toBe('obtain')
-    expect(containsCycle(automatic)).toBe(false)
+    expect(automatic.state).toBe('craft')
+    expect(containsCycle(automatic)).toBe(true)
 
-    const forcedRecipe = buildCraftingPlan(
-      index,
-      target,
+    const graph = buildCraftingGraph(automatic)
+    const root = graph.nodes.find(node => node.instanceId === graph.rootId)
+    expect(root).toMatchObject({
+      kind: 'item',
+      status: 'craft',
+      detail: 'Можно изготовить или найти.'
+    })
+    expect(graph.edges.some(edge => edge.kind === 'recipe')).toBe(true)
+    expect(graph.edges.some(edge => edge.kind === 'source')).toBe(true)
+    expect(graph.edges.some(edge => edge.cyclic)).toBe(true)
+  })
+
+  it('hides recycling and block unpacking from custom material choices', () => {
+    const item = catalog.items.find(entry => entry.title === 'Адамантовый сплав')
+    expect(item).toBeDefined()
+    if (!item) return
+
+    const plan = buildCraftingPlan(
+      createCraftingIndex(catalog, supplement),
+      targetForItem(item, catalog),
       1,
       {
-        modeByTarget: {
-          [target.key]: 'craft'
+        recipeByTarget: {
+          'resource:minecraft:netherite_ingot':
+            'blasting:netherite_ingot_from_blasting_netherite_materials'
         },
-        recipeByTarget: {},
         optionByRequirement: {}
       },
       {}
     )
-    expect(forcedRecipe.state).toBe('craft')
-    expect(containsCycle(forcedRecipe)).toBe(true)
+
+    expect(plan.recipe?.id).toBe('crafting:adamant')
+    expect(plan.recipeOptions.map(recipe => recipe.id)).toEqual([
+      'crafting:adamant'
+    ])
   })
 
   it('joins pack-defined vanilla items with their recipe results', () => {
@@ -357,6 +372,7 @@ describe('vanilla planner supplement', () => {
     )
     const itemTarget = targetForItem(item, catalog)
     expect(resourceTarget.key).toBe(itemTarget.key)
+    expect(itemTarget.itemPagePath).toBe(`/items/${item.slug}`)
     expect(itemTarget.detailsPath).toBe(`/items/${item.slug}`)
 
     const plan = buildCraftingPlan(
@@ -364,7 +380,6 @@ describe('vanilla planner supplement', () => {
       itemTarget,
       1,
       {
-        modeByTarget: {},
         recipeByTarget: {},
         optionByRequirement: {}
       },
@@ -378,12 +393,31 @@ describe('vanilla planner supplement', () => {
   })
 
   it('does not link plain carriers to recipes for component-defined items', () => {
+    expect(targetForResource(catalog, 'minecraft:potion').itemPagePath)
+      .toBeUndefined()
     expect(targetForResource(catalog, 'minecraft:potion').detailsPath)
       .toBeUndefined()
     expect(targetForResource(catalog, 'minecraft:pumpkin_pie').detailsPath)
       .toBeUndefined()
     expect(targetForResource(catalog, 'minecraft:music_disc_13').detailsPath)
       .toBe('/recipes/crafting/music_disc_13')
+  })
+
+  it('links standalone acquisition resources to their item articles', () => {
+    const rawEstus = catalog.acquisition.targets.find(target => (
+      target.slug === 'syroy-estus'
+    ))
+    expect(rawEstus).toBeDefined()
+    if (!rawEstus) return
+
+    expect(targetForAcquisitionTarget(rawEstus, catalog)).toMatchObject({
+      itemPagePath: '/items/syroy-estus',
+      detailsPath: '/items/syroy-estus'
+    })
+    expect(targetForResource(catalog, 'minecraft:blaze_powder')).toMatchObject({
+      itemPagePath: '/items/syroy-estus',
+      detailsPath: '/items/syroy-estus'
+    })
   })
 
   it('keeps customized vanilla gear and useful block transformations craftable', () => {
@@ -399,7 +433,6 @@ describe('vanilla planner supplement', () => {
         targetForResource(catalog, resourceId),
         1,
         {
-          modeByTarget: {},
           recipeByTarget: {},
           optionByRequirement: {}
         },
@@ -421,7 +454,6 @@ describe('vanilla planner supplement', () => {
         targetForItem(item, catalog),
         1,
         {
-          modeByTarget: {},
           recipeByTarget: {},
           optionByRequirement: {}
         },
@@ -449,7 +481,6 @@ describe('vanilla planner supplement', () => {
       targetForItem(item, catalog),
       1,
       {
-        modeByTarget: {},
         recipeByTarget: {},
         optionByRequirement: {}
       },
@@ -570,7 +601,6 @@ describe('vanilla planner supplement', () => {
       targetForResource(catalogWithDiscSource, 'minecraft:disc_fragment_5'),
       3,
       {
-        modeByTarget: {},
         recipeByTarget: {
           'resource:minecraft:disc_fragment_5': 'crafting:disc_fragment_from_disc'
         },

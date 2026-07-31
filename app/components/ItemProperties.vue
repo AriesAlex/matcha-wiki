@@ -1,20 +1,36 @@
 <template>
   <section class="article-section item-properties">
     <header class="section-heading">
-      <p class="eyebrow">Свойства</p>
-      <h2>Что даёт предмет</h2>
+      <p class="eyebrow">{{ hasOnlyEnchantments ? 'Чары' : 'Свойства' }}</p>
+      <h2>{{ sectionTitle }}</h2>
     </header>
 
     <dl class="properties">
       <div
+        v-for="enchantment in item.enchantments"
+        :key="`${enchantment.id}:${enchantment.level}`"
+      >
+        <dt class="enchantment">
+          <PhBookOpenText :size="18" aria-hidden="true" />
+          <span>
+            <strong>{{ enchantment.name }}</strong>
+            <small v-if="enchantment.description">{{ enchantment.description }}</small>
+          </span>
+        </dt>
+        <dd><strong>{{ formatEnchantmentLevel(enchantment.level) }}</strong></dd>
+      </div>
+      <div
         v-for="effect in item.effects"
         :key="`${effect.id}:${effect.level}:${effect.durationSeconds}`"
       >
-        <dt>
+        <dt :class="{ described: effect.description }">
           <PhSparkle :size="18" aria-hidden="true" />
-          {{ effect.name }} {{ effect.level > 1 ? effect.level : '' }}
+          <span>
+            <strong>{{ effect.name }} {{ effect.level > 1 ? effect.level : '' }}</strong>
+            <small v-if="effect.description">{{ effect.description }}</small>
+          </span>
         </dt>
-        <dd>{{ formatDuration(effect.durationSeconds) }}</dd>
+        <dd>{{ effectDuration(effect.durationSeconds) }}</dd>
       </div>
       <div
         v-for="attribute in item.attributes"
@@ -33,12 +49,24 @@
 </template>
 
 <script setup lang="ts">
-import { PhSparkle } from '@phosphor-icons/vue'
+import { PhBookOpenText, PhSparkle } from '@phosphor-icons/vue'
 import type { ItemView } from '../types/wiki'
 
-defineProps<{
+const props = defineProps<{
   item: ItemView
 }>()
+
+const hasOnlyEnchantments = computed(() => (
+  props.item.enchantments.length > 0
+  && props.item.effects.length === 0
+  && props.item.attributes.length === 0
+))
+const sectionTitle = computed(() => {
+  if (!hasOnlyEnchantments.value) return 'Что даёт предмет'
+  return props.item.carrier === 'minecraft:enchanted_book'
+    ? 'Какие чары хранит книга'
+    : 'Встроенные чары'
+})
 
 const attributeNames: Record<string, string> = {
   'minecraft:armor': 'Броня',
@@ -64,6 +92,17 @@ const slotNames: Record<string, string> = {
 const numberFormatter = new Intl.NumberFormat('ru-RU', {
   maximumFractionDigits: 3
 })
+
+function formatEnchantmentLevel(level: number): string {
+  const romanLevels = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
+  return romanLevels[level - 1] ?? String(level)
+}
+
+function effectDuration(durationSeconds: number | null): string {
+  if (durationSeconds === null) return 'При использовании'
+  if (durationSeconds === 0) return 'Мгновенно'
+  return formatDuration(durationSeconds)
+}
 
 function formatAttributeValue(id: string, amount: number): string {
   let playerValue = amount
@@ -104,6 +143,23 @@ function formatAttributeValue(id: string, amount: number): string {
       align-items: center;
       gap: 7px;
       font-weight: 700;
+
+      &.enchantment,
+      &.described {
+        align-items: flex-start;
+
+        > span {
+          display: grid;
+          gap: 4px;
+
+          small {
+            max-width: 560px;
+            color: var(--muted);
+            font-weight: 400;
+            line-height: 1.45;
+          }
+        }
+      }
     }
 
     dd {

@@ -16,8 +16,8 @@
       </div>
     </header>
 
-    <div class="introduction">
-      <section class="summary">
+    <div class="introduction" :class="{ 'preview-only': !hasSummary }">
+      <section v-if="hasSummary" class="summary">
         <p class="eyebrow">Коротко</p>
         <p class="lead">{{ summary }}</p>
         <p
@@ -50,10 +50,14 @@
 <script setup lang="ts">
 import type { ItemView } from '../types/wiki'
 
-defineProps<{
+const props = defineProps<{
   item: ItemView
   summary: string
 }>()
+
+const hasSummary = computed(() => Boolean(
+  props.summary || props.item.guide?.note
+))
 </script>
 
 <style scoped lang="scss">
@@ -94,6 +98,10 @@ defineProps<{
     align-items: start;
     gap: 42px;
     margin-top: 46px;
+
+    &.preview-only {
+      grid-template-columns: minmax(260px, 420px);
+    }
   }
 
   .summary {

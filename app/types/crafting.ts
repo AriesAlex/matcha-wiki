@@ -6,7 +6,6 @@ import type {
   WikiCatalog
 } from './wiki'
 
-export type CraftingMode = 'craft' | 'obtain'
 export type CraftingRecipeOrigin = 'pack' | 'vanilla'
 
 export interface CraftingRecipeLayout {
@@ -60,6 +59,7 @@ export interface CraftingTargetView {
   title: string
   icon?: string
   item?: ItemView
+  itemPagePath?: string
   detailsPath?: string
   vanillaName?: string
   obtainHint?: string
@@ -74,7 +74,6 @@ export interface CraftingIndex {
 }
 
 export interface CraftingPlanSelections {
-  modeByTarget: Record<string, CraftingMode>
   recipeByTarget: Record<string, string>
   optionByRequirement: Record<string, string>
 }
@@ -112,7 +111,6 @@ export interface CraftingPlanNode {
 
 export interface CraftingProgressState {
   ownedByTarget: Record<string, number>
-  modeByTarget: Record<string, CraftingMode>
   recipeByTarget: Record<string, string>
   optionByRequirement: Record<string, string>
 }

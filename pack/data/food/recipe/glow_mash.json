@@ -7,6 +7,7 @@
   "result": {
     "id": "minecraft:rotten_flesh",
     "components": {
+      "minecraft:item_model": "minecraft:glow_mash",
       "minecraft:lore": [
         {
           "text": "❤",

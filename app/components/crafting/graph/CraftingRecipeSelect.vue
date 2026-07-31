@@ -67,6 +67,7 @@ label {
     width: 100%;
     min-height: 44px;
     padding: 7px 32px 7px 10px;
+    color: var(--ink);
     background: var(--surface);
     border: 1px solid var(--edge);
     font-size: 12px;

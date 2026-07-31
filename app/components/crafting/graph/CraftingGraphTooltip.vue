@@ -57,12 +57,22 @@ const detailLabel = computed(() => {
   if (!current) return ''
   if (current.kind !== 'item') return current.detail
   if (props.complete) return ''
-  return current.status === 'obtain' ? current.detail : ''
+  return current.detail
 })
 const stateLabel = computed(() => {
   const current = graphNode.value
   if (!current) return ''
   if (current.kind === 'item' && props.complete) return 'Готово'
+  if (current.kind === 'recipe') return 'Способ изготовления'
+  if (current.kind === 'source') return 'Где получить'
+  if (current.kind === 'alternatives') {
+    return current.alternativeKind === 'source'
+      ? 'Выберите способ получения'
+      : 'Выберите материал'
+  }
+  if (current.recipeIds.length && current.target.sources?.length) {
+    return 'Изготовить или найти'
+  }
   return {
     owned: 'Готово',
     craft: 'Нужно изготовить',

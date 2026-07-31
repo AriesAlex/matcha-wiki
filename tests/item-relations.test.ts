@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { WikiCatalog } from '../app/types/wiki'
 import {
   hasTradeExchange,
+  playerFacingItemRecipeUses,
   resolveItemRecipeUses
 } from '../app/utils/itemRelations'
 
@@ -56,10 +57,30 @@ describe('player-facing item relations', () => {
       technical: true
     })
     expect(hellBoundBook?.result?.title).toBe('§cКнига адских уз')
-    expect(hellBoundBook?.description).toContain('Риск потери')
+    expect(hellBoundBook?.description).toBe('Нужен как ингредиент.')
     expect(hellBoundBook?.description).not.toMatch(
       /components|minecraft:|техническ/ui
     )
+  })
+
+  it('shows carrier recipes only when the recipe names the Matcha item', () => {
+    const benzene = catalog.items.find(item => (
+      item.id === 'recipe-output:crafting/benzene'
+    ))
+    const avesta = catalog.items.find(item => item.model === 'minecraft:avesta')
+    const fishBones = catalog.items.find(item => item.id === 'minecraft:fish_bones')
+    expect(benzene).toBeDefined()
+    expect(avesta).toBeDefined()
+    expect(fishBones).toBeDefined()
+    if (!benzene || !avesta || !fishBones) return
+
+    expect(playerFacingItemRecipeUses(catalog, benzene).map(use => use.to))
+      .toEqual([
+        '/recipes/blessings/hell_bound_book',
+        '/recipes/crafting/stabilised_estus'
+      ])
+    expect(playerFacingItemRecipeUses(catalog, avesta)).toEqual([])
+    expect(playerFacingItemRecipeUses(catalog, fishBones)).toEqual([])
   })
 
   it('preserves distinct trade results that share one visual model', () => {

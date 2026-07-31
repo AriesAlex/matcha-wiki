@@ -17,7 +17,6 @@ import {
 } from '../app/utils/craftingPlan'
 
 const emptySelections: CraftingPlanSelections = {
-  modeByTarget: {},
   recipeByTarget: {},
   optionByRequirement: {}
 }
@@ -153,7 +152,7 @@ describe('crafting plan', () => {
     expect(planks?.node.target.title).toBe('Еловые доски')
   })
 
-  it('reports a selected circular recipe instead of recursing forever', () => {
+  it('ignores a stored technical recipe that is not player-useful', () => {
     const plan = buildCraftingPlan(
       index,
       target,
@@ -167,7 +166,12 @@ describe('crafting plan', () => {
       {}
     )
 
-    expect(plan.requirements[0]?.node.requirements[0]?.node.state).toBe('cycle')
+    const iron = plan.requirements[0]?.node
+    expect(iron?.recipe?.id).toBe('minecraft:iron_from_blasting')
+    expect(iron?.recipeOptions.map(recipe => recipe.id)).toEqual([
+      'minecraft:iron_from_blasting'
+    ])
+    expect(iron?.requirements[0]?.node.state).toBe('obtain')
   })
 })
 

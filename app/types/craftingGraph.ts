@@ -41,6 +41,7 @@ export interface CraftingGraphItemNode extends CraftingGraphNodeBase {
   readonly demand: CraftingGraphDemand
   readonly occurrences: number
   readonly recipeIds: readonly string[]
+  readonly itemPagePath?: string
   readonly detailsPath?: string
 }
 

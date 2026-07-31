@@ -93,6 +93,15 @@
       ],
       "summary": "Эффекты экипировки адресованы владельцу зачарованного предмета через @s. Кровавая ярость больше не усиливает всех раненых игроков, аксессуары не бафают соседа, а Slaughter, Divinity и Warding Armour используют позицию и счётчики владельца.",
       "evidenceType": "run_function_command_source_ownership"
+    },
+    {
+      "id": "EQUIPMENT-08",
+      "files": [
+        "pack/data/main/enchantment/riposte.json",
+        "pack/assets/minecraft/lang/ru_ru.json"
+      ],
+      "summary": "Отскок бронзового меча проверяет состояние владельца, которого перемещает, а не состояние поражённой цели; русское имя теперь прямо описывает механику.",
+      "evidenceType": "post_attack_entity_context"
     }
   ],
   "deferred": [

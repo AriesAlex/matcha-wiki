@@ -50,7 +50,7 @@
 							"condition": "minecraft:inverted",
 							"term": {
 								"condition": "minecraft:entity_properties",
-								"entity": "this",
+								"entity": "direct_attacker",
 								"predicate": {
 									"vehicle": {}
 								}
@@ -58,7 +58,7 @@
 						},
 						{
 							"condition": "minecraft:entity_properties",
-							"entity": "this",
+							"entity": "direct_attacker",
 							"predicate": {
 								"flags": {
 									"is_fall_flying": false
@@ -67,7 +67,7 @@
 						},
 						{
 							"condition": "minecraft:entity_properties",
-							"entity": "this",
+							"entity": "direct_attacker",
 							"predicate": {
 								"flags": {
 									"is_in_water": false

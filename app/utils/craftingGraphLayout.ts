@@ -13,18 +13,23 @@ import {
   hiddenCraftingAlternativeCount,
   visibleCraftingAlternatives
 } from './craftingGraphAlternatives'
+import {
+  craftingRecipeDisplayKind,
+  recipeKind
+} from './craftingRecipeLayout'
+import { stripMinecraftFormatting } from './format'
 
 export const CRAFTING_GRAPH_ITEM_SIZE: CraftingGraphNodeSize
   = Object.freeze({ width: 268, height: 148 })
 
 export const CRAFTING_GRAPH_RECIPE_GRID_SIZE: CraftingGraphNodeSize
-  = Object.freeze({ width: 244, height: 292 })
+  = Object.freeze({ width: 244, height: 192 })
 
 export const CRAFTING_GRAPH_RECIPE_COMPACT_SIZE: CraftingGraphNodeSize
-  = Object.freeze({ width: 244, height: 190 })
+  = Object.freeze({ width: 244, height: 104 })
 
 export const CRAFTING_GRAPH_SOURCE_SIZE: CraftingGraphNodeSize
-  = Object.freeze({ width: 288, height: 174 })
+  = Object.freeze({ width: 288, height: 96 })
 
 export const CRAFTING_GRAPH_ALTERNATIVES_WIDTH = 320
 export const CRAFTING_GRAPH_ALTERNATIVES_HEADER_HEIGHT = 78
@@ -208,11 +213,9 @@ export function craftingGraphNodeSize(
   node: CraftingGraphNode
 ): CraftingGraphNodeSize {
   if (node.kind === 'item') return CRAFTING_GRAPH_ITEM_SIZE
-  if (node.kind === 'source') return CRAFTING_GRAPH_SOURCE_SIZE
+  if (node.kind === 'source') return sourceNodeSize(node.title, node.detail)
   if (node.kind === 'recipe') {
-    return recipeUsesGrid(node.recipe.type)
-      ? CRAFTING_GRAPH_RECIPE_GRID_SIZE
-      : CRAFTING_GRAPH_RECIPE_COMPACT_SIZE
+    return recipeNodeSize(node)
   }
 
   const optionCount = Math.max(1, visibleCraftingAlternatives(node).length)
@@ -232,9 +235,54 @@ function nodeSize(node: CraftingGraphNode): CraftingGraphNodeSize {
   return craftingGraphNodeSize(node)
 }
 
-function recipeUsesGrid(type: string): boolean {
-  const kind = type.replace(/^.*:/, '')
-  return kind === 'crafting_shaped' || kind === 'crafting_shapeless'
+function recipeNodeSize(
+  node: Extract<CraftingGraphNode, { kind: 'recipe' }>
+): CraftingGraphNodeSize {
+  const displayKind = craftingRecipeDisplayKind(node.recipe)
+  const base = displayKind === 'grid'
+    ? CRAFTING_GRAPH_RECIPE_GRID_SIZE
+    : CRAFTING_GRAPH_RECIPE_COMPACT_SIZE
+  const titleHeight = estimatedLineCount(node.title, 23, 2) * 17
+  const detailHeight = node.detail
+    ? 3 + estimatedLineCount(node.detail, 31, 4) * 13
+    : 0
+  const slotsHeight = displayKind === 'grid' ? 136 : 44
+  const hasLayoutHint = recipeKind(node.recipe.type) === 'crafting_shapeless'
+    || displayKind === 'smithing'
+  const contentHeight = 24
+    + titleHeight
+    + detailHeight
+    + 12
+    + slotsHeight
+    + (hasLayoutHint ? 26 : 0)
+
+  return {
+    width: base.width,
+    height: Math.max(base.height, contentHeight)
+  }
+}
+
+function sourceNodeSize(title: string, detail: string): CraftingGraphNodeSize {
+  const titleHeight = estimatedLineCount(title, 24, 3) * 18
+  const detailHeight = detail
+    ? 7 + estimatedLineCount(detail, 34, 4) * 15
+    : 0
+  return {
+    width: CRAFTING_GRAPH_SOURCE_SIZE.width,
+    height: Math.max(
+      CRAFTING_GRAPH_SOURCE_SIZE.height,
+      36 + titleHeight + detailHeight
+    )
+  }
+}
+
+function estimatedLineCount(
+  text: string,
+  charactersPerLine: number,
+  maximum: number
+): number {
+  const length = stripMinecraftFormatting(text).trim().length
+  return Math.max(1, Math.min(maximum, Math.ceil(length / charactersPerLine)))
 }
 
 function graphBounds(

@@ -71,8 +71,8 @@ function requestItem(
 
   if (missing <= 0 || representative.state === 'owned') return
 
+  ensureSources(context, item, representative)
   if (representative.state !== 'craft' || !representative.recipe) {
-    ensureSources(context, item, representative)
     return
   }
 

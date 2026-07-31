@@ -1,4 +1,4 @@
-import type { StackView } from './wiki'
+import type { ItemGuide, StackView } from './wiki'
 
 export type AcquisitionKind = 'chest' | 'archaeology' | 'mob'
 export type AcquisitionChannel = 'fishing' | 'fishing_table'
@@ -25,6 +25,7 @@ export interface AcquisitionTarget {
   stack: StackView
   vanillaName?: string
   itemSlug?: string
+  guide?: ItemGuide
 }
 
 export interface AcquisitionMethod {

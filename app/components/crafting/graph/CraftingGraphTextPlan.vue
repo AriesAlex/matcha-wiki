@@ -59,11 +59,13 @@ const incomingById = computed(() => {
 })
 
 function detailsPath(node: CraftingGraphNodeView): string {
-  const path = node.node.kind === 'item' || node.node.kind === 'recipe'
-    ? node.node.detailsPath
-    : node.node.kind === 'source'
-      ? node.node.source.path
-      : undefined
+  const path = node.node.kind === 'item'
+    ? node.node.itemPagePath
+    : node.node.kind === 'recipe'
+      ? node.node.detailsPath
+      : node.node.kind === 'source'
+        ? node.node.source.path
+        : undefined
 
   return path && normalizeWikiPath(route.path) !== normalizeWikiPath(path)
     ? path

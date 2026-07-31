@@ -4,8 +4,9 @@ import type { TraderView } from './entities'
 export interface ItemEffect {
   id: string
   name: string
+  description?: string
   level: number
-  durationSeconds: number
+  durationSeconds: number | null
 }
 
 export interface ItemAttribute {
@@ -14,6 +15,13 @@ export interface ItemAttribute {
   amount: number
   operation: string
   slot?: string
+}
+
+export interface ItemEnchantment {
+  id: string
+  name: string
+  level: number
+  description?: string
 }
 
 export interface StackView {
@@ -82,6 +90,7 @@ export interface ItemSource {
 export interface ItemGuide {
   summary: string
   note?: string
+  unobtainable?: boolean
 }
 
 export interface ItemRelationStackView {
@@ -122,6 +131,7 @@ export interface ItemView {
   category: string
   isCustom: boolean
   lore: string[]
+  enchantments: ItemEnchantment[]
   effects: ItemEffect[]
   attributes: ItemAttribute[]
   componentKeys: string[]

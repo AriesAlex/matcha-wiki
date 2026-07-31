@@ -73,7 +73,7 @@
           :complete="completedNodeIds.includes(node.instanceId)"
           :inactive="inactiveNodeIds.has(node.instanceId)"
           :style="nodeStyle(node)"
-          @open-details="openDetails"
+          @open-details="toggleDetails"
           @toggle-item="toggleItem"
           @select-option="selectOption"
           @focus-node="focusNode"
@@ -89,7 +89,6 @@
         :open="Boolean(selectedNode)"
         :complete="selectedId ? completedNodeIds.includes(selectedId) : false"
         @close="closeDetails"
-        @select-mode="emit('select-mode', $event.targetKey, $event.mode)"
         @select-recipe="emit('select-recipe', $event.targetKey, $event.recipeId)"
         @select-option="emit('select-option', $event.requirementKey, $event.targetKey)"
       />
@@ -138,7 +137,6 @@ import type {
   CraftingGraphNodeView,
   CraftingGraphView
 } from '../../../types/craftingGraph'
-import type { CraftingMode } from '../../../types/crafting'
 import { craftingGraphActivity } from '../../../utils/craftingGraphProgress'
 import { DEFAULT_CRAFTING_VIEWPORT_SCALE_RANGE } from '../../../utils/craftingViewport'
 
@@ -161,7 +159,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'toggle-item': [instanceId: string]
-  'select-mode': [targetKey: string, mode: CraftingMode]
   'select-recipe': [targetKey: string, recipeId: string]
   'select-option': [requirementKey: string, targetKey: string]
 }>()
@@ -195,7 +192,7 @@ const viewport = useCraftingViewport({
 watch(rootRef, element => viewport.rootRef.value = element, { immediate: true })
 watch(contentRef, element => viewport.contentRef.value = element, { immediate: true })
 watch(
-  () => [rootRef.value, contentRef.value, props.graph.rootId] as const,
+  [rootRef, contentRef, () => props.graph.rootId],
   async ([root, content]) => {
     if (!root || !content) return
     await nextTick()
@@ -277,7 +274,12 @@ function nodeStyle(node: CraftingGraphNodeView): CSSProperties {
   }
 }
 
-function openDetails(instanceId: string): void {
+async function toggleDetails(instanceId: string): Promise<void> {
+  if (selectedId.value === instanceId) {
+    await closeDetails()
+    return
+  }
+
   selectionTrigger = document.activeElement instanceof HTMLElement
     ? document.activeElement
     : null

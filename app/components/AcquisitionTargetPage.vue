@@ -19,6 +19,7 @@
         <p class="eyebrow">Ресурс Matcha</p>
         <h1><MinecraftText :text="target.title" /></h1>
         <p class="lead">{{ summary }}</p>
+        <p v-if="target.guide?.note" class="guide-note">{{ target.guide.note }}</p>
       </div>
     </header>
 
@@ -39,7 +40,8 @@
         <p class="eyebrow">Получение</p>
         <h2>Где взять</h2>
       </header>
-      <ItemRelationList :relations="sources" />
+      <p v-if="obtainHint" class="obtain-hint">{{ obtainHint }}</p>
+      <ItemRelationList v-if="sources.length" :relations="sources" />
       <div v-if="recipes.length" class="recipes">
         <h3>Изготовить самому</h3>
         <RecipeViewer
@@ -50,18 +52,15 @@
       </div>
     </section>
 
-    <ItemCraftingPath :target="craftingTarget" />
-
-    <section class="article-section">
+    <section v-if="uses.length" class="article-section">
       <header class="section-heading">
         <p class="eyebrow">Применение</p>
         <h2>Где используется</h2>
       </header>
-      <ItemRelationList v-if="uses.length" :relations="uses" />
-      <p v-else class="empty-note">
-        Прямого применения в рецептах и обменах не найдено.
-      </p>
+      <ItemRelationList :relations="uses" />
     </section>
+
+    <ItemCraftingPath :target="craftingTarget" />
   </article>
 </template>
 
@@ -74,13 +73,19 @@ const props = defineProps<{
 }>()
 
 const catalog = useWikiCatalog()
-const summary = computed(() => acquisitionTargetSummary(props.target))
+const obtainHint = computed(() => (
+  catalog.ingredientGlossary[props.target.stack.carrier]?.obtainHint ?? ''
+))
 const sources = computed(() => acquisitionTargetSources(catalog, props.target))
 const recipes = computed(() => recipesProducingAcquisitionTarget(
   catalog,
   props.target
 ))
 const uses = computed(() => acquisitionTargetUses(catalog, props.target))
+const summary = computed(() => acquisitionTargetSummary(
+  props.target,
+  uses.value
+))
 const craftingTarget = computed(() => targetForAcquisitionTarget(
   props.target,
   catalog
@@ -140,8 +145,19 @@ const craftingTarget = computed(() => targetForAcquisitionTarget(
     margin-top: 34px;
   }
 
-  .empty-note {
+  .obtain-hint {
+    max-width: 720px;
+    margin: 0 0 20px;
+    color: var(--ink);
+    font-size: 17px;
+    line-height: 1.6;
+  }
+
+  .guide-note {
+    max-width: 720px;
+    margin: 12px 0 0;
     color: var(--muted);
+    line-height: 1.55;
   }
 
   @media (max-width: 620px) {

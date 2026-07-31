@@ -57,6 +57,7 @@ export function finalizeCraftingGraph(
       recipeIds: Object.freeze(
         recipeIdsByTarget.get(item.projection.targetKey) ?? []
       ),
+      itemPagePath: target.itemPagePath,
       detailsPath: target.detailsPath
     }))
   }
@@ -222,8 +223,8 @@ function itemStatus(
   item: ItemAccumulator,
   demand: CraftingGraphDemand
 ): CraftingPlanState {
-  if (item.cyclic) return 'cycle'
   if (demand.missing === 0) return 'owned'
+  if (item.cyclic && !item.recipeId) return 'cycle'
 
   const state = item.projection.representative.state
   return state === 'owned' ? 'unknown' : state

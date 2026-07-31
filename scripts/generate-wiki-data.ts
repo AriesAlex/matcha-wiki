@@ -25,6 +25,7 @@ import type {
   IngredientGlossaryEntry,
   IngredientView,
   ItemAttribute,
+  ItemEnchantment,
   ItemEffect,
   ItemGuide,
   ItemRelationView,
@@ -45,6 +46,7 @@ import {
   type SmithingIngredients
 } from './lib/recipeRequirements'
 import { buildAcquisitionCatalog } from './lib/acquisition'
+import { acquisitionTargetSlug } from './lib/acquisition/targetRoutes'
 import { createSearchIndex } from './lib/searchIndex'
 import {
   buildTraderViews,
@@ -118,6 +120,11 @@ interface ItemGuideRegistry {
   tradeProfessions: Record<string, string>
 }
 
+interface AcquisitionGuideRegistry {
+  schemaVersion: 1
+  entries: Record<string, ItemGuide>
+}
+
 interface SourceGuideRegistry {
   schemaVersion: 1
   mobs: Record<string, {
@@ -165,6 +172,9 @@ const ingredientGuideRegistry = readJson<IngredientGuideRegistry>(
 const itemGuideRegistry = readJson<ItemGuideRegistry>(
   resolve(rootDir, 'wiki-data/item-guides.ru.json')
 )
+const acquisitionGuideRegistry = readJson<AcquisitionGuideRegistry>(
+  resolve(rootDir, 'wiki-data/acquisition-guides.ru.json')
+)
 const traderGuideRegistry = readJson<TraderGuideRegistry>(
   resolve(rootDir, 'wiki-data/entity-guides.ru.json')
 )
@@ -172,6 +182,30 @@ const sourceGuideRegistry = readJson<SourceGuideRegistry>(
   resolve(rootDir, 'wiki-data/source-guides.ru.json')
 )
 const enchantmentNames = loadEnchantmentNames()
+const enchantmentDescriptions: Record<string, string> = {
+  'main:anemos': 'После удара по существу или блоку выпускает заряд ветра в направлении взгляда. Перезарядка — 1 секунда.',
+  'main:bloodrage': 'Пока топор в основной руке и у вас не больше 5 сердец, даёт Силу I и Сопротивление II: +3 урона и на 40 % меньше входящего урона.',
+  'main:cleanse_armor_chest': 'Надетый нагрудник постоянно снимает Отравление и Иссушение.',
+  'main:cleanse_armor_feet': 'Надетые ботинки постоянно снимают Левитацию.',
+  'main:cleanse_armor_head': 'Надетый шлем постоянно снимает Слепоту и Тьму.',
+  'main:cleanse_armor_legs': 'Надетые поножи постоянно снимают Замедление.',
+  'main:conduit_power': 'Опаловые серьги постоянно дают Силу источника I и Грацию дельфина I: под водой легче дышать, видеть, добывать блоки и плавать.',
+  'main:divinity': 'Каждая надетая часть адамантовой брони и адамантовый предмет в основной руке добавляют 2 возобновляемых сердца Поглощения. Пять предметов дают 10 сердец и обновляют щит каждые 15 секунд; один–четыре — каждые 30 секунд.',
+  'main:fire_proof': 'Надетый рубиновый венец постоянно даёт Огнестойкость.',
+  'main:freezing_protection': 'Снижает урон от замерзания, а на III уровне полностью исключает переохлаждение в воде холодных биомов.',
+  'main:haste': 'Надетые топазовые серьги постоянно дают Спешку II.',
+  'main:reach': 'Увеличивает дальность взаимодействия с блоками на 2 блока за каждый уровень.',
+  'main:regeneration': 'Надетые янтарные серьги поддерживают Регенерацию I. Более сильную регенерацию они не заменяют и возвращают свой эффект после её окончания.',
+  'main:riposte': 'После удара отбрасывает владельца бронзового меча назад с силой 0,458 за уровень и дополнительно расходует 1 прочность.',
+  'main:sanguine': 'Каждый успешный удар палатинатовым мечом или копьём даёт владельцу Регенерацию III на 1 секунду. Удар по стойке для брони не считается.',
+  'main:slaughter': 'Мясницкий тесак наносит домашнему скоту на 40 единиц урона больше и почти обездвиживает таких животных в радиусе 3 блоков Замедлением X.',
+  'main:traversal': 'Повышает скорость передвижения на 10,5 % от обычной за каждый уровень на тропинке, гравии, каменистой земле, утрамбованной грязи или саманных кирпичах. На III уровне при срабатывании есть 12 % шанс потерять 1 прочность ботинок.',
+  'main:warding0': 'В любой руке замедляет ближайшую нежить в радиусе 8 блоков. Ближайшая обычная нежить в радиусе 3 блоков получает до 20 урона в секунду; Иссушитель урона не получает.',
+  'main:warding1': 'В любой руке замедляет ближайшую нежить в радиусе 8 блоков и наносит ближайшей обычной нежити и Иссушителю до 20 урона в секунду. Эффекты двух предметов могут складываться.',
+  'main:warding2': 'Пока предмет в руке, ближайшая нежить в радиусе 12 блоков получает Замедление III и до 60 единиц урона в секунду; иссушитель — до 20.',
+  'main:warding_armour': 'Сила ауры зависит от числа частей электрумовой брони. Одна часть замедляет нежить в радиусе 8 блоков и наносит до 2 урона в секунду; полный комплект действует в радиусе 24 блоков и раз в секунду наносит ближайшей обычной нежити 19 урона.',
+  'main:zephyr': 'Приседайте примерно 2,25 секунды до полного заряда, затем окажитесь в воздухе и отпустите приседание, чтобы резко взлететь.'
+}
 const bannerColours: Record<string, string> = {
   black: '#1d1d21',
   blue: '#3c44aa',
@@ -219,6 +253,17 @@ const effectNames: Record<string, string> = {
   water_breathing: 'Подводное дыхание',
   weakness: 'Слабость',
   wither: 'Иссушение'
+}
+
+interface VanillaPotionEffect {
+  id: string
+  amplifier: number
+  duration: number
+}
+
+const vanillaPotionEffects: Record<string, VanillaPotionEffect[]> = {
+  strong_healing: [{ id: 'minecraft:instant_health', amplifier: 1, duration: 0 }],
+  strong_poison: [{ id: 'minecraft:poison', amplifier: 1, duration: 432 }]
 }
 
 const equipmentPattern = /(axe|boots|bow|brush|chestplate|circlet|claymore|compass|crook|dolabra|earrings|elytra|hatchet|helmet|hoe|knife|laurel|leggings|mattock|pickaxe|shears|shield|shovel|spear|sword|trident)/
@@ -287,6 +332,7 @@ function main(): void {
     parseStack,
     vanillaNameForResource
   })
+  attachAcquisitionGuides(acquisition.targets, items)
   replaceLegacyLootRelations(items, acquisition)
   const files = walkFiles(packDir)
 
@@ -340,6 +386,7 @@ function assertSourceTree(): void {
     resolve(rootDir, 'wiki-data/advancement-guides.json'),
     resolve(rootDir, 'wiki-data/ingredient-guides.ru.json'),
     resolve(rootDir, 'wiki-data/item-guides.ru.json'),
+    resolve(rootDir, 'wiki-data/acquisition-guides.ru.json'),
     resolve(rootDir, 'wiki-data/entity-guides.ru.json'),
     resolve(rootDir, 'wiki-data/source-guides.ru.json'),
     vanillaAssetsPath
@@ -565,11 +612,6 @@ function captureVariants(): Map<string, CapturedVariant[]> {
         return
       }
 
-      const model = value.components['minecraft:item_model']
-      if (typeof model !== 'string') {
-        return
-      }
-
       const ownCarrier = [value.id, value.name]
         .find(candidate => typeof candidate === 'string' && isResourceLocation(candidate))
       const carrier = typeof ownCarrier === 'string' ? ownCarrier : inheritedCarrier
@@ -577,22 +619,35 @@ function captureVariants(): Map<string, CapturedVariant[]> {
         return
       }
 
+      const rawModel = value.components['minecraft:item_model']
+      const consumable = value.components['minecraft:consumable']
+      const isComponentOnlyLootVariant = source.kind === 'loot'
+        && isObject(consumable)
+        && Array.isArray(consumable.on_consume_effects)
+        && consumable.on_consume_effects.length > 0
+      if (typeof rawModel !== 'string' && !isComponentOnlyLootVariant) {
+        return
+      }
+      const model = typeof rawModel === 'string'
+        ? normalizeModelId(rawModel)
+        : normalizeModelId(carrier)
+
       const stack = parseStack({
         ...value,
         id: carrier,
         components: value.components
       })
-      if (!stack?.model) {
+      if (!stack) {
         return
       }
 
-      const bucket = variants.get(stack.model) ?? []
+      const bucket = variants.get(model) ?? []
       const occurrence = { stack, source }
       const signature = JSON.stringify(occurrence)
       if (!bucket.some(candidate => JSON.stringify(candidate) === signature)) {
         bucket.push(occurrence)
       }
-      variants.set(stack.model, bucket)
+      variants.set(model, bucket)
     })
   }
 
@@ -713,7 +768,8 @@ function buildItems(
       category: itemCategory(modelPath, carrier, components),
       isCustom,
       lore: extractLore(components),
-      effects: extractEffects(components),
+      enchantments: extractEnchantments(components),
+      effects: extractEffects(components, carrier),
       attributes: extractAttributes(components),
       componentKeys: Object.keys(components).sort(),
       components,
@@ -733,11 +789,40 @@ function buildItems(
     })
   }
 
-  items.push(...buildComponentItems(recipes))
+  for (const output of buildRecipeOutputItems(recipes)) {
+    const existing = items.find(item => (
+      item.carrier === output.carrier
+      && normalizeDisplayName(item.name) === normalizeDisplayName(output.name)
+      && JSON.stringify([
+        item.lore,
+        item.enchantments,
+        item.effects,
+        item.attributes
+      ]) === JSON.stringify([
+        output.lore,
+        output.enchantments,
+        output.effects,
+        output.attributes
+      ])
+    ))
+    if (!existing) {
+      items.push(output)
+      continue
+    }
+
+    existing.recipeIds = [...new Set([
+      ...existing.recipeIds,
+      ...output.recipeIds
+    ])]
+    existing.sources = dedupeSources([
+      ...existing.sources,
+      ...output.sources
+    ])
+  }
   return items.sort(compareItems)
 }
 
-function buildComponentItems(recipes: RecipeView[]): ItemView[] {
+function buildRecipeOutputItems(recipes: RecipeView[]): ItemView[] {
   const groups = new Map<string, {
     stack: StackView
     recipes: RecipeView[]
@@ -745,16 +830,25 @@ function buildComponentItems(recipes: RecipeView[]): ItemView[] {
 
   for (const recipe of recipes) {
     const stack = recipe.result
-    if (!stack || stack.model || Object.keys(stack.components ?? {}).length === 0) {
+    if (!stack || stack.model) {
       continue
     }
 
-    const signature = JSON.stringify({
-      carrier: stack.carrier,
-      name: stack.name,
-      nameKey: stack.nameKey,
-      components: stack.components
-    })
+    const components = stack.components ?? {}
+    const hasComponents = Object.keys(components).length > 0
+    if (!hasComponents && !isRenamedRecipeResult(stack)) continue
+
+    const signature = hasComponents
+      ? JSON.stringify({
+          carrier: stack.carrier,
+          name: stack.name,
+          nameKey: stack.nameKey,
+          components
+        })
+      : JSON.stringify({
+          carrier: stack.carrier,
+          name: stack.name
+        })
     const group = groups.get(signature) ?? { stack, recipes: [] }
     group.recipes.push(recipe)
     groups.set(signature, group)
@@ -763,8 +857,12 @@ function buildComponentItems(recipes: RecipeView[]): ItemView[] {
   return [...groups.values()].map(({ stack, recipes: matchingRecipes }) => {
     const orderedRecipes = [...matchingRecipes].sort((left, right) => left.id.localeCompare(right.id))
     const primaryRecipe = orderedRecipes[0]
-    const id = `recipe-output:${primaryRecipe.namespace}/${primaryRecipe.path}`
     const components = stack.components ?? {}
+    const hasComponents = Object.keys(components).length > 0
+    const resultSlug = acquisitionTargetSlug(stack.name)
+    const id = hasComponents
+      ? `recipe-output:${primaryRecipe.namespace}/${primaryRecipe.path}`
+      : `renamed-result:${resourceNamespace(stack.carrier)}/${resourcePath(stack.carrier)}/${resultSlug}`
     const description = stack.nameKey
       ? firstTranslation([
           `${stack.nameKey}.desc`,
@@ -774,7 +872,7 @@ function buildComponentItems(recipes: RecipeView[]): ItemView[] {
 
     return {
       id,
-      slug: slugify(id),
+      slug: hasComponents ? slugify(id) : resultSlug,
       carrier: stack.carrier,
       name: stack.name,
       title: stack.name,
@@ -784,7 +882,8 @@ function buildComponentItems(recipes: RecipeView[]): ItemView[] {
       category: itemCategory(resourcePath(stack.carrier), stack.carrier, components),
       isCustom: true,
       lore: extractLore(components),
-      effects: extractEffects(components),
+      enchantments: extractEnchantments(components),
+      effects: extractEffects(components, stack.carrier),
       attributes: extractAttributes(components),
       componentKeys: Object.keys(components).sort(),
       components,
@@ -801,12 +900,48 @@ function buildComponentItems(recipes: RecipeView[]): ItemView[] {
         id,
         stack.carrier,
         resourcePath(stack.carrier),
+        vanillaNameForResource(stack.carrier),
+        stack.name,
         stack.nameKey,
         en[stack.nameKey ?? ''],
         ...orderedRecipes.map(recipe => recipe.id)
       ].filter(Boolean))]
     }
   })
+}
+
+function isRenamedRecipeResult(stack: StackView): boolean {
+  const vanillaName = vanillaNameForResource(stack.carrier)
+  return Boolean(
+    vanillaName
+    && normalizeDisplayName(stack.name) !== normalizeDisplayName(vanillaName)
+  )
+}
+
+function attachAcquisitionGuides(
+  targets: WikiCatalog['acquisition']['targets'],
+  items: ItemView[]
+): void {
+  const targetsBySlug = new Map(targets.map(target => [target.slug, target]))
+  const staleGuides = Object.keys(acquisitionGuideRegistry.entries)
+    .filter(slug => !targetsBySlug.has(slug))
+  if (staleGuides.length) {
+    throw new Error(
+      `Гайды ссылаются на отсутствующие цели добычи: ${staleGuides.join(', ')}`
+    )
+  }
+
+  const itemsBySlug = new Map(items.map(item => [item.slug, item]))
+  for (const [slug, guide] of Object.entries(acquisitionGuideRegistry.entries)) {
+    const target = targetsBySlug.get(slug)
+    if (!target) continue
+
+    target.guide = guide
+    if (!target.itemSlug) continue
+
+    const item = itemsBySlug.get(target.itemSlug)
+    if (item) item.guide = guide
+  }
 }
 
 function disambiguateItemTitles(items: ItemView[]): void {
@@ -1062,7 +1197,11 @@ function stackIdentityLoreCount(stack: StackView, lore: string[]): number {
 }
 
 function stackEnchantments(stack: StackView): string[] {
-  const components = stack.components ?? {}
+  return extractEnchantments(stack.components ?? {})
+    .map(enchantment => `${enchantment.name} ${romanLevel(enchantment.level)}`)
+}
+
+function extractEnchantments(components: JsonObject): ItemEnchantment[] {
   const rawEnchantments = components['minecraft:stored_enchantments']
     ?? components['minecraft:enchantments']
   if (!isObject(rawEnchantments)) {
@@ -1071,16 +1210,20 @@ function stackEnchantments(stack: StackView): string[] {
   const levels = isObject(rawEnchantments.levels)
     ? rawEnchantments.levels
     : rawEnchantments
-  const enchantments = Object.entries(levels)
+  return Object.entries(levels)
     .filter((entry): entry is [string, number] => typeof entry[1] === 'number')
     .map(([id, level]) => {
       const normalized = normalizeResource(id)
       const name = enchantmentNames.get(normalized)
         ?? ru[`enchantment.${normalized.replace(':', '.')}`]
         ?? formatIdentifier(resourcePath(normalized))
-      return `${name} ${romanLevel(level)}`
+      return {
+        id: normalized,
+        name,
+        level,
+        description: enchantmentDescriptions[normalized]
+      }
     })
-  return enchantments
 }
 
 function loadEnchantmentNames(): Map<string, string> {
@@ -1118,6 +1261,8 @@ function attachLootRelations(items: ItemView[]): void {
   }
 
   for (const item of items) {
+    if (item.guide?.unobtainable) continue
+
     const directTableIds = item.sources
       .filter(source => source.kind === 'loot')
       .map(source => lootTableIdFromSourcePath(source.path))
@@ -1633,30 +1778,100 @@ function extractLore(components: JsonObject): string[] {
     : []
 }
 
-function extractEffects(components: JsonObject): ItemEffect[] {
-  const consumable = components['minecraft:consumable']
-  if (!isObject(consumable) || !Array.isArray(consumable.on_consume_effects)) {
-    return []
+function extractEffects(components: JsonObject, carrier: string): ItemEffect[] {
+  const result: ItemEffect[] = []
+  const seen = new Set<string>()
+  const durationScale = carrier === 'minecraft:tipped_arrow' ? 1 / 8 : 1
+  const appendEffect = (effect: JsonObject, scale = 1) => {
+    if (typeof effect.id !== 'string') return
+
+    const id = normalizeResource(effect.id)
+    const path = resourcePath(id)
+    const durationSeconds = typeof effect.duration === 'number'
+      ? Math.round(effect.duration * scale / 20)
+      : 0
+    const itemEffect: ItemEffect = {
+      id,
+      name: effectNames[path] ?? ru[`effect.minecraft.${path}`] ?? formatIdentifier(path),
+      level: typeof effect.amplifier === 'number' ? effect.amplifier + 1 : 1,
+      durationSeconds
+    }
+    const signature = JSON.stringify(itemEffect)
+    if (seen.has(signature)) return
+
+    seen.add(signature)
+    result.push(itemEffect)
   }
 
-  const result: ItemEffect[] = []
+  const potionContents = components['minecraft:potion_contents']
+  if (isObject(potionContents)) {
+    if (typeof potionContents.potion === 'string') {
+      const potionPath = resourcePath(normalizeResource(potionContents.potion))
+      for (const effect of vanillaPotionEffects[potionPath] ?? []) {
+        appendEffect(effect, durationScale)
+      }
+    }
+
+    if (Array.isArray(potionContents.custom_effects)) {
+      for (const effect of potionContents.custom_effects) {
+        if (isObject(effect)) appendEffect(effect, durationScale)
+      }
+    }
+  }
+
+  const consumable = components['minecraft:consumable']
+  if (!isObject(consumable) || !Array.isArray(consumable.on_consume_effects)) {
+    return result
+  }
+
   for (const action of consumable.on_consume_effects) {
-    if (!isObject(action) || !Array.isArray(action.effects)) {
+    if (!isObject(action)) continue
+
+    if (action.type === 'minecraft:clear_all_effects') {
+      result.push({
+        id: 'minecraft:clear_all_effects',
+        name: 'Снимает все активные эффекты',
+        level: 1,
+        durationSeconds: null
+      })
       continue
     }
 
-    for (const effect of action.effects) {
-      if (!isObject(effect) || typeof effect.id !== 'string') {
-        continue
-      }
-      const id = normalizeResource(effect.id)
-      const path = resourcePath(id)
-      result.push({
-        id,
-        name: effectNames[path] ?? formatIdentifier(path),
-        level: typeof effect.amplifier === 'number' ? effect.amplifier + 1 : 1,
-        durationSeconds: typeof effect.duration === 'number' ? Math.round(effect.duration / 20) : 0
+    if (action.type === 'minecraft:remove_effects' && Array.isArray(action.effects)) {
+      const removedEffectNames = action.effects.flatMap((effect) => {
+        if (typeof effect !== 'string') return []
+        const path = resourcePath(normalizeResource(effect))
+        return [effectNames[path] ?? ru[`effect.minecraft.${path}`] ?? formatIdentifier(path)]
       })
+      if (removedEffectNames.length) {
+        result.push({
+          id: 'minecraft:remove_effects',
+          name: 'Снимает вредные эффекты',
+          description: removedEffectNames.join(', '),
+          level: 1,
+          durationSeconds: null
+        })
+      }
+      continue
+    }
+
+    if (action.type === 'minecraft:teleport_randomly') {
+      const diameter = typeof action.diameter === 'number' ? action.diameter : 16
+      const radius = String(diameter / 2).replace('.', ',')
+      result.push({
+        id: 'minecraft:teleport_randomly',
+        name: 'Случайная телепортация',
+        description: `Перемещает в случайное безопасное место в пределах ${radius} блоков.`,
+        level: 1,
+        durationSeconds: null
+      })
+      continue
+    }
+
+    if (!Array.isArray(action.effects)) continue
+
+    for (const effect of action.effects) {
+      if (isObject(effect)) appendEffect(effect)
     }
   }
 
@@ -2110,6 +2325,14 @@ function vanillaNameForResource(resource: string): string | undefined {
     `item.minecraft.${path}`,
     `block.minecraft.${path}`
   ].map(key => vanillaRu.entries[key]).find(Boolean)
+}
+
+function normalizeDisplayName(value: string): string {
+  return value
+    .replace(/§[0-9a-fk-or]/gi, '')
+    .toLocaleLowerCase('ru-RU')
+    .replaceAll('ё', 'е')
+    .trim()
 }
 
 function firstTranslation(keys: string[]): string | undefined {

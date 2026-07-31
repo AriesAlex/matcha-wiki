@@ -27,7 +27,6 @@
         <h1>
           <MinecraftText :text="resultTitle" />
         </h1>
-        <p>{{ recipe.station }} · точная раскладка и нужное количество ресурсов.</p>
       </div>
     </header>
 
@@ -161,10 +160,6 @@ useSeoMeta({
       font-size: clamp(2rem, 5vw, 4rem);
     }
 
-    p:last-child {
-      margin: 10px 0 0;
-      color: var(--muted);
-    }
   }
 
   .ingredient-list {

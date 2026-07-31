@@ -16,7 +16,15 @@
       :summary="purposeSummary"
     />
 
-    <section class="article-section">
+    <ItemProperties
+      v-if="item.effects.length || item.enchantments.length || item.attributes.length"
+      :item="item"
+    />
+
+    <section
+      v-if="item.obtainedFrom.length || recipes.length"
+      class="article-section"
+    >
       <header class="section-heading">
         <p class="eyebrow">Получение</p>
         <h2>Как получить</h2>
@@ -38,51 +46,19 @@
           />
         </div>
       </div>
-      <p
-        v-if="!item.obtainedFrom.length && !recipes.length"
-        class="empty-note"
-      >
-        В данных пака не найден отдельный рецепт или гарантированный источник.
-        Возможно, предмет выдаётся скрытой механикой или пока недоступен в выживании.
-      </p>
     </section>
 
-    <ItemCraftingPath :target="craftingTarget" />
-
-    <section class="article-section">
+    <section v-if="directUses.length" class="article-section">
       <header class="section-heading">
         <p class="eyebrow">Применение</p>
         <h2>Где используется</h2>
       </header>
       <ItemRelationList
-        v-if="directUses.length"
         :relations="directUses"
       />
-      <p
-        v-else-if="!technicalUses.length"
-        class="empty-note"
-      >
-        Прямого применения в рецептах и обменах пока не найдено.
-      </p>
-      <details
-        v-if="technicalUses.length"
-        class="ordinary-uses"
-      >
-        <summary>
-          Осторожно: его можно потратить как «{{ ordinaryItemName }}»
-        </summary>
-        <p>
-          Эти рецепты примут особый предмет вместо обычного и уничтожат его.
-          Обычно выгоднее использовать простой «{{ ordinaryItemName }}».
-        </p>
-        <ItemRelationList :relations="playerSafeOrdinaryUses" />
-      </details>
     </section>
 
-    <ItemProperties
-      v-if="item.effects.length || item.attributes.length"
-      :item="item"
-    />
+    <ItemCraftingPath :target="craftingTarget" />
 
     <ItemTechnicalDetails :item="item" />
   </article>
@@ -135,25 +111,14 @@ const recipes = computed(() => item.value
       .filter(recipe => recipe !== undefined)
   : [])
 const recipeUses = computed(() => (
-  item.value ? resolveItemRecipeUses(catalog, item.value) : []
+  item.value ? playerFacingItemRecipeUses(catalog, item.value) : []
 ))
 const directUses = computed(() => [
   ...(item.value?.usedIn ?? []),
-  ...recipeUses.value.filter(relation => !relation.technical)
+  ...recipeUses.value
 ])
-const technicalUses = computed(() => recipeUses.value.filter(relation => relation.technical))
-const ordinaryItemName = computed(() => {
-  const current = item.value
-  if (!current) return 'обычный предмет'
-  const glossary = catalog.ingredientGlossary[current.carrier]
-  return glossary?.vanillaName ?? glossary?.name ?? 'обычный предмет'
-})
-const playerSafeOrdinaryUses = computed(() => technicalUses.value.map(relation => ({
-  ...relation,
-  description: `Рецепт примет этот предмет вместо «${ordinaryItemName.value}» и потратит его.`
-})))
 const purposeSummary = computed(() => (
-  item.value ? getItemPurposeSummary(item.value) : ''
+  item.value ? getItemPurposeSummary(item.value, directUses.value) : ''
 ))
 
 useSeoMeta({
@@ -185,34 +150,5 @@ useSeoMeta({
     }
   }
 
-  .empty-note {
-    max-width: 720px;
-    margin: 0;
-    color: var(--muted);
-    line-height: 1.6;
-  }
-
-  .ordinary-uses {
-    max-width: 880px;
-    margin-top: 22px;
-
-    summary {
-      width: fit-content;
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      color: var(--ink);
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    > p {
-      max-width: 720px;
-      margin: 4px 0 14px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.55;
-    }
-  }
 }
 </style>

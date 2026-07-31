@@ -21,7 +21,7 @@
           draggable="false"
         >
         <span v-else>?</span>
-        <b v-if="node.demand.required > 1">
+        <b v-if="!root">
           {{ node.demand.required }}
         </b>
       </span>
@@ -62,10 +62,19 @@ const plainTitle = computed(() => stripMinecraftFormatting(props.node.title))
 const iconUrl = computed(() => (
   props.node.target.icon ? useAssetPath(props.node.target.icon) : ''
 ))
-const accessibleName = computed(() => [
-  plainTitle.value,
-  props.complete ? 'Готово' : props.node.detail
-].filter(Boolean).join('. '))
+const accessibleName = computed(() => {
+  const state = props.root
+    ? (props.complete ? 'Готово' : props.node.detail)
+    : (props.complete
+        ? `Готово: ${props.node.demand.required}`
+        : `Нужно: ${props.node.demand.required}`)
+
+  return [
+    plainTitle.value,
+    state,
+    props.root || props.complete ? '' : props.node.detail
+  ].filter(Boolean).join('. ')
+})
 </script>
 
 <style scoped lang="scss">

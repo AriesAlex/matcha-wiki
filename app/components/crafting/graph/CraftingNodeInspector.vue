@@ -51,7 +51,6 @@
         v-if="graphNode.kind === 'item'"
         :node="graphNode"
         :complete="complete"
-        @select-mode="emit('select-mode', $event)"
         @select-recipe="emit('select-recipe', $event)"
       />
       <CraftingInspectorRecipe
@@ -93,13 +92,7 @@ import type { Component } from 'vue'
 import CraftingInspectorAlternatives from './CraftingInspectorAlternatives.vue'
 import CraftingInspectorItem from './CraftingInspectorItem.vue'
 import CraftingInspectorRecipe from './CraftingInspectorRecipe.vue'
-import type { CraftingMode } from '../../../types/crafting'
 import type { CraftingGraphNodeView } from '../../../types/craftingGraph'
-
-interface ModeSelection {
-  targetKey: string
-  mode: CraftingMode
-}
 
 interface RecipeSelection {
   targetKey: string
@@ -123,7 +116,6 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   close: []
-  'select-mode': [payload: ModeSelection]
   'select-recipe': [payload: RecipeSelection]
   'select-option': [payload: OptionSelection]
 }>()
@@ -184,11 +176,13 @@ const kindIcon = computed<Component>(() => {
 const detailsPath = computed(() => {
   const current = graphNode.value
   if (!current) return ''
-  const path = current.kind === 'item' || current.kind === 'recipe'
-    ? current.detailsPath
-    : current.kind === 'source'
-      ? current.source.path
-      : undefined
+  const path = current.kind === 'item'
+    ? current.itemPagePath
+    : current.kind === 'recipe'
+      ? current.detailsPath
+      : current.kind === 'source'
+        ? current.source.path
+        : undefined
 
   return path && normalizeWikiPath(route.path) !== normalizeWikiPath(path)
     ? path

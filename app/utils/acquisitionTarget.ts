@@ -12,6 +12,7 @@ import {
   resolveAcquisitionTargetForStack
 } from './acquisition'
 import { resolveStackItem } from './itemReference'
+import { describeItemUses } from './relationSummary'
 
 export function recipesProducingAcquisitionTarget(
   catalog: WikiCatalog,
@@ -30,15 +31,40 @@ export function acquisitionTargetSources(
   catalog: WikiCatalog,
   target: AcquisitionTarget
 ): ItemRelationView[] {
-  return acquisitionMethodsForTarget(catalog.acquisition, target.id)
+  const worldSources = acquisitionMethodsForTarget(catalog.acquisition, target.id)
     .map(({ method, source, sourcePath }) => ({
-      kind: 'loot',
+      kind: 'loot' as const,
       title: source.name,
       description: `${method.context}. ${method.action}`,
       to: sourcePath,
       context: method.context,
       sourcePath: method.sourcePath
     }))
+  const tradeSources = allTradeOffers(catalog.traders).flatMap((offer) => {
+    const resultTarget = resolveAcquisitionTargetForStack(
+      catalog.acquisition,
+      offer.result.stack
+    )
+    if (resultTarget?.id !== target.id) return []
+
+    return [{
+      kind: 'trade' as const,
+      title: offer.traderTitle,
+      description: offer.level
+        ? `Продаёт на ${offer.level}-м уровне.`
+        : 'Продаёт этот предмет.',
+      icon: offer.result.stack.icon,
+      to: offer.to,
+      context: offer.traderTitle,
+      contextDetail: offer.level ? `${offer.level}-й уровень` : undefined,
+      cost: offer.costs,
+      result: offer.result,
+      details: offer.details.length ? offer.details : undefined,
+      sourcePath: offer.sourcePath
+    }]
+  })
+
+  return dedupeRelations([...worldSources, ...tradeSources])
 }
 
 export function acquisitionTargetUses(
@@ -47,8 +73,7 @@ export function acquisitionTargetUses(
 ): ItemRelationView[] {
   const recipeUses = catalog.recipes.flatMap((recipe) => {
     const acceptsTarget = recipe.ingredients.some(ingredient => (
-      ingredient.ids.includes(target.stack.model ?? target.stack.carrier)
-      || ingredient.ids.includes(target.stack.carrier)
+      ingredientAcceptsTarget(ingredient, target)
     ))
     if (!acceptsTarget) return []
 
@@ -95,20 +120,48 @@ export function acquisitionTargetUses(
 }
 
 export function acquisitionTargetSummary(
-  target: AcquisitionTarget
+  target: AcquisitionTarget,
+  uses: readonly ItemRelationView[] = []
 ): string {
+  if (target.guide) {
+    return target.guide.summary
+  }
+
+  const usage = describeItemUses(uses)
   const vanillaName = target.vanillaName
   if (
     vanillaName
     && normalizeName(vanillaName) !== normalizeName(target.stack.name)
   ) {
-    return `В Matcha этот ресурс называется «${target.stack.name}». `
+    return `${usage ? `${usage} ` : ''}В Matcha этот ресурс называется «${target.stack.name}». `
       + `В обычном Minecraft на его месте находится «${vanillaName}», `
       + 'поэтому знакомые рецепты и способы добычи могли измениться.'
   }
 
-  return 'Реальный ресурс из таблиц добычи Matcha. '
-    + 'Ниже собраны точные места получения и найденные применения.'
+  return usage || 'Ниже показано, где получить этот ресурс.'
+}
+
+function ingredientAcceptsTarget(
+  ingredient: RecipeView['ingredients'][number],
+  target: AcquisitionTarget
+): boolean {
+  if (
+    target.stack.model
+    && ingredient.ids.includes(target.stack.model)
+  ) {
+    return true
+  }
+
+  const ingredientName = normalizeName(ingredient.label)
+  const targetNames = [target.title, target.stack.name]
+    .map(normalizeName)
+  if (targetNames.includes(ingredientName)) return true
+
+  const isOrdinaryCarrier = !target.stack.model
+    && Object.keys(target.stack.components ?? {}).length === 0
+    && (!target.vanillaName
+      || normalizeName(target.vanillaName) === normalizeName(target.stack.name))
+  return isOrdinaryCarrier && ingredient.ids.includes(target.stack.carrier)
 }
 
 function stackAccepts(requirement: StackView, target: StackView): boolean {

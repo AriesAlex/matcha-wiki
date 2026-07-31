@@ -178,7 +178,7 @@ describe('crafting graph model', () => {
 
     expect(first.nodes).toHaveLength(4)
     expect(rootItem.demand.required).toBe(1)
-    expect(rootItem.status).toBe('cycle')
+    expect(rootItem.status).toBe('craft')
     expect(cyclicEdges).toHaveLength(1)
     expect(cyclicEdges[0]).toMatchObject({
       to: rootItem.instanceId,
@@ -288,6 +288,36 @@ describe('crafting graph model', () => {
       to: source?.instanceId,
       kind: 'source'
     })])
+  })
+
+  it('shows crafting and finding as sibling paths from the item', () => {
+    const shard: CraftingTargetView = {
+      ...target('matcha:divine_shard', 'Божественный осколок'),
+      itemPagePath: '/items/bozhestvennyy-oskolok',
+      detailsPath: '/items/bozhestvennyy-oskolok',
+      sources: [{
+        id: 'ancient-city-shard',
+        kind: 'location',
+        title: 'Древний город',
+        detail: 'Обыщите сундуки древнего города.',
+        path: '/locations/ancient-city'
+      }]
+    }
+    const ingredient = target('minecraft:amethyst_shard', 'Осколок аметиста')
+    const graph = buildCraftingGraph(craftNode(shard, {
+      recipeId: 'matcha:divine_shard',
+      requirements: [{ child: obtainNode(ingredient), count: 4 }]
+    }))
+    const root = itemNode(graph, shard.key)
+    const outgoing = graph.edges.filter(edge => edge.from === graph.rootId)
+
+    expect(root.itemPagePath).toBe('/items/bozhestvennyy-oskolok')
+    expect(outgoing.map(edge => edge.kind).sort()).toEqual([
+      'recipe',
+      'source'
+    ])
+    expect(graph.nodes.some(node => node.kind === 'recipe')).toBe(true)
+    expect(graph.nodes.some(node => node.kind === 'source')).toBe(true)
   })
 })
 

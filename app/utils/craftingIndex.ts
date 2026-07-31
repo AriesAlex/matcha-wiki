@@ -130,16 +130,24 @@ export function targetForItem(
     }]
   })
   const allSources = dedupeSources([...sources, ...tradeSources])
+  const plainRenamedResult = item.id.startsWith('renamed-result:')
+    && !item.model
+    && Object.keys(item.components).length === 0
 
   return {
-    key: `item:${item.slug}`,
+    key: plainRenamedResult
+      ? resourceTargetKey(item.carrier)
+      : `item:${item.slug}`,
     kind: 'item',
-    resourceId: item.id,
+    resourceId: plainRenamedResult ? item.carrier : item.id,
     title: item.title,
     icon: item.icon,
     item,
+    itemPagePath: `/items/${item.slug}`,
     detailsPath: `/items/${item.slug}`,
-    obtainHint: allSources[0]?.detail ?? itemAcquisitionHint(item),
+    obtainHint: allSources[0]?.detail
+      ?? itemAcquisitionHint(item)
+      ?? catalog.ingredientGlossary[item.carrier]?.obtainHint,
     sources: allSources
   }
 }
@@ -188,6 +196,7 @@ export function targetForAcquisitionTarget(
   }))
   const components = target.stack.components ?? {}
   const resourceId = target.stack.model ?? target.stack.carrier
+  const itemPagePath = `/items/${target.slug}`
 
   return {
     key: target.stack.model || Object.keys(components).length
@@ -197,6 +206,8 @@ export function targetForAcquisitionTarget(
     resourceId,
     title: target.title,
     icon: target.stack.icon,
+    itemPagePath,
+    detailsPath: itemPagePath,
     vanillaName: target.vanillaName,
     obtainHint: sources[0]?.detail,
     sources
@@ -266,7 +277,8 @@ export function targetForResource(
       .map(normalizeItemName)
   )
   const customizedVanillaItem = uniqueItem(catalog.items.filter(item => (
-    item.id.startsWith('recipe-output:')
+    (item.id.startsWith('recipe-output:')
+      || item.id.startsWith('renamed-result:'))
     && item.carrier === resourceId
     && vanillaNames.has(normalizeItemName(item.title))
   )))
@@ -288,6 +300,7 @@ export function targetForResource(
     ?? formatIdentifier(resourceId)
   const vanillaName = glossary?.vanillaName
   const sources = resourceSources(catalog, resourceId)
+  const itemPagePath = standaloneTargetPagePath(catalog, resourceId)
 
   return {
     key: `resource:${resourceId}`,
@@ -295,13 +308,27 @@ export function targetForResource(
     resourceId,
     title,
     icon: icon ?? glossary?.icon,
-    detailsPath: resourceRecipePath(catalog, resourceId),
+    itemPagePath,
+    detailsPath: itemPagePath ?? resourceRecipePath(catalog, resourceId),
     vanillaName: vanillaName && vanillaName !== title
       ? vanillaName
       : undefined,
     obtainHint: sources[0]?.detail ?? glossary?.obtainHint,
     sources
   }
+}
+
+function standaloneTargetPagePath(
+  catalog: WikiCatalog,
+  resourceId: string
+): string | undefined {
+  const target = uniqueItem((catalog.acquisition?.targets ?? []).filter(entry => (
+    !entry.itemSlug
+    && entry.stack.carrier === resourceId
+    && !entry.stack.model
+    && Object.keys(entry.stack.components ?? {}).length === 0
+  )))
+  return target ? `/items/${target.slug}` : undefined
 }
 
 function groupAlternativeTargets(
@@ -387,7 +414,7 @@ function itemAcquisitionHint(item: ItemView): string | undefined {
   return `${first.title}. ${first.description}`
 }
 
-function uniqueItem(items: ItemView[]): ItemView | undefined {
+function uniqueItem<T>(items: T[]): T | undefined {
   return items.length === 1 ? items[0] : undefined
 }
 

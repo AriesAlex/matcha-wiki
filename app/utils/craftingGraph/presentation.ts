@@ -14,10 +14,10 @@ export function itemDetail(
     return 'Выбранный путь возвращается к этому предмету.'
   }
   if (demand.missing === 0) {
-    return demand.required === 1
-      ? 'Уже есть.'
-      : `Уже есть: ${demand.required}.`
+    return 'Уже готово.'
   }
+  const hasRecipeAndSource = status === 'craft'
+    && Boolean(target.sources?.length)
   if (status === 'obtain' && target.obtainHint) {
     return target.obtainHint
   }
@@ -25,9 +25,15 @@ export function itemDetail(
     return 'Надёжный способ получения пока не найден.'
   }
   if (demand.owned > 0) {
-    return `Есть: ${demand.owned}. Осталось: ${demand.missing}.`
+    if (hasRecipeAndSource) return 'Осталось изготовить или найти.'
+    return status === 'craft'
+      ? 'Осталось изготовить.'
+      : 'Осталось получить.'
   }
-  return `Нужно: ${demand.required}.`
+  if (hasRecipeAndSource) return 'Можно изготовить или найти.'
+  return status === 'craft'
+    ? 'Можно изготовить.'
+    : 'Получить одним из способов ниже.'
 }
 
 export function recipeDetail(

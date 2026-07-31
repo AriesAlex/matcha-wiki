@@ -63,7 +63,10 @@ function buildNode(
     context.inventory.set(target.key, storedCount - ownedCount)
   }
 
-  const recipeOptions = context.index.recipesByTarget.get(target.key) ?? []
+  const recipeOptions = recipeCandidates(
+    context.index.recipesByTarget.get(target.key) ?? [],
+    target
+  )
   const base = {
     id: `${ancestry.join('>')}|${target.key}`,
     target,
@@ -84,15 +87,9 @@ function buildNode(
     return { ...base, state: 'cycle' }
   }
 
-  const selectedMode = context.selections.modeByTarget[target.key]
-  if (selectedMode === 'obtain') {
-    return { ...base, state: 'obtain' }
-  }
-
   const selectedRecipeId = context.selections.recipeByTarget[target.key]
   const recipe = chooseRecipe(
     recipeOptions,
-    target,
     selectedRecipeId,
     context.index.preferredRecipeByTarget.get(target.key)
   )
@@ -148,22 +145,12 @@ function buildNode(
     resultCount,
     requirements
   }
-  const explicitlyCrafting = selectedMode === 'craft' || Boolean(selectedRecipeId)
-  if (
-    !explicitlyCrafting
-    && hasKnownSource(target)
-    && containsCycle(plan)
-  ) {
-    return { ...base, state: 'obtain' }
-  }
-
   commitBuildContext(context, branchContext)
   return plan
 }
 
 function chooseRecipe(
   recipes: CraftingRecipeView[],
-  target: CraftingTargetView,
   selectedRecipeId: string | undefined,
   preferredRecipeId: string | undefined
 ): CraftingRecipeView | undefined {
@@ -173,13 +160,25 @@ function chooseRecipe(
   const preferred = recipes.find(recipe => recipe.id === preferredRecipeId)
   if (preferred) return preferred
 
-  const best = [...recipes].sort((left, right) => (
+  return recipes[0]
+}
+
+function recipeCandidates(
+  recipes: CraftingRecipeView[],
+  target: CraftingTargetView
+): CraftingRecipeView[] {
+  const useful = recipes.filter(recipe => recipeScore(recipe, target) < 1_000)
+  const packRecipes = useful.filter(recipe => recipe.origin === 'pack')
+  const prefersPackRecipe = target.kind === 'item'
+    && target.item?.id.startsWith('renamed-result:')
+  const candidates = prefersPackRecipe && packRecipes.length
+    ? packRecipes
+    : useful
+
+  return [...candidates].sort((left, right) => (
     recipeScore(left, target) - recipeScore(right, target)
     || left.id.localeCompare(right.id)
-  ))[0]
-  return best && recipeScore(best, target) >= 1_000
-    ? undefined
-    : best
+  ))
 }
 
 function recipeScore(
@@ -217,15 +216,6 @@ function normalizeRequiredCount(value: number): number {
 
 function normalizeCount(value: number): number {
   return Math.max(0, Math.floor(Number.isFinite(value) ? value : 0))
-}
-
-function hasKnownSource(target: CraftingTargetView): boolean {
-  return Boolean(target.obtainHint) || Boolean(target.sources?.length)
-}
-
-function containsCycle(node: CraftingPlanNode): boolean {
-  return node.state === 'cycle'
-    || node.requirements.some(requirement => containsCycle(requirement.node))
 }
 
 function forkBuildContext(context: BuildContext): BuildContext {

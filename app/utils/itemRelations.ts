@@ -4,6 +4,7 @@ import type {
   ItemView,
   WikiCatalog
 } from '../types/wiki'
+import { stripMinecraftFormatting } from './format'
 import { resolveStackItem } from './itemReference'
 
 export function hasTradeExchange(
@@ -30,18 +31,12 @@ export function resolveItemRecipeUses(
     const resultItem = recipe.result
       ? resolveStackItem(catalog.items, recipe.result)
       : undefined
-    const ordinaryItem = catalog.ingredientGlossary[item.carrier]
-    const ordinaryItemName = ordinaryItem?.vanillaName
-      ?? ordinaryItem?.name
-      ?? 'обычный предмет'
     const title = resultItem?.title ?? recipe.result?.name ?? 'Результат рецепта'
 
     return [{
       kind: 'recipe' as const,
       title,
-      description: use.technical
-        ? `Риск потери: рецепт принимает любой предмет вида «${ordinaryItemName}». Этот особый экземпляр будет уничтожен.`
-        : 'Нужен как ингредиент.',
+      description: 'Нужен как ингредиент.',
       icon: recipe.result?.icon,
       to: `/recipes/${recipe.namespace}/${recipe.path}`,
       context: playerStationName(recipe.station),
@@ -55,6 +50,33 @@ export function resolveItemRecipeUses(
       sourcePath: recipe.sourcePath
     }]
   })
+}
+
+export function playerFacingItemRecipeUses(
+  catalog: WikiCatalog,
+  item: ItemView
+): ItemRelationView[] {
+  const itemNames = new Set([
+    normalizeItemName(item.name),
+    normalizeItemName(item.title)
+  ])
+
+  return resolveItemRecipeUses(catalog, item).filter((relation) => {
+    if (!relation.technical) return true
+    const recipe = catalog.recipes.find(candidate => (
+      candidate.sourcePath === relation.sourcePath
+    ))
+    return recipe?.requirements.some(requirement => (
+      itemNames.has(normalizeItemName(requirement.ingredient.label))
+    )) ?? false
+  })
+}
+
+function normalizeItemName(value: string): string {
+  return stripMinecraftFormatting(value)
+    .toLocaleLowerCase('ru-RU')
+    .replaceAll('ё', 'е')
+    .trim()
 }
 
 function playerStationName(station: string): string {

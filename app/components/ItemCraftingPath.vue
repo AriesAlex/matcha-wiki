@@ -28,7 +28,6 @@
       :graph="graphView"
       :completed-node-ids="completedNodeIds"
       @toggle-item="toggleItem"
-      @select-mode="progress.setMode"
       @select-recipe="progress.selectRecipe"
       @select-option="progress.selectOption"
     />
@@ -51,6 +50,10 @@ const catalog = useWikiCatalog()
 const craftingPlanner = craftingPlannerSource as CraftingPlannerSupplement
 const index = createCraftingIndex(catalog, craftingPlanner)
 const progress = useCraftingProgress()
+const recipeByTarget = computed(() => progress.state.value.recipeByTarget)
+const optionByRequirement = computed(() => (
+  progress.state.value.optionByRequirement
+))
 const canBuildPath = computed(() => (
   index.recipesByTarget.has(props.target.key)
   || Boolean(props.target.sources?.length)
@@ -60,9 +63,8 @@ const structuralPlan = computed(() => buildCraftingPlan(
   props.target,
   1,
   {
-    modeByTarget: progress.state.value.modeByTarget,
-    recipeByTarget: progress.state.value.recipeByTarget,
-    optionByRequirement: progress.state.value.optionByRequirement
+    recipeByTarget: recipeByTarget.value,
+    optionByRequirement: optionByRequirement.value
   },
   {}
 ))

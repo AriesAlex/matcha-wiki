@@ -81,7 +81,9 @@ export function createSearchIndex(catalog: WikiCatalog): WikiSearchEntry[] {
           item.guide?.summary ?? item.description,
           'Свойства, способы получения и применение.'
         ),
-        category: item.category,
+        category: item.id.startsWith('renamed-result:')
+          ? 'Переосмысленный ресурс'
+          : item.category,
         path: `/items/${item.slug}`,
         icon: item.icon,
         terms: uniqueTerms([

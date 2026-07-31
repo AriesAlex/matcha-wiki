@@ -8,7 +8,7 @@
       К содержанию
     </a>
 
-    <header class="site-header" :inert="navigationModalOpen">
+    <header class="site-header">
       <div class="header-inner">
         <button
           class="icon-button mobile-only"
@@ -26,6 +26,7 @@
           class="brand"
           to="/"
           aria-label="Matcha Wiki"
+          :inert="navigationModalOpen"
         >
           <img
             :src="useAssetPath('/generated/ui/pack.png')"
@@ -39,7 +40,11 @@
           </span>
         </NuxtLink>
 
-        <nav class="header-nav" aria-label="Основная навигация">
+        <nav
+          class="header-nav"
+          aria-label="Основная навигация"
+          :inert="navigationModalOpen"
+        >
           <NuxtLink to="/start">
             <PhBookOpenText :size="18" aria-hidden="true" />
             Начать
@@ -54,7 +59,7 @@
           </NuxtLink>
         </nav>
 
-        <div class="header-actions">
+        <div class="header-actions" :inert="navigationModalOpen">
           <button
             class="search-button"
             type="button"
