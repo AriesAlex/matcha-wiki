@@ -6,7 +6,7 @@
 Оригинальный пак создан Klei. Русский форк, ручная локализация, проверенные
 исправления и сопровождение этой редакции выполнены ArieX.
 
-[Открыть вики](https://ariesalex.github.io/matcha-wiki/) ·
+[Открыть вики](https://matcha.ariex.ru/) ·
 [Скачать последний ZIP](https://github.com/AriesAlex/matcha-wiki/releases/latest)
 
 Вики строится по реальным данным пака, а не по вручную переписанному списку.
@@ -68,7 +68,7 @@ bun run pack       # собрать версионированный ZIP в dist
 [`wiki-data/localization/README.md`](wiki-data/localization/README.md).
 
 Каждое исправление описано в `wiki-data/fixes/*.json`; страница
-[«Исправления и известные проблемы»](https://ariesalex.github.io/matcha-wiki/known-issues)
+[«Исправления и известные проблемы»](https://matcha.ariex.ru/known-issues)
 строит из этих manifest публичный проверяемый реестр.
 
 ## Авторство и лицензия

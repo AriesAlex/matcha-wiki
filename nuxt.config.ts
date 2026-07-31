@@ -42,6 +42,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/content',
     '@nuxtjs/sitemap',
+    'nuxt-yandex-metrika',
     '@nuxt/eslint'
   ],
   css: [
@@ -111,7 +112,17 @@ export default defineNuxtConfig({
     }
   },
   site: {
-    url: process.env.NUXT_PUBLIC_SITE_URL ?? 'https://ariesalex.github.io'
+    url: process.env.NUXT_PUBLIC_SITE_URL ?? 'https://matcha.ariex.ru'
+  },
+  yandexMetrika: {
+    id: '111206604',
+    options: {
+      accurateTrackBounce: true,
+      clickmap: true,
+      ecommerce: 'dataLayer',
+      trackLinks: true,
+      webvisor: true
+    }
   },
   sitemap: {
     autoLastmod: true,

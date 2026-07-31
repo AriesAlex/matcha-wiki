@@ -7,7 +7,7 @@
     "url": "https://github.com/AriesAlex"
   },
   "license": "CC-BY-NC-SA-4.0",
-  "homepage": "https://ariesalex.github.io/matcha-wiki/",
+  "homepage": "https://matcha.ariex.ru/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AriesAlex/matcha-wiki.git"
@@ -23,7 +23,6 @@
     "dev": "bun run data && nuxt dev",
     "build": "bun run data && nuxt build",
     "generate": "bun run data && nuxt generate",
-    "pages": "bun run data && nuxt build --preset github_pages",
     "preview": "nuxt preview",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
@@ -49,6 +48,7 @@
     "@types/node": "^25.0.0",
     "eslint": "10.8.0",
     "fflate": "0.8.3",
+    "nuxt-yandex-metrika": "2.0.2",
     "sass": "1.102.0",
     "typescript": "^5.9.0",
     "vitest": "4.1.10",
