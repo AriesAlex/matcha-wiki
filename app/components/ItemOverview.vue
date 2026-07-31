@@ -66,6 +66,8 @@ defineProps<{
 
     h1 {
       font-size: clamp(2.2rem, 5vw, 4.2rem);
+      overflow-wrap: anywhere;
+      hyphens: auto;
     }
   }
 
