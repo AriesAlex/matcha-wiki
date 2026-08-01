@@ -36,4 +36,22 @@ describe('pack localization contract', () => {
     )
     expect(JSON.stringify(trade)).not.toContain("I don't have any good ideas")
   })
+
+  it('uses the Russian fork splash set without original author slogans', () => {
+    const path = resolve(
+      import.meta.dirname,
+      '../pack/assets/minecraft/texts/splashes.txt'
+    )
+    const splashes = readFileSync(path, 'utf8')
+      .split(/\r?\n/u)
+      .filter(Boolean)
+
+    expect(splashes).toHaveLength(43)
+    expect(new Set(splashes).size).toBe(43)
+    expect(splashes).toContain('Сначала костёр, потом подвиги!')
+    expect(splashes).toContain('Матча есть. Чайник ставь!')
+    expect(splashes.join('\n')).not.toMatch(
+      /Транс-права|Упразднить ICE|ACT UP|Dakota|Josax|Elliot Moss|Jeremias/u
+    )
+  })
 })
