@@ -1,4 +1,8 @@
-import type { RecipeRequirementView, WikiCatalog } from '../types/wiki'
+import type {
+  RecipeRequirementView,
+  RecipeView,
+  WikiCatalog
+} from '../types/wiki'
 import { resolveStackItem } from './itemReference'
 
 interface EnchantmentLevel {
@@ -33,13 +37,7 @@ const romanLevels = [
 
 export function buildBlessingRows(catalog: WikiCatalog): BlessingRow[] {
   return catalog.recipes.flatMap((recipe) => {
-    if (
-      recipe.namespace !== 'blessings'
-      || recipe.id === 'blessings:hell_bound_book'
-      || !recipe.result
-    ) {
-      return []
-    }
+    if (!isBlessingRecipe(recipe) || !recipe.result) return []
 
     const item = resolveStackItem(catalog.items, recipe.result)
     if (!item || !recipe.result.icon || !item.enchantments.length) return []
@@ -59,4 +57,10 @@ export function buildBlessingRows(catalog: WikiCatalog): BlessingRow[] {
       }))
     }]
   })
+}
+
+export function isBlessingRecipe(recipe: RecipeView): boolean {
+  return recipe.namespace === 'blessings'
+    && recipe.id !== 'blessings:hell_bound_book'
+    && Boolean(recipe.result)
 }

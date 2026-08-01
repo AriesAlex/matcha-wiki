@@ -54,7 +54,7 @@
     </section>
 
     <ItemCraftingPath
-      v-if="craftingTarget"
+      v-if="isBlessing && craftingTarget"
       :target="craftingTarget"
       :initial-recipe-id="recipe.id"
     />
@@ -107,6 +107,9 @@ const craftingTarget = computed(() => {
   const result = recipe.value?.result
   return result ? targetForStack(catalog, result) : undefined
 })
+const isBlessing = computed(() => (
+  recipe.value ? isBlessingRecipe(recipe.value) : false
+))
 const resultTitle = computed(() => (
   resultItem.value?.title
   ?? recipe.value?.result?.name
