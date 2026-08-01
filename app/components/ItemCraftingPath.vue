@@ -28,7 +28,7 @@
       :graph="graphView"
       :completed-node-ids="completedNodeIds"
       @toggle-item="toggleItem"
-      @select-recipe="progress.selectRecipe"
+      @select-recipe="selectRecipe"
       @select-option="progress.selectOption"
     />
   </section>
@@ -44,16 +44,33 @@ import type {
 
 const props = defineProps<{
   target: CraftingTargetView
+  initialRecipeId?: string
 }>()
 
 const catalog = useWikiCatalog()
 const craftingPlanner = craftingPlannerSource as CraftingPlannerSupplement
 const index = createCraftingIndex(catalog, craftingPlanner)
 const progress = useCraftingProgress()
-const recipeByTarget = computed(() => progress.state.value.recipeByTarget)
+const rootRecipeSelectionOverridden = ref(false)
+const recipeByTarget = computed(() => {
+  const storedSelections = progress.state.value.recipeByTarget
+  if (!props.initialRecipeId || rootRecipeSelectionOverridden.value) {
+    return storedSelections
+  }
+
+  return {
+    ...storedSelections,
+    [props.target.key]: props.initialRecipeId
+  }
+})
 const optionByRequirement = computed(() => (
   progress.state.value.optionByRequirement
 ))
+
+watch(
+  [() => props.target.key, () => props.initialRecipeId],
+  () => rootRecipeSelectionOverridden.value = false
+)
 const canBuildPath = computed(() => (
   index.recipesByTarget.has(props.target.key)
   || Boolean(props.target.sources?.length)
@@ -96,6 +113,13 @@ function toggleItem(instanceId: string): void {
   } else {
     progress.setOwnedBatch({ [item.targetKey]: item.required })
   }
+}
+
+function selectRecipe(targetKey: string, recipeId: string): void {
+  if (targetKey === props.target.key) {
+    rootRecipeSelectionOverridden.value = true
+  }
+  progress.selectRecipe(targetKey, recipeId)
 }
 
 function clearRouteProgress(): void {

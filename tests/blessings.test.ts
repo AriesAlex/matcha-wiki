@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import catalogSource from '../generated/catalog.json'
+import craftingPlannerSource from '../generated/crafting-planner.json'
+import type { CraftingPlannerSupplement } from '../app/types/crafting'
 import type { WikiCatalog } from '../app/types/wiki'
 import { buildBlessingRows } from '../app/utils/blessings'
+import { buildCraftingGraph } from '../app/utils/craftingGraphModel'
+import {
+  createCraftingIndex,
+  targetForStack
+} from '../app/utils/craftingIndex'
+import { buildCraftingPlan } from '../app/utils/craftingPlan'
 
-const blessings = buildBlessingRows(catalogSource as WikiCatalog)
+const catalog = catalogSource as WikiCatalog
+const craftingPlanner = craftingPlannerSource as CraftingPlannerSupplement
+const blessings = buildBlessingRows(catalog)
 
 describe('blessing table data', () => {
   it('builds one linked row for every blessing recipe', () => {
@@ -20,6 +30,37 @@ describe('blessing table data', () => {
     expect(blessings.flatMap(blessing => blessing.materials).every(requirement => (
       !requirement.ingredient.ids.includes('minecraft:enchanted_book')
     ))).toBe(true)
+  })
+
+  it('builds the selected recipe path for every blessing page', () => {
+    const index = createCraftingIndex(catalog, craftingPlanner)
+    const failures = blessings.flatMap((blessing) => {
+      const recipe = catalog.recipes.find(entry => entry.id === blessing.id)
+      const target = recipe?.result
+        ? targetForStack(catalog, recipe.result)
+        : undefined
+      if (!recipe || !target) return [`${blessing.id}: result target`]
+
+      const plan = buildCraftingPlan(
+        index,
+        target,
+        1,
+        {
+          recipeByTarget: { [target.key]: recipe.id },
+          optionByRequirement: {}
+        },
+        {}
+      )
+      const graph = buildCraftingGraph(plan)
+
+      return plan.recipe?.id === recipe.id
+        && plan.requirements.length > 0
+        && graph.nodes.length > 1
+        ? []
+        : [`${blessing.id}: incomplete graph`]
+    })
+
+    expect(failures).toEqual([])
   })
 
   it('uses current catalog names, quantities and localized enchantments', () => {

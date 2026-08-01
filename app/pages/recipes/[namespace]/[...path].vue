@@ -53,6 +53,12 @@
       </ul>
     </section>
 
+    <ItemCraftingPath
+      v-if="craftingTarget"
+      :target="craftingTarget"
+      :initial-recipe-id="recipe.id"
+    />
+
     <details class="verification">
       <summary>
         <PhGitBranch :size="18" />
@@ -96,6 +102,10 @@ onMounted(() => {
 const resultItem = computed(() => {
   const result = recipe.value?.result
   return result ? resolveStackItem(catalog.items, result) : undefined
+})
+const craftingTarget = computed(() => {
+  const result = recipe.value?.result
+  return result ? targetForStack(catalog, result) : undefined
 })
 const resultTitle = computed(() => (
   resultItem.value?.title
