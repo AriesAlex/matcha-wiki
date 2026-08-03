@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, follow">
+    <meta http-equiv="refresh" content="0; url=https://matcha.ariex.ru">
+    <link rel="canonical" href="https://matcha.ariex.ru">
+    <title>Matcha Wiki переехала</title>
+    <script>
+      (() => {
+        const legacyPrefix = '/matcha-wiki'
+        const legacyPath = window.location.pathname
+        const currentPath = legacyPath === legacyPrefix
+          ? '/'
+          : legacyPath.startsWith(`${legacyPrefix}/`)
+            ? legacyPath.slice(legacyPrefix.length)
+            : legacyPath
+        const target = new URL('https://matcha.ariex.ru')
+
+        target.pathname = currentPath || '/'
+        target.search = window.location.search
+        target.hash = window.location.hash
+        window.location.replace(target.href)
+      })()
+    </script>
+  </head>
+  <body>
+    <p>Matcha Wiki переехала на <a href="https://matcha.ariex.ru">matcha.ariex.ru</a>.</p>
+  </body>
+</html>
