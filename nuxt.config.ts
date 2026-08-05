@@ -65,7 +65,7 @@ export default defineNuxtConfig({
         },
         {
           name: 'keywords',
-          content: 'Matcha Flavoured вики, Matcha Wiki, Minecraft датапак, русская энциклопедия Minecraft, рецепты Matcha Flavoured, гайд Matcha Flavoured'
+          content: 'Matcha Flavoured вики, Matcha Flavoured википедия, Matcha Wiki, Minecraft датапак, русская энциклопедия Minecraft, рецепты Matcha Flavoured, гайд Matcha Flavoured'
         },
         {
           name: 'theme-color',

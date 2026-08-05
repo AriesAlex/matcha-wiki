@@ -25,6 +25,7 @@ describe('site metadata', () => {
 
     expect(config).not.toContain("titleTemplate: '%s · Matcha Wiki'")
     expect(config).toContain("name: 'keywords'")
+    expect(config).toContain('Matcha Flavoured википедия')
     expect(robots).toContain('Sitemap: https://matcha.ariex.ru/sitemap.xml')
   })
 })
