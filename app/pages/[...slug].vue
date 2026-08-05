@@ -104,7 +104,7 @@ const relatedPages = computed(() => {
   return page.value?.related?.flatMap(path => pagesByPath.get(path) ?? []) ?? []
 })
 
-useSeoMeta({
+useWikiSeo({
   title: () => page.value?.title ?? 'Matcha Wiki',
   description: () => page.value?.description ?? ''
 })

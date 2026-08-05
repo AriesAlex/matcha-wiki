@@ -10,8 +10,8 @@
     :tabindex="modalOpen ? -1 : undefined"
     @keydown.esc.stop="emit('close')"
   >
-    <WikiSidebarNavigation :active-heading-id="activeHeadingId" />
     <WikiSidebarRelease />
+    <WikiSidebarNavigation :active-heading-id="activeHeadingId" />
   </aside>
 </template>
 

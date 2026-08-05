@@ -29,7 +29,7 @@
 <script setup lang="ts">
 const catalog = useWikiCatalog()
 
-useSeoMeta({
+useWikiSeo({
   title: 'Мобы и добыча',
   description: 'Мобы Matcha Flavoured: где встретить, как победить и какие особые предметы с них выпадают.'
 })

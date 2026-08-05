@@ -141,7 +141,7 @@ const milestones = computed(() => catalog.advancements
   .filter(advancement => advancement.section === 'tutorial')
   .slice(0, 6))
 
-useSeoMeta({
+useWikiSeo({
   title: 'Русская энциклопедия Matcha Flavoured',
   description: 'Рецепты, предметы, механики и подробное прохождение актуальной редакции Matcha Flavoured.'
 })

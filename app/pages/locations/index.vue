@@ -29,7 +29,7 @@
 <script setup lang="ts">
 const catalog = useWikiCatalog()
 
-useSeoMeta({
+useWikiSeo({
   title: 'Места и находки',
   description: 'Структуры, сундуки и археология Matcha Flavoured: где искать и какие особые предметы можно получить.'
 })

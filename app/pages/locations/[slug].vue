@@ -45,7 +45,7 @@ onMounted(() => {
   }
 })
 
-useSeoMeta({
+useWikiSeo({
   title: () => location.value?.name ?? 'Место',
   description: () => location.value
     ? `${location.value.name} в Matcha Flavoured: где искать, что делать и какие особые предметы можно получить.`

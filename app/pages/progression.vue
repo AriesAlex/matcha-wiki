@@ -152,7 +152,7 @@ const stages = [
 
 const tutorial = computed(() => catalog.advancements.filter(entry => entry.section === 'tutorial'))
 
-useSeoMeta({
+useWikiSeo({
   title: 'Путь прохождения',
   description: 'Подробная прогрессия Matcha Flavoured от первого костра и меди до Энда, Визера, адаманта и коллекционных целей.'
 })

@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { COLOR_THEME_BOOTSTRAP_SCRIPT } from './app/utils/colorTheme'
 
+const siteUrl = process.env.NUXT_PUBLIC_SITE_URL ?? 'https://matcha.ariex.ru'
+
 interface GeneratedRouteData {
   items?: Array<{ slug: string }>
   recipes?: Array<{ namespace: string, path: string }>
@@ -56,11 +58,14 @@ export default defineNuxtConfig({
         lang: 'ru'
       },
       title: 'Matcha Wiki',
-      titleTemplate: '%s · Matcha Wiki',
       meta: [
         {
           name: 'description',
-          content: 'Русская энциклопедия и руководство по Matcha Flavoured.'
+          content: 'Русская вики-энциклопедия Matcha Flavoured: предметы, рецепты, механики, прохождение и исправленный форк.'
+        },
+        {
+          name: 'keywords',
+          content: 'Matcha Flavoured вики, Matcha Wiki, Minecraft датапак, русская энциклопедия Minecraft, рецепты Matcha Flavoured, гайд Matcha Flavoured'
         },
         {
           name: 'theme-color',
@@ -111,8 +116,13 @@ export default defineNuxtConfig({
       prerender: true
     }
   },
+  runtimeConfig: {
+    public: {
+      siteUrl
+    }
+  },
   site: {
-    url: process.env.NUXT_PUBLIC_SITE_URL ?? 'https://matcha.ariex.ru'
+    url: siteUrl
   },
   yandexMetrika: {
     id: '111206604',

@@ -127,7 +127,7 @@ watchDebounced(
   { debounce: 180 }
 )
 
-useSeoMeta({
+useWikiSeo({
   title: 'Предметы',
   description: `Каталог ${catalog.stats.items} предметов Matcha Flavoured: получение, применение, рецепты и свойства.`
 })

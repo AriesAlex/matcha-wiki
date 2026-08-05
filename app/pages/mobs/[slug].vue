@@ -40,7 +40,7 @@ onMounted(() => {
   }
 })
 
-useSeoMeta({
+useWikiSeo({
   title: () => mob.value?.name ?? 'Моб',
   description: () => mob.value
     ? `${mob.value.name} в Matcha Flavoured: где встретить, как победить и какие особые предметы получить.`

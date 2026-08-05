@@ -54,4 +54,15 @@ describe('pack localization contract', () => {
       /Транс-права|Упразднить ICE|ACT UP|Dakota|Josax|Elliot Moss|Jeremias/u
     )
   })
+
+  it('uses an unambiguous Russian name for the magical clay statues', () => {
+    const language = JSON.parse(readFileSync(resolve(
+      import.meta.dirname,
+      '../pack/assets/minecraft/lang/ru_ru.json'
+    ), 'utf8')) as Record<string, string>
+
+    expect(language['item.kleispack.cheerful_clay_statue']).toBe('Глиняный идол')
+    expect(language['item.kleispack.mournful_clay_statue']).toBe('Глиняный идол')
+    expect(JSON.stringify(language)).not.toContain('Глиняный фетиш')
+  })
 })

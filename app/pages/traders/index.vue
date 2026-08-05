@@ -28,7 +28,7 @@ import TraderCatalogList from '../../components/traders/TraderCatalogList.vue'
 
 const catalog = useWikiCatalog()
 
-useSeoMeta({
+useWikiSeo({
   title: 'Торговцы',
   description: 'Все доступные торговцы Matcha Flavoured: точные цены, товары, уровни и полезные обмены в удобном виде.'
 })

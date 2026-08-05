@@ -155,7 +155,7 @@ function recipeLink(recipe: RecipeView): string {
     : recipePath(recipe.namespace, recipe.path)
 }
 
-useSeoMeta({
+useWikiSeo({
   title: 'Рецепты',
   description: `Все ${catalog.stats.recipes} способов изготовления в Matcha Flavoured: ингредиенты, рабочие места и результат.`
 })

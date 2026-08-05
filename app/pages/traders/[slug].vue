@@ -71,7 +71,7 @@ onMounted(() => {
   }
 })
 
-useSeoMeta({
+useWikiSeo({
   title: () => trader.value?.title ?? 'Торговец',
   description: () => trader.value
     ? `${trader.value.title} в Matcha Flavoured: все доступные сделки, точные цены и полезные покупки.`

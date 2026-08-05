@@ -146,7 +146,7 @@ function secondaryRoleLabel(role: RecipeRequirementRole): string {
   }[role]
 }
 
-useSeoMeta({
+useWikiSeo({
   title: () => `Как сделать: ${stripMinecraftFormatting(resultTitle.value)}`,
   description: () => {
     const current = recipe.value

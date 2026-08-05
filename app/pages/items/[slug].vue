@@ -121,7 +121,7 @@ const purposeSummary = computed(() => (
   item.value ? getItemPurposeSummary(item.value, directUses.value) : ''
 ))
 
-useSeoMeta({
+useWikiSeo({
   title: () => stripMinecraftFormatting(
     item.value?.title ?? acquisitionTarget.value?.title ?? 'Предмет'
   ),
