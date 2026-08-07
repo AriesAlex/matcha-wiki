@@ -3,23 +3,23 @@
     <div class="release-heading">
       <PhTranslate :size="22" weight="bold" aria-hidden="true" />
       <div>
-        <span>Русская редакция</span>
-        <strong id="fork-release-title">Форк Matcha от ArieX</strong>
+        <span>Готовая версия</span>
+        <strong id="fork-release-title">Русская Matcha</strong>
       </div>
     </div>
 
-    <p>Ручная локализация и исправления. Один ZIP для datapacks и resourcepacks.</p>
+    <p>Ручной перевод и исправления. Один ZIP для игры.</p>
 
     <div class="release-actions">
       <a
         class="download-link"
-        href="https://github.com/AriesAlex/matcha-wiki/releases/latest"
+        :href="downloadUrl"
       >
         <PhDownloadSimple :size="17" weight="bold" aria-hidden="true" />
-        Скачать ZIP
+        Скачать
       </a>
       <NuxtLink to="/fork">
-        Что изменено
+        Что переведено
         <PhArrowRight :size="15" weight="bold" aria-hidden="true" />
       </NuxtLink>
     </div>
@@ -32,6 +32,13 @@ import {
   PhDownloadSimple,
   PhTranslate
 } from '@phosphor-icons/vue'
+import { releaseDownloadUrl } from '~/utils/siteMeta'
+
+const catalog = useWikiCatalog()
+const downloadUrl = releaseDownloadUrl(
+  catalog.pack.artifactName,
+  catalog.pack.version
+)
 </script>
 
 <style scoped lang="scss">

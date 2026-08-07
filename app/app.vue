@@ -14,6 +14,7 @@ import {
 
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
+const websiteUrl = canonicalWikiUrl(runtimeConfig.public.siteUrl)
 const canonicalUrl = computed(() => canonicalWikiUrl(
   runtimeConfig.public.siteUrl,
   route.path
@@ -33,9 +34,10 @@ useHead(() => ({
       innerHTML: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
+        '@id': `${websiteUrl}#website`,
         name: SITE_NAME,
         alternateName: 'Русская энциклопедия Matcha Flavoured',
-        url: runtimeConfig.public.siteUrl,
+        url: websiteUrl,
         description: SITE_DESCRIPTION,
         inLanguage: 'ru-RU'
       })

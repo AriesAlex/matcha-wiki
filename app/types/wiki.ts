@@ -179,6 +179,7 @@ export interface WikiCatalog {
   pack: {
     title: string
     version: string
+    artifactName: string
     minecraft: string
     sha256?: string
   }

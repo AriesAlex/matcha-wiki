@@ -2,19 +2,26 @@
   <div class="home-page">
     <section class="home-intro">
       <div>
-        <p class="eyebrow">Проверено по исходникам пака</p>
-        <h1>Matcha Flavoured без догадок</h1>
+        <p class="eyebrow">Русская вики и готовая сборка</p>
+        <h1>Matcha Flavoured на русском</h1>
         <p class="lead">
-          Русская энциклопедия актуальной редакции: реальные рецепты,
-          способы добычи, изменённые механики и маршрут от первого костра до пост-Энда.
+          Скачайте русскую версию пака или найдите понятный ответ по рецептам,
+          предметам, механикам и прохождению.
         </p>
+        <div class="home-actions">
+          <a class="home-download" :href="downloadUrl">
+            <PhDownloadSimple :size="24" weight="bold" aria-hidden="true" />
+            Скачать русскую Matcha
+          </a>
+          <NuxtLink to="/fork">Что переведено и исправлено</NuxtLink>
+        </div>
         <button
           class="home-search"
           type="button"
           @click="openSearch"
         >
           <PhMagnifyingGlass :size="22" weight="bold" />
-          <span>Найти предмет, рецепт или достижение</span>
+          <span>Искать предмет, рецепт или достижение</span>
           <kbd>Ctrl K</kbd>
         </button>
       </div>
@@ -27,21 +34,20 @@
         >
         <p>
           Обычная ванильная интуиция здесь часто мешает: каменных инструментов нет,
-          голод заменён лечением, а смерть забирает часть максимального здоровья.
+          еда лечит, а смерть может забрать дополнительное сердце.
         </p>
       </aside>
     </section>
 
     <section class="task-section">
       <header class="section-heading">
-        <p class="eyebrow">Выберите текущую задачу</p>
-        <h2>Куда идти прямо сейчас</h2>
+        <h2>С чего начать</h2>
       </header>
       <nav class="task-list" aria-label="Основные сценарии">
         <NuxtLink to="/start">
           <PhBookOpenText :size="28" />
           <span>
-            <strong>Я только установил пак</strong>
+            <strong>Я только установил Matcha</strong>
             <small>Проверить установку, пережить первые минуты и получить медь.</small>
           </span>
           <PhArrowRight :size="20" />
@@ -54,55 +60,33 @@
           </span>
           <PhArrowRight :size="20" />
         </NuxtLink>
-        <NuxtLink to="/fork">
-          <PhWrench :size="28" />
-          <span>
-            <strong>Попробовать форк ArieX</strong>
-            <small>Ручная локализация, проверенные исправления, установка и один ZIP.</small>
-          </span>
-          <PhArrowRight :size="20" />
-        </NuxtLink>
       </nav>
     </section>
 
     <section class="reference-section">
-      <div>
-        <header class="section-heading">
-          <p class="eyebrow">Быстрый справочник</p>
-          <h2>Смотреть по типу</h2>
-        </header>
-        <div class="category-index">
-          <NuxtLink
-            v-for="[category, count] in categoryCounts"
-            :key="category"
-            :to="{ path: '/items', query: { category } }"
-          >
-            <span>{{ category }}</span>
-            <small>{{ count }}</small>
-          </NuxtLink>
-        </div>
-        <p class="inline-counts">
-          В каталоге: <NuxtLink to="/items">{{ catalog.stats.items }} предметов</NuxtLink>,
-          <NuxtLink to="/recipes">{{ catalog.stats.recipes }} рецептов</NuxtLink> и
-          <NuxtLink to="/progression">{{ catalog.stats.advancements }} видимых достижений</NuxtLink>.
-        </p>
+      <header class="section-heading">
+        <h2>Найти нужный предмет или рецепт</h2>
+      </header>
+      <div class="category-index">
+        <NuxtLink
+          v-for="[category, count] in categoryCounts"
+          :key="category"
+          :to="{ path: '/items', query: { category } }"
+        >
+          <span>{{ category }}</span>
+          <small>{{ count }}</small>
+        </NuxtLink>
       </div>
-
-      <aside class="version-note">
-        <p class="eyebrow">Редакция вики</p>
-        <h2>Актуальный проверенный срез</h2>
-        <p>
-          Форк ArieX сохраняет баланс оригинала, добавляет ручной русский перевод
-          и только проверенные технические исправления.
-        </p>
-        <NuxtLink to="/fork">О редакции ArieX</NuxtLink>
-      </aside>
+      <p class="inline-counts">
+        В каталоге: <NuxtLink to="/items">{{ catalog.stats.items }} предметов</NuxtLink>,
+        <NuxtLink to="/recipes">{{ catalog.stats.recipes }} рецептов</NuxtLink> и
+        <NuxtLink to="/progression">{{ catalog.stats.advancements }} видимых достижений</NuxtLink>.
+      </p>
     </section>
 
     <section class="milestone-section">
       <header class="section-heading">
-        <p class="eyebrow">Первые ориентиры</p>
-        <h2>Встроенный путь обучения</h2>
+        <h2>Первые цели в игре</h2>
       </header>
       <ol class="milestone-list">
         <li
@@ -124,10 +108,15 @@
 </template>
 
 <script setup lang="ts">
-import { PhArrowRight, PhBookOpenText, PhCompass, PhMagnifyingGlass, PhWrench } from '@phosphor-icons/vue'
+import { PhArrowRight, PhBookOpenText, PhCompass, PhDownloadSimple, PhMagnifyingGlass } from '@phosphor-icons/vue'
+import { releaseDownloadUrl } from '~/utils/siteMeta'
 
 const catalog = useWikiCatalog()
 const { open: openSearch } = useSearchDialog()
+const downloadUrl = releaseDownloadUrl(
+  catalog.pack.artifactName,
+  catalog.pack.version
+)
 
 const categoryCounts = computed(() => {
   const counts = new Map<string, number>()
@@ -142,8 +131,8 @@ const milestones = computed(() => catalog.advancements
   .slice(0, 6))
 
 useWikiSeo({
-  title: 'Русская энциклопедия Matcha Flavoured',
-  description: 'Рецепты, предметы, механики и подробное прохождение актуальной редакции Matcha Flavoured.'
+  title: 'Matcha Flavoured на русском: вики и скачивание',
+  description: 'Скачайте русскую версию Matcha Flavoured или найдите рецепты, предметы, механики и подробное прохождение.'
 })
 </script>
 
@@ -157,9 +146,49 @@ useWikiSeo({
 
     .lead {
       max-width: 760px;
-      margin: 24px 0 30px;
+      margin: 24px 0 22px;
       color: var(--muted);
       font-size: 20px;
+    }
+  }
+
+  .home-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+    margin-bottom: 16px;
+
+    a {
+      min-height: 52px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 2px;
+      font-weight: 800;
+    }
+
+    .home-download {
+      gap: 9px;
+      padding: 0 20px;
+      color: var(--surface);
+      background: var(--accent);
+      box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 68%, var(--ink));
+      font-size: 17px;
+      text-decoration: none;
+      transition:
+        background-color 120ms ease,
+        box-shadow 120ms ease,
+        transform 120ms ease;
+
+      &:hover {
+        color: var(--surface);
+        background: color-mix(in srgb, var(--accent) 84%, var(--ink));
+      }
+
+      &:active {
+        box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 68%, var(--ink));
+        transform: translateY(3px);
+      }
     }
   }
 
@@ -267,10 +296,7 @@ useWikiSeo({
   }
 
   .reference-section {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 64px;
-    align-items: start;
+    max-width: 760px;
   }
 
   .category-index {
@@ -303,24 +329,6 @@ useWikiSeo({
     margin: 24px 0 0;
     color: var(--muted);
     font-size: 14px;
-  }
-
-  .version-note {
-    padding: 24px;
-    background: var(--surface-quiet);
-
-    h2 {
-      font-size: 30px;
-    }
-
-    p:not(.eyebrow) {
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    a {
-      font-weight: 800;
-    }
   }
 
   .milestone-list {
@@ -360,8 +368,7 @@ useWikiSeo({
   }
 
   @media (max-width: 780px) {
-    .home-intro,
-    .reference-section {
+    .home-intro {
       display: flex;
       flex-direction: column;
       gap: 40px;
@@ -376,10 +383,6 @@ useWikiSeo({
         margin: -52px 0 8px 14px;
       }
     }
-
-    .reference-section .version-note {
-      width: min(100%, 420px);
-    }
   }
 
   @media (max-width: 540px) {
@@ -390,6 +393,19 @@ useWikiSeo({
     .home-search {
       kbd {
         display: none;
+      }
+    }
+
+    .home-actions {
+      align-items: stretch;
+      flex-direction: column;
+
+      a {
+        justify-content: center;
+      }
+
+      .home-download {
+        min-height: 58px;
       }
     }
 

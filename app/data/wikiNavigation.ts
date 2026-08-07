@@ -63,7 +63,7 @@ export const wikiNavigation: WikiNavigationSection[] = [
     ]
   },
   {
-    label: 'Форк ArieX',
+    label: 'Русская Matcha',
     links: [
       { to: '/fork', label: 'Русская версия' },
       { to: '/known-issues', label: 'Исправления и баги' }

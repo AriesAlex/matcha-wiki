@@ -83,6 +83,7 @@ interface ProjectManifest {
   pack: {
     title: string
     version: string
+    artifactName: string
   }
   minecraftVersion: string
 }
@@ -341,6 +342,7 @@ function main(): void {
     pack: {
       title: project.pack.title,
       version: project.pack.version,
+      artifactName: project.pack.artifactName,
       minecraft: project.minecraftVersion,
       sha256: hashTree(files)
     },

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { COLOR_THEME_BOOTSTRAP_SCRIPT } from './app/utils/colorTheme'
+import { SITE_DESCRIPTION } from './app/utils/siteMeta'
 
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL ?? 'https://matcha.ariex.ru'
 
@@ -61,11 +62,11 @@ export default defineNuxtConfig({
       meta: [
         {
           name: 'description',
-          content: 'Русская вики-энциклопедия Matcha Flavoured: предметы, рецепты, механики, прохождение и исправленный форк.'
+          content: SITE_DESCRIPTION
         },
         {
           name: 'keywords',
-          content: 'Matcha Flavoured вики, Matcha Flavoured википедия, Matcha Wiki, Minecraft датапак, русская энциклопедия Minecraft, рецепты Matcha Flavoured, гайд Matcha Flavoured'
+          content: 'Matcha Flavoured на русском, скачать Matcha Flavoured, Matcha Flavoured вики, Matcha Wiki, Minecraft датапак, рецепты Matcha Flavoured, гайд Matcha Flavoured'
         },
         {
           name: 'theme-color',
@@ -98,6 +99,19 @@ export default defineNuxtConfig({
     }
   },
   nitro: {
+    hooks: {
+      'prerender:generate'(route) {
+        if (route.route !== '/404.html' || !route.contents) {
+          return
+        }
+
+        const title = '<title>Страница не найдена · Matcha Wiki</title>'
+        const robots = '<meta name="robots" content="noindex, nofollow">'
+        route.contents = route.contents
+          .replace(/<title>.*?<\/title>/, title)
+          .replace('</head>', `${robots}</head>`)
+      }
+    },
     prerender: {
       // Nuxt otherwise uses CPU count × 4. Hundreds of catalog pages share
       // the same Content payloads, so that fan-out races atomic cache writes

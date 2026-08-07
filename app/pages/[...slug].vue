@@ -46,6 +46,7 @@
       </details>
     </footer>
   </article>
+  <WikiErrorState v-else :status-code="404" />
 </template>
 
 <script setup lang="ts">
@@ -62,6 +63,9 @@ const {
   () => `wiki:${pagePath.value}`,
   () => queryCollection('wiki').path(pagePath.value).first()
 )
+const missingPage = computed(
+  () => isMissingWikiPage(pageStatus.value, page.value)
+)
 const tocLinks = computed(
   () => (page.value?.body?.toc?.links as WikiTocLink[] | undefined) ?? []
 )
@@ -72,21 +76,15 @@ if (import.meta.server && pageError.value) {
   throw pageError.value
 }
 
-if (import.meta.server && isMissingWikiPage(pageStatus.value, page.value)) {
-  throw createError({
-    statusCode: 404,
-    statusMessage: 'Статья не найдена'
-  })
+const requestEvent = useRequestEvent()
+
+if (import.meta.server && missingPage.value && requestEvent) {
+  setResponseStatus(requestEvent, 404)
 }
 
 onMounted(() => {
   if (pageError.value) {
     showError(pageError.value)
-  } else if (isMissingWikiPage(pageStatus.value, page.value)) {
-    showError({
-      statusCode: 404,
-      statusMessage: 'Статья не найдена'
-    })
   }
 })
 
@@ -105,8 +103,9 @@ const relatedPages = computed(() => {
 })
 
 useWikiSeo({
-  title: () => page.value?.title ?? 'Matcha Wiki',
-  description: () => page.value?.description ?? ''
+  title: () => page.value?.title ?? 'Страница не найдена',
+  description: () => page.value?.description ?? 'Запрошенной страницы нет в Matcha Wiki.',
+  indexable: () => !missingPage.value
 })
 </script>
 
