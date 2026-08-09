@@ -66,11 +66,10 @@ const emit = defineEmits<{
   &:hover,
   &.branch {
     color: var(--accent);
-    background: var(--surface-quiet);
   }
 
   &.router-link-exact-active {
-    box-shadow: inset 3px 0 0 var(--accent);
+    color: var(--accent);
     font-weight: 750;
   }
 }

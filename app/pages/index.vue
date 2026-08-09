@@ -1,72 +1,83 @@
 <template>
   <div class="home-page">
     <section class="home-intro">
-      <div>
-        <p class="eyebrow">Русская вики и готовая сборка</p>
-        <h1>Matcha Flavoured на русском</h1>
-        <p class="lead">
-          Скачайте русскую версию пака или найдите понятный ответ по рецептам,
-          предметам, механикам и прохождению.
-        </p>
-        <div class="home-actions">
-          <a class="home-download" :href="downloadUrl">
-            <PhDownloadSimple :size="24" weight="bold" aria-hidden="true" />
-            Скачать русскую Matcha
-          </a>
-          <NuxtLink to="/fork">Что переведено и исправлено</NuxtLink>
-        </div>
-        <button
-          class="home-search"
-          type="button"
-          @click="openSearch"
-        >
-          <PhMagnifyingGlass :size="22" weight="bold" />
-          <span>Искать предмет, рецепт или достижение</span>
-          <kbd>Ctrl K</kbd>
-        </button>
-      </div>
-      <aside class="field-note">
+      <header class="home-heading">
         <img
+          class="home-mark"
           :src="useAssetPath('/generated/ui/pack.png')"
           alt="Эмблема Matcha Flavoured"
           width="112"
           height="112"
         >
-        <p>
-          Обычная ванильная интуиция здесь часто мешает: каменных инструментов нет,
-          еда лечит, а смерть может забрать дополнительное сердце.
-        </p>
-      </aside>
+        <div>
+          <h1>
+            <span>Matcha Flavoured</span>
+            на русском
+          </h1>
+          <p class="edition">
+            Редакция {{ catalog.pack.version }} · Minecraft Java {{ catalog.pack.minecraft }}
+          </p>
+        </div>
+      </header>
+
+      <p class="lead">
+        Ручной перевод с исправлениями и вики, которая ведёт от первого костра
+        до эндгейма.
+      </p>
+
+      <div class="home-actions">
+        <a class="home-download" :href="downloadUrl">
+          <PhDownloadSimple :size="23" weight="bold" aria-hidden="true" />
+          Скачать русскую Matcha
+        </a>
+        <NuxtLink to="/fork">Что переведено и исправлено</NuxtLink>
+      </div>
+
+      <button
+        class="home-search"
+        type="button"
+        @click="openSearch"
+      >
+        <PhMagnifyingGlass :size="22" weight="bold" />
+        <span>Предмет, рецепт или достижение</span>
+        <kbd>Ctrl K</kbd>
+      </button>
     </section>
 
-    <section class="task-section">
+    <section class="starter-section">
       <header class="section-heading">
-        <h2>С чего начать</h2>
+        <h2>Начните не с камня</h2>
+        <p>
+          Каменных инструментов здесь нет. Первый путь Matcha начинается с огня,
+          сухой травы и саманной печи.
+        </p>
       </header>
-      <nav class="task-list" aria-label="Основные сценарии">
-        <NuxtLink to="/start">
-          <PhBookOpenText :size="28" />
-          <span>
-            <strong>Я только установил Matcha</strong>
-            <small>Проверить установку, пережить первые минуты и получить медь.</small>
-          </span>
-          <PhArrowRight :size="20" />
+
+      <ol class="starter-trail">
+        <li
+          v-for="step in starterTrail"
+          :key="step.id"
+        >
+          <ItemSlot :stack="step.icon" />
+          <span>{{ step.label }}</span>
+        </li>
+      </ol>
+
+      <nav class="starter-links">
+        <NuxtLink class="text-link" to="/guides/first-day">
+          Первые 20–40 минут <PhArrowRight :size="18" />
         </NuxtLink>
-        <NuxtLink to="/progression">
-          <PhCompass :size="28" />
-          <span>
-            <strong>Хочу понять всю прогрессию</strong>
-            <small>Металлургия, сердца, Ад, Энд и возобновляемый эндгейм.</small>
-          </span>
-          <PhArrowRight :size="20" />
+        <NuxtLink class="text-link" to="/progression">
+          Весь путь игры <PhArrowRight :size="18" />
         </NuxtLink>
       </nav>
     </section>
 
     <section class="reference-section">
       <header class="section-heading">
-        <h2>Найти нужный предмет или рецепт</h2>
+        <h2>Найти в игре</h2>
       </header>
+
       <div class="category-index">
         <NuxtLink
           v-for="[category, count] in categoryCounts"
@@ -77,38 +88,18 @@
           <small>{{ count }}</small>
         </NuxtLink>
       </div>
-      <p class="inline-counts">
-        В каталоге: <NuxtLink to="/items">{{ catalog.stats.items }} предметов</NuxtLink>,
-        <NuxtLink to="/recipes">{{ catalog.stats.recipes }} рецептов</NuxtLink> и
-        <NuxtLink to="/progression">{{ catalog.stats.advancements }} видимых достижений</NuxtLink>.
-      </p>
-    </section>
 
-    <section class="milestone-section">
-      <header class="section-heading">
-        <h2>Первые цели в игре</h2>
-      </header>
-      <ol class="milestone-list">
-        <li
-          v-for="milestone in milestones"
-          :key="milestone.id"
-        >
-          <ItemSlot :stack="milestone.icon" />
-          <div>
-            <strong><MinecraftText :text="milestone.title" /></strong>
-            <p><MinecraftText :text="milestone.description" /></p>
-          </div>
-        </li>
-      </ol>
-      <NuxtLink class="text-link" to="/progression">
-        Открыть карту прохождения <PhArrowRight :size="18" />
-      </NuxtLink>
+      <nav class="reference-links">
+        <NuxtLink to="/items">Все предметы</NuxtLink>
+        <NuxtLink to="/recipes">Все рецепты</NuxtLink>
+        <NuxtLink to="/traders">Торговцы</NuxtLink>
+      </nav>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { PhArrowRight, PhBookOpenText, PhCompass, PhDownloadSimple, PhMagnifyingGlass } from '@phosphor-icons/vue'
+import { PhArrowRight, PhDownloadSimple, PhMagnifyingGlass } from '@phosphor-icons/vue'
 import { releaseDownloadUrl } from '~/utils/siteMeta'
 
 const catalog = useWikiCatalog()
@@ -118,6 +109,19 @@ const downloadUrl = releaseDownloadUrl(
   catalog.pack.version
 )
 
+const starterTrailIds = [
+  { id: 'main:tutorial/light_campfire', label: 'Костёр' },
+  { id: 'main:tutorial/obtain_dry_grass', label: 'Сухая трава' },
+  { id: 'main:tutorial/obtain_kiln', label: 'Саманная печь' },
+  { id: 'main:tutorial/obtain_copper', label: 'Медь' },
+  { id: 'main:tutorial/obtain_blast_furnace', label: 'Плавильная печь' }
+]
+
+const starterTrail = computed(() => starterTrailIds.flatMap((step) => {
+  const advancement = catalog.advancements.find(entry => entry.id === step.id)
+  return advancement ? [{ ...step, icon: advancement.icon }] : []
+}))
+
 const categoryCounts = computed(() => {
   const counts = new Map<string, number>()
   catalog.items.forEach((item) => {
@@ -125,10 +129,6 @@ const categoryCounts = computed(() => {
   })
   return [...counts.entries()].sort((left, right) => right[1] - left[1])
 })
-
-const milestones = computed(() => catalog.advancements
-  .filter(advancement => advancement.section === 'tutorial')
-  .slice(0, 6))
 
 useWikiSeo({
   title: 'Matcha Flavoured на русском: вики и скачивание',
@@ -139,31 +139,51 @@ useWikiSeo({
 <style scoped lang="scss">
 .home-page {
   .home-intro {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 260px;
-    gap: 64px;
-    align-items: end;
+    max-width: 820px;
+  }
 
-    .lead {
-      max-width: 760px;
-      margin: 24px 0 22px;
-      color: var(--muted);
-      font-size: 20px;
+  .home-heading {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+
+    h1 span {
+      display: block;
     }
+
+    .edition {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 650;
+    }
+  }
+
+  .home-mark {
+    width: 112px;
+    height: 112px;
+    flex: none;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  .lead {
+    max-width: 700px;
+    margin: 26px 0 22px;
+    color: var(--muted);
+    font-size: 20px;
   }
 
   .home-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px 18px;
-    margin-bottom: 16px;
+    gap: 10px 20px;
 
     a {
       min-height: 52px;
       display: inline-flex;
       align-items: center;
-      padding: 0 2px;
       font-weight: 800;
     }
 
@@ -172,7 +192,7 @@ useWikiSeo({
       padding: 0 20px;
       color: var(--surface);
       background: var(--accent);
-      box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 68%, var(--ink));
+      box-shadow: 0 4px 0 #285a2d;
       font-size: 17px;
       text-decoration: none;
       transition:
@@ -182,31 +202,35 @@ useWikiSeo({
 
       &:hover {
         color: var(--surface);
-        background: color-mix(in srgb, var(--accent) 84%, var(--ink));
+        background: var(--accent-bright);
       }
 
       &:active {
-        box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 68%, var(--ink));
+        box-shadow: 0 1px 0 #285a2d;
         transform: translateY(3px);
       }
     }
   }
 
   .home-search {
-    width: min(100%, 660px);
+    width: min(100%, 700px);
     min-height: 56px;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
+    margin-top: 20px;
     padding: 0 14px 0 18px;
     color: var(--ink);
     background: var(--surface);
     border: 1px solid var(--edge);
-    box-shadow: 0 10px 30px var(--shadow);
     text-align: left;
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease;
 
     &:hover {
+      background: var(--surface-quiet);
       border-color: var(--accent);
     }
 
@@ -225,74 +249,73 @@ useWikiSeo({
     }
   }
 
-  .field-note {
-    padding: 20px;
-    background: var(--surface-quiet);
-
-    img {
-      width: 112px;
-      height: 112px;
-      display: block;
-      margin: -54px 0 10px auto;
-      object-fit: contain;
-      image-rendering: pixelated;
-    }
-
-    p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
+  .starter-section,
+  .reference-section {
+    margin-top: 80px;
   }
 
-  .task-section,
-  .reference-section,
-  .milestone-section {
-    margin-top: 88px;
-  }
+  .starter-section {
+    max-width: 900px;
 
-  .task-list {
-    display: flex;
-    flex-direction: column;
+    .section-heading {
+      max-width: 680px;
 
-    a {
-      min-height: 94px;
-      display: grid;
-      grid-template-columns: 32px minmax(0, 1fr) 20px;
-      align-items: center;
-      gap: 18px;
-      padding: 18px 10px;
-      color: inherit;
-      text-decoration: none;
-
-      + a {
-        border-top: 1px solid var(--edge);
-      }
-
-      > svg:first-child {
-        color: var(--accent);
-      }
-
-      &:hover {
-        color: inherit;
-        background: var(--surface-quiet);
-      }
-
-      span {
-        display: flex;
-        flex-direction: column;
-      }
-
-      strong {
-        font-size: 18px;
-      }
-
-      small {
-        margin-top: 4px;
+      p {
+        margin: 14px 0 0;
         color: var(--muted);
-        font-size: 14px;
+        font-size: 17px;
       }
     }
+  }
+
+  .starter-trail {
+    max-width: 760px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin: 30px 0 24px;
+    padding: 0;
+    list-style: none;
+
+    li {
+      position: relative;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+      text-align: center;
+
+      &:not(:last-child)::after {
+        content: '›';
+        position: absolute;
+        top: 9px;
+        right: -8px;
+        color: var(--muted);
+        font-size: 24px;
+        font-weight: 400;
+        line-height: 1;
+      }
+    }
+  }
+
+  .starter-links,
+  .reference-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+  }
+
+  .text-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 800;
   }
 
   .reference-section {
@@ -325,102 +348,88 @@ useWikiSeo({
     }
   }
 
-  .inline-counts {
-    margin: 24px 0 0;
-    color: var(--muted);
-    font-size: 14px;
+  .reference-links {
+    margin-top: 24px;
+
+    a {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      font-weight: 800;
+    }
   }
 
-  .milestone-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-
-    li {
-      display: grid;
-      grid-template-columns: 52px minmax(0, 1fr);
+  @media (max-width: 620px) {
+    .home-heading {
       gap: 15px;
-      padding: 16px 0;
+      align-items: flex-start;
 
-      + li {
-        border-top: 1px solid var(--edge);
+      h1 {
+        font-size: clamp(2.25rem, 10vw, 3.1rem);
       }
 
-      strong {
-        font-size: 16px;
+      .edition {
+        margin-top: 7px;
+        font-size: 12px;
       }
+    }
 
-      p {
-        margin: 3px 0 0;
-        color: var(--muted);
+    .home-mark {
+      width: 68px;
+      height: 68px;
+    }
+
+    .lead {
+      margin-top: 22px;
+      font-size: 17px;
+    }
+
+    .home-actions .home-download {
+      min-height: 56px;
+    }
+
+    .home-search kbd {
+      display: none;
+    }
+
+    .starter-section,
+    .reference-section {
+      margin-top: 64px;
+    }
+
+    .starter-trail {
+      gap: 4px;
+
+      li {
+        gap: 7px;
+        font-size: 11px;
+
+        &:not(:last-child)::after {
+          right: -4px;
+        }
+      }
+    }
+
+    .category-index {
+      gap-inline: 18px;
+
+      a {
         font-size: 14px;
       }
     }
   }
 
-  .text-link {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-top: 18px;
-    font-weight: 800;
-  }
+  @media (max-width: 350px) {
+    .home-heading {
+      display: block;
 
-  @media (max-width: 780px) {
-    .home-intro {
-      display: flex;
-      flex-direction: column;
-      gap: 40px;
-      align-items: stretch;
-    }
-
-    .field-note {
-      margin-top: 20px;
-
-      img {
-        float: right;
-        margin: -52px 0 8px 14px;
-      }
-    }
-  }
-
-  @media (max-width: 540px) {
-    .home-intro .lead {
-      font-size: 17px;
-    }
-
-    .home-search {
-      kbd {
-        display: none;
+      .home-mark {
+        margin-bottom: 14px;
       }
     }
 
-    .home-actions {
-      align-items: stretch;
-      flex-direction: column;
-
-      a {
-        justify-content: center;
-      }
-
-      .home-download {
-        min-height: 58px;
-      }
-    }
-
-    .task-section,
-    .reference-section,
-    .milestone-section {
-      margin-top: 68px;
-    }
-
-    .task-list a {
-      grid-template-columns: 28px minmax(0, 1fr);
-
-      > svg:last-child {
-        display: none;
-      }
+    .starter-trail li {
+      font-size: 10px;
     }
 
     .category-index {

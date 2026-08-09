@@ -172,8 +172,7 @@ onBeforeUnmount(() => {
     top: 0;
     z-index: 40;
     color: var(--ink);
-    background: color-mix(in srgb, var(--surface) 94%, transparent);
-    border-bottom: 1px solid var(--edge);
+    background: var(--surface);
   }
 
   .header-inner {
@@ -239,7 +238,6 @@ onBeforeUnmount(() => {
       &:hover,
       &.router-link-active {
         color: var(--accent);
-        background: var(--surface-quiet);
       }
     }
   }
