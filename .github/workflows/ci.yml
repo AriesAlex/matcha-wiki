@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   validate:
@@ -30,6 +31,7 @@ jobs:
         run: bun run validate
 
       - name: Upload corrected pack
+        id: upload-pack
         uses: actions/upload-artifact@v7
         with:
           name: Matcha-Flavoured-RU
@@ -37,3 +39,23 @@ jobs:
             dist/*.zip
             dist/SHA256SUMS.txt
           if-no-files-found: error
+
+      - name: Remove previous corrected packs
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT_ARTIFACT_ID: ${{ steps.upload-pack.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -n "$CURRENT_ARTIFACT_ID"
+          gh api \
+            --paginate \
+            "repos/$GITHUB_REPOSITORY/actions/artifacts?name=Matcha-Flavoured-RU&per_page=100" \
+            --jq '.artifacts[].id' \
+            | while read -r artifact_id; do
+                if [ "$artifact_id" != "$CURRENT_ARTIFACT_ID" ]; then
+                  gh api \
+                    --method DELETE \
+                    "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id"
+                fi
+              done
